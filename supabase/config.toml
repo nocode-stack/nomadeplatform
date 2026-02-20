@@ -1,0 +1,4 @@
+project_id = "mqqibdpddkxjxonbende"
+
+[functions.trigger-contract-webhook]
+verify_jwt = false

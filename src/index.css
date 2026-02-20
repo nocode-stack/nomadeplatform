@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --header-h: 80px;
+
+    /* Nomade Nation Brand Palette */
+    /* Arena Nómada (#F4F0E6) */
+    --background: 43 33% 93%;
+    /* Neo Charcoal (#2C2F33) */
+    --foreground: 214 7% 19%;
+
+    --card: 43 33% 95%;
+    /* Slightly lighter than background */
+    --card-foreground: 214 7% 19%;
+
+    --popover: 43 33% 95%;
+    --popover-foreground: 214 7% 19%;
+
+    /* Ocre Aventura (#E0A458) */
+    --primary: 34 69% 61%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Neo Charcoal for secondary elements */
+    --secondary: 214 7% 25%;
+    --secondary-foreground: 43 33% 93%;
+
+    --muted: 43 15% 88%;
+    --muted-foreground: 214 7% 40%;
+
+    --accent: 34 69% 61%;
+    --accent-foreground: 214 7% 19%;
+
+    /* Functional Colors */
+    /* Rojo Arcilla (#C75B5B) */
+    --destructive: 0 50% 57%;
+    --destructive-foreground: 43 33% 93%;
+
+    --border: 214 7% 85%;
+    --input: 214 7% 85%;
+    --ring: 34 69% 61%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar: Neo Charcoal */
+    --sidebar-background: 214 7% 19%;
+    --sidebar-foreground: 43 33% 90%;
+    --sidebar-primary: 34 69% 61%;
+    --sidebar-primary-foreground: 214 7% 19%;
+    --sidebar-accent: 214 7% 25%;
+    --sidebar-accent-foreground: 43 33% 93%;
+    --sidebar-border: 214 7% 25%;
+    --sidebar-ring: 34 69% 61%;
+
+    /* Feedback Colors (Custom Variables) */
+    --success: 138 25% 39%;
+    /* Verde Bosque #4A7C59 */
+    --info: 204 23% 48%;
+    /* Azul Acero #5D7F96 */
+    --warning: 34 69% 61%;
+    /* Reuse Ocre for warning if needed */
+  }
+
+  .dark {
+    --background: 214 7% 12%;
+    --foreground: 43 33% 95%;
+    --card: 214 7% 15%;
+    --card-foreground: 43 33% 95%;
+    --primary: 34 69% 61%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 43 33% 25%;
+    --secondary-foreground: 43 33% 93%;
+  }
+}
+
+@layer base {
+
+  *,
+  ::before,
+  ::after {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    @apply antialiased;
+    width: 100% !important;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden !important;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-slate-50 text-foreground;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .card-professional {
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+
+  .animate-pulse-button {
+    animation: pulse-button 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-button {
+
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    50% {
+      transform: scale(1.03);
+      opacity: 0.95;
+    }
+  }
+}
+
+@layer utilities {
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+}
