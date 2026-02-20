@@ -5,9 +5,15 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
-// Mock env variables for Supabase client
-vi.stubEnv('VITE_SUPABASE_URL', 'https://mock.supabase.co');
-vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'mock-key');
+// Mock Supabase client
+vi.mock('../../integrations/supabase/client', () => ({
+    supabase: {
+        from: vi.fn(),
+        auth: {
+            getSession: vi.fn().mockResolvedValue({ data: { session: null } })
+        }
+    }
+}));
 
 // Mock de Layout
 vi.mock('../../components/layout/Layout', () => ({

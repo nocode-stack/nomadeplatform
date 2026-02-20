@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+/* eslint-disable no-console */
+import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -141,7 +142,7 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
       isFormInitialized.current = true;
       if (import.meta.env.DEV) console.log('✅ Formulario inicializado correctamente');
     }
-  }, [budget?.id, isEditing]);
+  }, [budget, isEditing, setValue]);
 
   // Efecto para cargar items existentes en modo edición
   useEffect(() => {

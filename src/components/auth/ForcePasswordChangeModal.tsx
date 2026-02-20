@@ -54,7 +54,7 @@ const ForcePasswordChangeModal = () => {
                 });
                 setMustSetPassword(false);
             }
-        } catch (error) {
+        } catch {
             toast({
                 title: "Error",
                 description: "No se pudo actualizar la contraseña. Reinténtalo.",
