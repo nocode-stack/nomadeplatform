@@ -18,21 +18,19 @@ export const useClients = () => {
     queryKey: ['common-clients-list'],
     queryFn: async () => {
       // @ts-ignore - Compilación profunda de tipos de Supabase
+      // @ts-ignore - Deep Supabase type compilation
       const { data, error } = await supabase
         .from('NEW_Clients')
         .select(`
           *,
-          NEW_Projects (
+          NEW_Budget!NEW_Budget_client_id_fkey (
             *,
-            NEW_Budget (
-              *,
-              model_option:model_options(name),
-              engine_option:engine_options(name),
-              interior_color_option:interior_color_options(name),
-              pack:NEW_Budget_Packs(name),
-              electric_system:NEW_Budget_Electric(name),
-              NEW_Budget_Items (*)
-            )
+            model_option:model_options(name),
+            engine_option:engine_options(name),
+            interior_color_option:interior_color_options(name),
+            pack:NEW_Budget_Packs(name),
+            electric_system:NEW_Budget_Electric(name),
+            NEW_Budget_Items (*)
           ),
           NEW_Billing (
             *

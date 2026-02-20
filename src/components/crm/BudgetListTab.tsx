@@ -54,7 +54,7 @@ const buildPrintDataFromBudget = (
     budget: JoinedNewBudget,
     budgetItems: any[]
 ): BudgetPrintData => {
-    const client = budget.project?.NEW_Clients;
+    const client = budget.client;
     const location = (() => {
         if (budget.iva_rate === 7) return 'canarias' as const;
         if (budget.iva_rate === 0) return 'internacional' as const;
@@ -188,7 +188,7 @@ const BudgetListTab = ({ projectId, clientName }: BudgetListTabProps) => {
     const handleTogglePrimary = async (budgetId: string, currentlyPrimary: boolean) => {
         if (currentlyPrimary) return;
         try {
-            await setPrimaryMutation.mutateAsync({ budgetId, confirmed: true });
+            await setPrimaryMutation.mutateAsync({ budgetId, clientId: projectId || '', confirmed: true });
             toast({
                 title: "Presupuesto preferido actualizado",
                 description: "Este presupuesto es ahora el principal del proyecto.",

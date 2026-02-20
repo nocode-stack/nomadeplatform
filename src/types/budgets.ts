@@ -133,51 +133,49 @@ export interface BudgetWithItems extends Budget {
 
 export interface NewBudget {
   id: string;
-  budget_code?: string;
+  budget_code?: string | null;
   status: string;
-  subtotal: number;
-  total: number;
-  discount_amount: number;
-  iva_rate: number;
-  base_price: number;
-  pack_price: number;
-  electric_system_price: number;
-  color_modifier: number;
-  project_id?: string;
-  notes?: string;
+  subtotal: number | null;
+  total: number | null;
+  discount_amount: number | null;
+  iva_rate: number | null;
+  base_price: number | null;
+  pack_price: number | null;
+  electric_system_price: number | null;
+  color_modifier: number | null;
+  client_id?: string | null;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
-  created_by?: string;
+  created_by?: string | null;
   budget_items?: NewBudgetItem[];
   // Configuración del vehículo
-  engine_option_id?: string;
-  model_option_id?: string;
-  exterior_color_id?: string;
-  interior_color_id?: string;
-  pack_id?: string;
-  electric_system_id?: string;
-  reservation_amount?: number;
-  discount_percentage?: number;
-  is_active?: boolean;
-  location?: string;
+  engine_option_id?: string | null;
+  model_option_id?: string | null;
+  exterior_color_id?: string | null;
+  interior_color_id?: string | null;
+  pack_id?: string | null;
+  electric_system_id?: string | null;
+  reservation_amount?: number | null;
+  discount_percentage?: number | null;
+  is_active?: boolean | null;
+  location?: string | null;
 }
 
 export interface JoinedNewBudget extends NewBudget {
-  project?: {
+  client?: {
     id: string;
-    project_code: string;
-    client_name?: string;
-    NEW_Clients?: {
-      name: string;
-      email?: string;
-      phone?: string;
-      address?: string;
-    };
-  };
-  engine_option?: { name: string };
-  model_option?: { name: string };
-  pack?: { name: string };
-  is_primary?: boolean;
+    name: string | null;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    client_code?: string | null;
+    [key: string]: any; // Allow additional fields from full client row
+  } | null;
+  engine_option?: { name: string } | null;
+  model_option?: { name: string } | null;
+  pack?: { name: string } | null;
+  is_primary?: boolean | null;
 }
 
 export interface NewBudgetItem {

@@ -6,6 +6,7 @@ interface ContractData {
   id?: string;
   project_id: string;
   client_id: string;
+  budget_id?: string;
   contract_type: string;
   client_full_name: string;
   client_dni: string;
@@ -75,7 +76,7 @@ export const useContractVersioning = (projectId: string) => {
       }
 
       // Obtener datos de facturación
-      let billingData = null;
+      let billingData: any = null;
       if (contractData.client_id) {
         try {
           // removed debug log
@@ -112,6 +113,7 @@ export const useContractVersioning = (projectId: string) => {
         billing_entity_name: contractData.billing_entity_name || (billingData?.name !== (projectData?.new_clients?.name || contractData.client_full_name) ? billingData?.name : null),
         billing_entity_nif: contractData.billing_entity_nif || billingData?.nif || null,
         billing_address: contractData.billing_address || billingData?.billing_address || projectData?.new_clients?.address || 'Dirección pendiente',
+        budget_id: contractData.budget_id || primaryBudget?.id || null,
         vehicle_model: vehicleModel,
         vehicle_vin: contractData.vehicle_vin || projectData?.new_vehicles?.numero_bastidor || '',
         vehicle_plate: contractData.vehicle_plate || projectData?.new_vehicles?.matricula || '',

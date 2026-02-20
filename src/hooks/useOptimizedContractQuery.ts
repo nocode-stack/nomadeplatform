@@ -4,12 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 
 // Hook optimizado para obtener el estado de los contratos con caché inteligente y tiempo real
-export const useOptimizedContractQuery = (projectId: string) => {
+export const useOptimizedContractQuery = (projectId: string, budgetId?: string) => {
   const queryClient = useQueryClient();
 
   // Real-time subscription for contract updates
   useEffect(() => {
     if (!projectId) return;
+
+    let filterString = `project_id=eq.${projectId}`;
+    if (budgetId) filterString += `&budget_id=eq.${budgetId}`;
 
     const channel = supabase
       .channel('contracts-realtime')
@@ -19,7 +22,7 @@ export const useOptimizedContractQuery = (projectId: string) => {
           event: '*',
           schema: 'public',
           table: 'NEW_Contracts',
-          filter: `project_id=eq.${projectId}`
+          filter: filterString
         },
         () => {
           logger.debug('Real-time contract update', { component: 'Contract', action: 'realtime' });
@@ -56,17 +59,23 @@ export const useOptimizedContractQuery = (projectId: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [projectId, queryClient]);
+  }, [projectId, budgetId, queryClient]);
 
   return useQuery({
-    queryKey: ['contractStatuses', projectId],
+    queryKey: ['contractStatuses', projectId, budgetId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('NEW_Contracts')
-        .select('contract_type, estado_visual, version, created_at, updated_at')
+        .select('*')
         .eq('project_id', projectId)
         .eq('is_latest', true)
         .eq('is_active', true);
+
+      if (budgetId) {
+        query = query.eq('budget_id', budgetId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         logger.error('Error fetching contract statuses', { component: 'Contract', action: 'fetch', data: error });

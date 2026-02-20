@@ -53,7 +53,7 @@ const buildPrintDataFromBudget = (
     budget: JoinedNewBudget,
     budgetItems: any[]
 ): BudgetPrintData => {
-    const client = budget.project?.NEW_Clients;
+    const client = budget.client;
     const location = (() => {
         // Infer location from iva_rate
         if (budget.iva_rate === 7) return 'canarias' as const;
@@ -211,16 +211,15 @@ const Presupuestos = () => {
     const handleEdit = useCallback((budget: JoinedNewBudget, e: React.MouseEvent) => {
         e.stopPropagation();
         setEditorBudgetId(budget.id);
-        setEditorProjectId(budget.project_id || undefined);
-        setEditorClientName(budget.project?.NEW_Clients?.name);
+        setEditorProjectId(budget.client_id || undefined);
+        setEditorClientName(budget.client?.name || undefined);
         setEditorOpen(true);
     }, []);
 
     const filteredBudgets = budgets.filter(b => {
         const matchesSearch =
             b.budget_code?.toLowerCase().includes(filter.toLowerCase()) ||
-            b.project?.NEW_Clients?.name?.toLowerCase().includes(filter.toLowerCase()) ||
-            b.project?.project_code?.toLowerCase().includes(filter.toLowerCase());
+            b.client?.name?.toLowerCase().includes(filter.toLowerCase());
 
         const matchesPrimary = !showOnlyPrimary || b.is_primary;
         const matchesModel = selectedModel === 'all' || b.model_option?.name === selectedModel;
@@ -330,7 +329,7 @@ const Presupuestos = () => {
 
                                     <div>
                                         <h3 className="text-xl font-black tracking-tight group-hover:text-primary transition-colors">
-                                            {budget.project?.NEW_Clients?.name || budget.project?.project_code || 'Varios / Stock'}
+                                            {budget.client?.name || 'Varios / Stock'}
                                         </h3>
                                         <p className="text-sm text-muted-foreground">
                                             {budget.model_option?.name || 'Sin modelo asignado'}

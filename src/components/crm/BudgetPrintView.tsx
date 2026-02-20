@@ -474,7 +474,7 @@ const BudgetPrintView = ({ open, onOpenChange, data }: BudgetPrintViewProps) => 
                                     <div className="h-px bg-[#E5E7EB] flex-1" />
                                 </div>
                                 <p className="text-[10px] text-[#9CA3AF]">
-                                    Nomade Vans S.L. · CIF: B-XXXXXXXX · info@nomade.es · +34 XXX XXX XXX
+                                    Nomade Vans S.L. · CIF: B09622879 · info@nomade-nation.com
                                 </p>
                                 <p className="text-[9px] text-[#CBD5E1]">
                                     © {new Date().getFullYear()} Nomade Vans S.L. — Todos los derechos reservados

@@ -35,12 +35,8 @@ export const useAllContracts = () => {
                 .from('NEW_Contracts')
                 .select(`
                     *,
-                    project:NEW_Projects(
-                        project_code,
-                        client_name,
-                        new_clients:NEW_Clients(name),
-                        budgets:NEW_Budget!NEW_Budget_project_id_fkey(budget_code, is_primary)
-                    )
+                    client:NEW_Clients(name),
+                    budget:NEW_Budget(budget_code)
                 `)
                 .order('created_at', { ascending: false });
 

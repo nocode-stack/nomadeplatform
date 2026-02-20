@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -78,68 +78,35 @@ export type Database = {
       }
       engine_options: {
         Row: {
+          available_locations: string[]
           created_at: string
           id: string
           is_active: boolean
           name: string
           order_index: number
-          power: string
+          price_export: number
           price_modifier: number
-          transmission: string
           updated_at: string
         }
         Insert: {
+          available_locations?: string[]
           created_at?: string
           id?: string
           is_active?: boolean
           name: string
           order_index?: number
-          power: string
+          price_export?: number
           price_modifier?: number
-          transmission: string
           updated_at?: string
         }
         Update: {
+          available_locations?: string[]
           created_at?: string
           id?: string
           is_active?: boolean
           name?: string
           order_index?: number
-          power?: string
-          price_modifier?: number
-          transmission?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      exterior_color_options: {
-        Row: {
-          color_code: string | null
-          created_at: string
-          id: string
-          is_active: boolean
-          name: string
-          order_index: number
-          price_modifier: number
-          updated_at: string
-        }
-        Insert: {
-          color_code?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          order_index?: number
-          price_modifier?: number
-          updated_at?: string
-        }
-        Update: {
-          color_code?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          order_index?: number
+          price_export?: number
           price_modifier?: number
           updated_at?: string
         }
@@ -147,32 +114,32 @@ export type Database = {
       }
       interior_color_options: {
         Row: {
-          color_code: string | null
           created_at: string
           id: string
           is_active: boolean
           name: string
           order_index: number
+          price_export: number
           price_modifier: number
           updated_at: string
         }
         Insert: {
-          color_code?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           name: string
           order_index?: number
+          price_export?: number
           price_modifier?: number
           updated_at?: string
         }
         Update: {
-          color_code?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           name?: string
           order_index?: number
+          price_export?: number
           price_modifier?: number
           updated_at?: string
         }
@@ -185,6 +152,7 @@ export type Database = {
           is_active: boolean
           name: string
           order_index: number
+          price_export: number
           price_modifier: number
           updated_at: string
         }
@@ -194,6 +162,7 @@ export type Database = {
           is_active?: boolean
           name: string
           order_index?: number
+          price_export?: number
           price_modifier?: number
           updated_at?: string
         }
@@ -203,6 +172,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           order_index?: number
+          price_export?: number
           price_modifier?: number
           updated_at?: string
         }
@@ -294,7 +264,7 @@ export type Database = {
           comunidad_autonoma?: string | null
           created_at?: string
           created_by?: string | null
-          discount_amount?: number
+          discount_amount: number
           discount_percentage?: number | null
           electric_system_id?: string | null
           electric_system_price?: number
@@ -348,6 +318,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "NEW_Budget_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "NEW_Clients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "NEW_Budget_electric_system_id_fkey"
             columns: ["electric_system_id"]
             isOneToOne: false
@@ -359,13 +336,6 @@ export type Database = {
             columns: ["engine_option_id"]
             isOneToOne: false
             referencedRelation: "engine_options"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Budget_exterior_color_id_fkey"
-            columns: ["exterior_color_id"]
-            isOneToOne: false
-            referencedRelation: "exterior_color_options"
             referencedColumns: ["id"]
           },
           {
@@ -412,9 +382,11 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_general: boolean | null
           name: string
           order_index: number
           price: number
+          price_export: number
           updated_at: string
         }
         Insert: {
@@ -423,9 +395,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_general?: boolean | null
           name: string
           order_index?: number
           price?: number
+          price_export?: number
           updated_at?: string
         }
         Update: {
@@ -434,9 +408,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_general?: boolean | null
           name?: string
           order_index?: number
           price?: number
+          price_export?: number
           updated_at?: string
         }
         Relationships: []
@@ -483,6 +459,7 @@ export type Database = {
           order_index: number
           pack_pricing_rules: Json | null
           price: number
+          price_export: number
           required_packs: string[] | null
           system_type: string
           updated_at: string
@@ -498,6 +475,7 @@ export type Database = {
           order_index?: number
           pack_pricing_rules?: Json | null
           price?: number
+          price_export?: number
           required_packs?: string[] | null
           system_type?: string
           updated_at?: string
@@ -513,6 +491,7 @@ export type Database = {
           order_index?: number
           pack_pricing_rules?: Json | null
           price?: number
+          price_export?: number
           required_packs?: string[] | null
           system_type?: string
           updated_at?: string
@@ -581,6 +560,38 @@ export type Database = {
           },
         ]
       }
+      NEW_Budget_Pack_Components: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          order_index: number
+          pack_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          order_index?: number
+          pack_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          order_index?: number
+          pack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "NEW_Budget_Pack_Components_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "NEW_Budget_Packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       NEW_Budget_Packs: {
         Row: {
           created_at: string
@@ -589,6 +600,7 @@ export type Database = {
           is_active: boolean
           name: string
           price: number | null
+          price_export: number
           updated_at: string
         }
         Insert: {
@@ -598,6 +610,7 @@ export type Database = {
           is_active?: boolean
           name: string
           price?: number | null
+          price_export?: number
           updated_at?: string
         }
         Update: {
@@ -607,7 +620,106 @@ export type Database = {
           is_active?: boolean
           name?: string
           price?: number | null
+          price_export?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      NEW_Budget_Packs_Extras: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          order_index: number
+          price: number
+          price_export: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          order_index?: number
+          price?: number
+          price_export?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          order_index?: number
+          price?: number
+          price_export?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      NEW_Budget_Packs_Extras_Components: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          order_index: number
+          pack_extra_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          order_index?: number
+          pack_extra_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          order_index?: number
+          pack_extra_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "NEW_Budget_Packs_Extras_Components_pack_extra_id_fkey"
+            columns: ["pack_extra_id"]
+            isOneToOne: false
+            referencedRelation: "NEW_Budget_Packs_Extras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      NEW_Budget_Transport: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          order_index: number
+          price: number
+          price_export: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          order_index?: number
+          price?: number
+          price_export?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          order_index?: number
+          price?: number
+          price_export?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -622,6 +734,8 @@ export type Database = {
           dni: string | null
           email: string | null
           id: string
+          is_active: boolean | null
+          is_hot_lead: boolean | null
           name: string | null
           phone: string | null
           updated_at: string | null
@@ -636,6 +750,8 @@ export type Database = {
           dni?: string | null
           email?: string | null
           id?: string
+          is_active?: boolean | null
+          is_hot_lead?: boolean | null
           name?: string | null
           phone?: string | null
           updated_at?: string | null
@@ -650,6 +766,8 @@ export type Database = {
           dni?: string | null
           email?: string | null
           id?: string
+          is_active?: boolean | null
+          is_hot_lead?: boolean | null
           name?: string | null
           phone?: string | null
           updated_at?: string | null
@@ -737,6 +855,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_latest: boolean | null
+          is_primary: boolean | null
           parent_contract_id: string | null
           payment_conditions: string | null
           payment_first_amount: number | null
@@ -775,6 +894,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_latest?: boolean | null
+          is_primary?: boolean | null
           parent_contract_id?: string | null
           payment_conditions?: string | null
           payment_first_amount?: number | null
@@ -813,6 +933,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_latest?: boolean | null
+          is_primary?: boolean | null
           parent_contract_id?: string | null
           payment_conditions?: string | null
           payment_first_amount?: number | null
@@ -1125,13 +1246,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "new_production_settings_applies_from_slot_id_fkey"
-            columns: ["applies_from_slot_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Production_Schedule"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "NEW_Production_Settings_applies_from_slot_id_fkey"
             columns: ["applies_from_slot_id"]
             isOneToOne: false
@@ -1233,6 +1347,7 @@ export type Database = {
           client_id: string | null
           client_name: string | null
           comercial: string | null
+          comments: string | null
           created_at: string
           delivery_date: string | null
           id: string
@@ -1247,6 +1362,7 @@ export type Database = {
           client_id?: string | null
           client_name?: string | null
           comercial?: string | null
+          comments?: string | null
           created_at?: string
           delivery_date?: string | null
           id?: string
@@ -1261,6 +1377,7 @@ export type Database = {
           client_id?: string | null
           client_name?: string | null
           comercial?: string | null
+          comments?: string | null
           created_at?: string
           delivery_date?: string | null
           id?: string
@@ -1412,6 +1529,51 @@ export type Database = {
         }
         Relationships: []
       }
+      regional_config: {
+        Row: {
+          budget_footer: string | null
+          created_at: string | null
+          currency: string
+          id: string
+          iedmt_applies: boolean
+          iedmt_rate: number
+          iva_label: string
+          iva_rate: number
+          legal_text: string | null
+          legal_text_extra: string | null
+          location: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget_footer?: string | null
+          created_at?: string | null
+          currency?: string
+          id?: string
+          iedmt_applies?: boolean
+          iedmt_rate?: number
+          iva_label?: string
+          iva_rate?: number
+          legal_text?: string | null
+          legal_text_extra?: string | null
+          location: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget_footer?: string | null
+          created_at?: string | null
+          currency?: string
+          id?: string
+          iedmt_applies?: boolean
+          iedmt_rate?: number
+          iva_label?: string
+          iva_rate?: number
+          legal_text?: string | null
+          legal_text_extra?: string | null
+          location?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           avatar_url: string | null
@@ -1422,6 +1584,8 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          role: string | null
+          status: string | null
           updated_at: string
           user_id: string
         }
@@ -1434,6 +1598,8 @@ export type Database = {
           id?: string
           name: string
           phone?: string | null
+          role?: string | null
+          status?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1446,6 +1612,8 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          role?: string | null
+          status?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1463,34 +1631,15 @@ export type Database = {
     Views: {
       project_assignments_status: {
         Row: {
-          client_code: string | null
-          client_id: string | null
-          client_name: string | null
-          created_at: string | null
-          matricula: string | null
-          numero_bastidor: string | null
           project_code: string | null
           project_id: string | null
-          project_status: string | null
-          slot_end_date: string | null
+          slot_code: string | null
           slot_id: string | null
-          slot_production_code: string | null
-          slot_start_date: string | null
-          slot_synced: boolean | null
-          sync_status: string | null
-          updated_at: string | null
+          status: string | null
           vehicle_code: string | null
           vehicle_id: string | null
-          vehicle_synced: boolean | null
         }
         Relationships: [
-          {
-            foreignKeyName: "NEW_Projects_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Clients"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "NEW_Projects_slot_id_fkey"
             columns: ["slot_id"]
@@ -1535,10 +1684,7 @@ export type Database = {
         Args: { project_id_param: string }
         Returns: string
       }
-      check_auth_user_exists: {
-        Args: { user_email: string }
-        Returns: boolean
-      }
+      check_auth_user_exists: { Args: { user_email: string }; Returns: boolean }
       check_client_status_for_project: {
         Args: { project_id_param: string }
         Returns: boolean
@@ -1554,18 +1700,9 @@ export type Database = {
           deleted_name: string
         }[]
       }
-      generate_budget_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_budget_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_client_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_budget_code: { Args: never; Returns: string }
+      generate_budget_number: { Args: never; Returns: string }
+      generate_client_code: { Args: never; Returns: string }
       generate_contract_version: {
         Args: {
           p_contract_data: Json
@@ -1574,34 +1711,13 @@ export type Database = {
         }
         Returns: string
       }
-      generate_incident_reference_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_new_budget_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_production_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_production_schedule_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_project_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_prospect_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_vehicle_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_incident_reference_number: { Args: never; Returns: string }
+      generate_new_budget_code: { Args: never; Returns: string }
+      generate_production_code: { Args: never; Returns: string }
+      generate_production_schedule_code: { Args: never; Returns: string }
+      generate_project_code: { Args: never; Returns: string }
+      generate_prospect_code: { Args: never; Returns: string }
+      generate_vehicle_code: { Args: never; Returns: string }
       initialize_new_project_phases: {
         Args: { project_id_param: string }
         Returns: undefined
@@ -1611,7 +1727,7 @@ export type Database = {
         Returns: undefined
       }
       sync_all_project_assignments: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           action_type: string
           details: string
@@ -1619,7 +1735,7 @@ export type Database = {
         }[]
       }
       sync_all_project_statuses: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           action: string
           new_status: string
@@ -1633,13 +1749,13 @@ export type Database = {
       project_code_status: "available" | "assigned" | "completed" | "cancelled"
       project_priority: "low" | "medium" | "high" | "critical"
       project_status:
-      | "prospect"
-      | "pre_production"
-      | "production"
-      | "reworks"
-      | "pre_delivery"
-      | "delivered"
-      | "repair"
+        | "prospect"
+        | "pre_production"
+        | "production"
+        | "reworks"
+        | "pre_delivery"
+        | "delivered"
+        | "repair"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1653,116 +1769,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {

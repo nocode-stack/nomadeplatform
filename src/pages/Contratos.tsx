@@ -28,6 +28,7 @@ import {
 import { Checkbox } from "../components/ui/checkbox";
 import { Label } from "../components/ui/label";
 import { useAllContracts } from '../hooks/useAllContracts';
+import { useToggleContractPrimary } from '../hooks/useToggleContractPrimary';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -44,6 +45,7 @@ const Contratos = () => {
     const pageSize = 20;
 
     const { data: rawContracts, isLoading } = useAllContracts();
+    const togglePrimary = useToggleContractPrimary();
 
     const mapContractType = (type: string) => {
         switch (type) {
@@ -72,11 +74,14 @@ const Contratos = () => {
     const allContracts = (rawContracts || []).map(c => ({
         id: c.id.substring(0, 8).toUpperCase(),
         realId: c.id,
-        client: c.client_full_name || c.project?.new_clients?.name || c.project?.client_name || 'Sin nombre',
+        projectId: c.client_id, // Usar client_id ahora para acciones
+        contractType: c.contract_type,
+        client: c.client_full_name || c.client?.name || 'Sin nombre',
         status: mapContractStatus(c.estado_visual),
         date: (c.updated_at || c.created_at) ? format(new Date(c.updated_at || c.created_at), 'dd/MM/yyyy', { locale: es }) : 'N/A',
-        budgetCode: c.project?.budgets?.find((b: any) => b.is_primary)?.budget_code || c.project?.budgets?.[0]?.budget_code || c.project?.project_code || 'PR-N/A',
+        budgetCode: c.budget?.budget_code || 'Presupuesto no asignado',
         type: mapContractType(c.contract_type),
+        isPrimary: c.is_primary || false,
         isCurrent: c.is_latest,
         model: c.vehicle_model || 'N/A'
     }));
@@ -376,9 +381,22 @@ const Contratos = () => {
                                         <div>
                                             <div className="flex items-center space-x-2">
                                                 <h4 className="font-bold text-foreground">{c.client}</h4>
-                                                {c.isCurrent && (
-                                                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 animate-pulse-star" />
-                                                )}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        togglePrimary.mutate({
+                                                            contractId: c.realId,
+                                                            projectId: c.projectId,
+                                                            contractType: c.contractType,
+                                                            isPrimary: !c.isPrimary,
+                                                        });
+                                                    }}
+                                                    disabled={togglePrimary.isPending}
+                                                    className="p-0.5 rounded-md hover:bg-amber-50 transition-all hover:scale-110"
+                                                    title={c.isPrimary ? 'Quitar como principal' : 'Marcar como principal'}
+                                                >
+                                                    <Star className={`w-3.5 h-3.5 transition-all ${c.isPrimary ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30 hover:text-amber-300'}`} />
+                                                </button>
                                             </div>
                                             <p className="text-xs text-muted-foreground font-medium">
                                                 <span className="text-foreground/70">{c.type}</span> • {c.id} • Relacionado con {c.budgetCode}

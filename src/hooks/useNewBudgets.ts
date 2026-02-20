@@ -9,7 +9,7 @@ type NewBudgetUpdate = TablesUpdate<'NEW_Budget'>;
 
 type ModelOption = Tables<'model_options'>;
 type EngineOption = Tables<'engine_options'>;
-type ExteriorColorOption = Tables<'exterior_color_options'>;
+// exterior_color_options table removed
 type InteriorColorOption = Tables<'interior_color_options'>;
 type ElectricSystem = Tables<'NEW_Budget_Electric'>;
 type BudgetPack = Tables<'NEW_Budget_Packs'>;
@@ -27,7 +27,6 @@ export const useNewBudget = (budgetId: string) => {
           *,
           engine_option:engine_options(*),
           model_option:model_options(*),
-          exterior_color:exterior_color_options(*),
           interior_color:interior_color_options(*),
           pack:NEW_Budget_Packs(*),
           electric_system:NEW_Budget_Electric(*)
@@ -42,10 +41,10 @@ export const useNewBudget = (budgetId: string) => {
   });
 };
 
-// Hook para obtener presupuestos de un proyecto
-export const useProjectBudgets = (projectId: string) => {
+// Hook para obtener presupuestos de un cliente (anteriormente por proyecto)
+export const useProjectBudgets = (clientId: string) => {
   return useQuery({
-    queryKey: ['project-budgets', projectId],
+    queryKey: ['project-budgets', clientId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('NEW_Budget')
@@ -54,9 +53,9 @@ export const useProjectBudgets = (projectId: string) => {
           engine_option:engine_options(name),
           model_option:model_options(name),
           pack:NEW_Budget_Packs(name),
-          project:NEW_Projects(*, NEW_Clients(*))
+          client:NEW_Clients!NEW_Budget_client_id_fkey(*)
         `)
-        .eq('project_id', projectId)
+        .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -77,12 +76,12 @@ export const useNewBudgets = (projectId?: string) => {
           engine_option:engine_options(name),
           model_option:model_options(name),
           pack:NEW_Budget_Packs(name),
-          project:NEW_Projects(*, NEW_Clients(*))
+          client:NEW_Clients!NEW_Budget_client_id_fkey(*)
         `)
         .order('created_at', { ascending: false });
 
       if (projectId) {
-        query = query.eq('project_id', projectId);
+        query = query.eq('client_id', projectId);
       }
 
       const { data, error } = await query;
@@ -115,12 +114,11 @@ export const useCreateNewBudget = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Invalidar todas las queries relacionadas con presupuestos
       queryClient.invalidateQueries({ queryKey: ['new-budget'] });
       queryClient.invalidateQueries({ queryKey: ['new-budgets'] });
-      if (data.project_id) {
-        queryClient.invalidateQueries({ queryKey: ['project-budgets', data.project_id] });
-        queryClient.invalidateQueries({ queryKey: ['new-budgets', data.project_id] });
+      if (data.client_id) {
+        queryClient.invalidateQueries({ queryKey: ['project-budgets', data.client_id] });
+        queryClient.invalidateQueries({ queryKey: ['new-budgets', data.client_id] });
       }
     },
   });
@@ -150,30 +148,19 @@ export const useUpdateNewBudget = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Invalidar caché específico del presupuesto
       queryClient.invalidateQueries({ queryKey: ['new-budget', data.id] });
 
-      if (data.project_id) {
-        // Invalidar todas las queries relacionadas con presupuestos del proyecto
-        queryClient.invalidateQueries({ queryKey: ['project-budgets', data.project_id] });
-        queryClient.invalidateQueries({ queryKey: ['new-budgets', data.project_id] });
+      if (data.client_id) {
+        queryClient.invalidateQueries({ queryKey: ['project-budgets', data.client_id] });
+        queryClient.invalidateQueries({ queryKey: ['new-budgets', data.client_id] });
+        queryClient.invalidateQueries({ queryKey: ['common-clients-list'] });
 
-        // Si este presupuesto es primario, invalidar queries del proyecto y vehículo
         if (data.is_primary) {
-          queryClient.invalidateQueries({ queryKey: ['new-project', data.project_id] });
-          queryClient.invalidateQueries({ queryKey: ['unified-projects'] });
-          queryClient.invalidateQueries({ queryKey: ['unified-project', data.project_id] });
-          queryClient.invalidateQueries({ queryKey: ['new-projects-list'] });
-          queryClient.invalidateQueries({ queryKey: ['primary-budget', data.project_id] });
-          queryClient.invalidateQueries({ queryKey: ['vehicle', data.project_id] });
-          queryClient.invalidateQueries({ queryKey: ['vehicles'] });
-
-          if (import.meta.env.DEV) console.log('✅ Updated primary budget - all project and vehicle queries invalidated');
+          if (import.meta.env.DEV) console.log('✅ Updated primary budget - client queries invalidated');
         }
 
-        // Invalidar contratos ya que el total puede cambiar
-        queryClient.invalidateQueries({ queryKey: ['contract', data.project_id] });
-        queryClient.invalidateQueries({ queryKey: ['contractStatuses', data.project_id] });
+        queryClient.invalidateQueries({ queryKey: ['contract', data.client_id] });
+        queryClient.invalidateQueries({ queryKey: ['contractStatuses', data.client_id] });
       }
     },
   });
@@ -207,29 +194,31 @@ export const useSetPrimaryBudget = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ budgetId, confirmed = false }: { budgetId: string; confirmed?: boolean }) => {
+    mutationFn: async ({ budgetId, clientId, confirmed = false }: { budgetId: string; clientId: string; confirmed?: boolean }) => {
       if (import.meta.env.DEV) console.log('🎯 Setting primary budget:', budgetId, 'Confirmed:', confirmed);
 
       if (!confirmed) {
         throw new Error('CONFIRMATION_REQUIRED');
       }
 
-      // First get the project_id for this budget
+      // First get the client_id for this budget (fallback just in case)
       const { data: budgetData } = await supabase
         .from('NEW_Budget')
-        .select('project_id')
+        .select('client_id')
         .eq('id', budgetId)
         .single();
 
-      if (!budgetData?.project_id) {
-        throw new Error('Budget not found or has no project');
+      const resolvedClientId = clientId || budgetData?.client_id;
+
+      if (!resolvedClientId) {
+        throw new Error('Budget not found or has no client');
       }
 
-      // First, unmark all other budgets as primary for this project
+      // First, unmark all other budgets as primary for this client
       const { error: unmarkError } = await supabase
         .from('NEW_Budget')
         .update({ is_primary: false })
-        .eq('project_id', budgetData.project_id);
+        .eq('client_id', resolvedClientId);
 
       if (unmarkError) {
         console.error('❌ Error unmarking other budgets:', unmarkError);
@@ -256,36 +245,65 @@ export const useSetPrimaryBudget = () => {
       if (import.meta.env.DEV) console.log('✅ Primary budget set successfully:', data);
       return data;
     },
-    onSuccess: (data) => {
+    onMutate: async ({ budgetId, clientId }) => {
+      // Cancelar consultas en curso sobre esta clave para que no sobreescriban nuestra actualización optimista
+      await queryClient.cancelQueries({ queryKey: ['project-budgets', clientId] });
+
+      // Guardar el estado anterior por si hay que revertir
+      const previousBudgets = queryClient.getQueryData(['project-budgets', clientId]);
+
+      // Actualización optimista de la caché local
+      queryClient.setQueryData(['project-budgets', clientId], (old: any[] | undefined) => {
+        if (!old) return old;
+        return old.map(b => ({
+          ...b,
+          is_primary: b.id === budgetId,
+          is_active: b.id === budgetId ? true : b.is_active // el primario siempre se vuelve activo
+        }));
+      });
+
+      return { previousBudgets };
+    },
+    onError: (error: any, { clientId }, context: any) => {
+      // Si la mutación falla, restaurar la caché al estado anterior
+      if (context?.previousBudgets) {
+        queryClient.setQueryData(['project-budgets', clientId], context.previousBudgets);
+      }
+
+      if (error?.message !== 'CONFIRMATION_REQUIRED') {
+        console.error('❌ Error setting primary budget:', error);
+      }
+    },
+    onSuccess: (data, { clientId }) => {
       if (import.meta.env.DEV) console.log('🔄 Invalidating queries after primary budget change');
 
       // Invalidar queries de presupuestos
       queryClient.invalidateQueries({ queryKey: ['new-budgets'] });
 
-      if (data.project_id) {
+      // Utilizar de preferencia el clientId de la mutación o del objeto retornado
+      const activeClientId = clientId || data?.client_id;
+
+      if (activeClientId) {
         // Invalidar todas las queries relacionadas con presupuestos del proyecto
-        queryClient.invalidateQueries({ queryKey: ['new-budgets', data.project_id] });
-        queryClient.invalidateQueries({ queryKey: ['project-budgets', data.project_id] });
+        queryClient.invalidateQueries({ queryKey: ['new-budgets', activeClientId] });
+        queryClient.invalidateQueries({ queryKey: ['project-budgets', activeClientId] });
 
         // Invalidar queries del proyecto y vehículo para actualizar header instantáneamente
-        queryClient.invalidateQueries({ queryKey: ['new-project', data.project_id] });
+        queryClient.invalidateQueries({ queryKey: ['new-clients', activeClientId] });
         queryClient.invalidateQueries({ queryKey: ['unified-projects'] });
-        queryClient.invalidateQueries({ queryKey: ['unified-project', data.project_id] });
+        queryClient.invalidateQueries({ queryKey: ['unified-project', activeClientId] });
         queryClient.invalidateQueries({ queryKey: ['new-projects-list'] });
-        queryClient.invalidateQueries({ queryKey: ['primary-budget', data.project_id] });
-        queryClient.invalidateQueries({ queryKey: ['vehicle', data.project_id] });
+
+        // La tabla vehicles y budgets primaria también se ve afectada
+        queryClient.invalidateQueries({ queryKey: ['primary-budget', activeClientId] });
+        queryClient.invalidateQueries({ queryKey: ['vehicle', activeClientId] });
         queryClient.invalidateQueries({ queryKey: ['vehicles'] });
 
         // Invalidar contratos ya que el total puede cambiar
-        queryClient.invalidateQueries({ queryKey: ['contract', data.project_id] });
-        queryClient.invalidateQueries({ queryKey: ['contractStatuses', data.project_id] });
+        queryClient.invalidateQueries({ queryKey: ['contract', activeClientId] });
+        queryClient.invalidateQueries({ queryKey: ['contractStatuses', activeClientId] });
 
-        if (import.meta.env.DEV) console.log('✅ All queries invalidated for project:', data.project_id);
-      }
-    },
-    onError: (error: any) => {
-      if (error.message !== 'CONFIRMATION_REQUIRED') {
-        console.error('❌ Error setting primary budget:', error);
+        if (import.meta.env.DEV) console.log('✅ All queries invalidated for client:', activeClientId);
       }
     }
   });
@@ -325,17 +343,11 @@ export const useEngineOptions = () => {
 };
 
 export const useExteriorColorOptions = () => {
+  // exterior_color_options table was removed — return empty array
   return useQuery({
     queryKey: ['exterior-color-options'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('exterior_color_options')
-        .select('*')
-        .eq('is_active', true)
-        .order('order_index');
-
-      if (error) throw error;
-      return data as ExteriorColorOption[];
+      return [] as any[];
     },
   });
 };

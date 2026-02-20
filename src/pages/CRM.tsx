@@ -78,12 +78,12 @@ const CRM = () => {
     // Map Supabase data to the structure the CRM expects
     const leads = (clientsData || []).map(client => {
         try {
-            const project = client.NEW_Projects?.[0]; // Taking the first project
-            const primaryBudget = project?.NEW_Budget?.find((b: any) => b.is_primary) || project?.NEW_Budget?.[0];
+            const budgets = (client as any).NEW_Budget || [];
+            const primaryBudget = budgets.find((b: any) => b.is_primary) || budgets[0];
             const billing = client.NEW_Billing?.[0];
 
             return {
-                id: project?.id || client.id,
+                id: client.id,
                 client_id: client.id,
                 name: client.name || 'Sin nombre',
                 company: billing?.name || 'Empresa no definida',
@@ -93,13 +93,13 @@ const CRM = () => {
                 dni: client.dni || '',
                 birthDate: client.birthdate || '',
                 address: client.address || '',
-                comercial: project?.comercial || 'No asignado',
+                comercial: 'No asignado',
                 isHotLead: (client as any).is_hot_lead || false,
                 vehicleModel: primaryBudget?.model_option?.name || '',
                 motorization: primaryBudget?.engine_option?.name || '',
                 furnitureColor: primaryBudget?.interior_color_option?.name || '',
-                exteriorColor: primaryBudget?.exterior_color_option?.name || '',
-                productionSlot: 'Por asignar', // From NEW_Production_Schedule potentially
+                exteriorColor: '',
+                productionSlot: 'Por asignar',
                 electricalSystem: primaryBudget?.electric_system?.name || '',
                 extraPacks: (primaryBudget as any)?.pack?.name || '',
                 projectNotes: (primaryBudget as any)?.comments || (primaryBudget as any)?.notes || '',

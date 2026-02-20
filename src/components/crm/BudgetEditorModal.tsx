@@ -375,6 +375,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
         setIsSaving(true);
         try {
             if (!projectId) {
+                // projectId is used as clientId in new flow
                 toast({
                     title: 'Guarda el lead primero',
                     description: 'Necesitas registrar el lead antes de crear un presupuesto.',
@@ -414,7 +415,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             const { data: newBudget, error: createError } = await supabase
                 .from('NEW_Budget')
                 .insert({
-                    project_id: projectId,
+                    client_id: projectId, // projectId prop now carries the client ID
                     status: 'draft',
                     is_primary: true,
                     is_active: true,
@@ -505,24 +506,10 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
 
     // ── Build Print Data ────────────────────────────────────
     const buildPrintData = useCallback(async (): Promise<BudgetPrintData> => {
-        // Fetch client info
+        // Use the clientName prop directly since NEW_Projects no longer exists
         let printClientName = clientName || 'Cliente';
         let printClientEmail = '';
         let printClientPhone = '';
-
-        if (projectId) {
-            const { data: project } = await supabase
-                .from('NEW_Projects')
-                .select('NEW_Clients(name, email, phone)')
-                .eq('id', projectId)
-                .single();
-            if (project?.NEW_Clients) {
-                const c = project.NEW_Clients as any;
-                printClientName = c.name || printClientName;
-                printClientEmail = c.email || '';
-                printClientPhone = c.phone || '';
-            }
-        }
 
         const modelObj = models.find(m => m.id === selectedModel);
         const engineObj = engines.find(e => e.id === selectedEngine);
