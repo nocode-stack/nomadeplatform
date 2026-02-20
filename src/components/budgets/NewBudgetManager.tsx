@@ -110,7 +110,7 @@ const NewBudgetManager = ({ project }: NewBudgetManagerProps) => {
           description: "El PDF del presupuesto se está descargando.",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error generando PDF:', error);
       toast({
         title: "Error",
@@ -141,8 +141,8 @@ const NewBudgetManager = ({ project }: NewBudgetManagerProps) => {
       });
       setPrimaryDialogOpen(false);
       setBudgetToPrimary(null);
-    } catch (error: any) {
-      if (error.message === 'CONFIRMATION_REQUIRED') {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === 'CONFIRMATION_REQUIRED') {
         // Esto no debería ocurrir aquí
         return;
       }

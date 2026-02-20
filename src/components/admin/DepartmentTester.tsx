@@ -98,7 +98,7 @@ const FEATURE_BLOCKS: FeatureBlock[] = [
 export const DepartmentTester = () => {
   const { data: userPermissions } = useDepartmentPermissions();
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
 
   // Fetch all departments
   const { data: departments } = useQuery({
@@ -120,7 +120,7 @@ export const DepartmentTester = () => {
     queryKey: ['test-department-permissions', selectedDepartment],
     queryFn: async () => {
       if (!selectedDepartment) return null;
-      
+
       const deptData = departments?.find(d => d.name === selectedDepartment);
       if (!deptData) return null;
 
@@ -140,12 +140,12 @@ export const DepartmentTester = () => {
     enabled: !!selectedDepartment && !!departments,
   });
 
-  const checkFeatureAccess = (feature: FeatureBlock, deptPermissions: any) => {
+  const checkFeatureAccess = (feature: FeatureBlock, deptPermissions: { routes: string[]; permissions: string[] } | null | undefined) => {
     if (!deptPermissions) return { hasAccess: false, missingRoutes: [], missingPermissions: [] };
 
     const hasRoutes = feature.routes.every(route => deptPermissions.routes.includes(route));
     const hasPermissions = feature.permissions.every(perm => deptPermissions.permissions.includes(perm));
-    
+
     const missingRoutes = feature.routes.filter(route => !deptPermissions.routes.includes(route));
     const missingPermissions = feature.permissions.filter(perm => !deptPermissions.permissions.includes(perm));
 
@@ -199,7 +199,7 @@ export const DepartmentTester = () => {
             <div className="space-y-6">
               {FEATURE_BLOCKS.map((feature) => {
                 const access = checkFeatureAccess(feature, selectedDeptPermissions);
-                
+
                 return (
                   <div key={feature.name} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -218,8 +218,8 @@ export const DepartmentTester = () => {
                         <label className="text-xs font-medium text-muted-foreground">RUTAS REQUERIDAS:</label>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {feature.routes.map((route) => (
-                            <Badge 
-                              key={route} 
+                            <Badge
+                              key={route}
                               variant={access.missingRoutes.includes(route) ? "destructive" : "outline"}
                               className="text-xs"
                             >
@@ -234,8 +234,8 @@ export const DepartmentTester = () => {
                         <label className="text-xs font-medium text-muted-foreground">PERMISOS REQUERIDOS:</label>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {feature.permissions.map((perm) => (
-                            <Badge 
-                              key={perm} 
+                            <Badge
+                              key={perm}
                               variant={access.missingPermissions.includes(perm) ? "destructive" : "outline"}
                               className="text-xs"
                             >
@@ -286,9 +286,9 @@ export const DepartmentTester = () => {
               <div key={dept.id} className="border rounded-lg p-3">
                 <h4 className="font-semibold">{dept.name}</h4>
                 <p className="text-xs text-muted-foreground mb-2">{dept.description}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setSelectedDepartment(dept.name)}
                   className="w-full"
                 >

@@ -6,7 +6,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/use-toast';
-import { Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
 
 const ForcePasswordChangeModal = () => {
     const { mustSetPassword, setMustSetPassword, changePassword } = useAuth();
@@ -54,7 +54,7 @@ const ForcePasswordChangeModal = () => {
                 });
                 setMustSetPassword(false);
             }
-        } catch (error) {
+        } catch (_error) {
             toast({
                 title: "Error",
                 description: "No se pudo actualizar la contraseña. Reinténtalo.",

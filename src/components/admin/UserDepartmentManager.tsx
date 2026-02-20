@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -23,19 +22,6 @@ export const UserDepartmentManager = () => {
   const { data: users, isLoading: usersLoading } = useUsers();
   const [selectedUser, setSelectedUser] = useState<string>('');
 
-  // Only show if user has admin permissions
-  if (!userPermissions?.canEdit) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground">No tienes permisos para administrar usuarios.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Fetch departments
   const { data: departments } = useQuery({
     queryKey: ['departments'],
@@ -56,7 +42,7 @@ export const UserDepartmentManager = () => {
     mutationFn: async ({ userId, departmentName }: { userId: string; departmentName: string }) => {
       const { error } = await supabase
         .from('user_profiles')
-        .update({ 
+        .update({
           department: departmentName,
           updated_at: new Date().toISOString()
         })
@@ -71,8 +57,8 @@ export const UserDepartmentManager = () => {
       setSelectedUser('');
     },
     onError: (error) => {
-      toast({ 
-        title: 'Error al actualizar departamento', 
+      toast({
+        title: 'Error al actualizar departamento',
         description: error.message,
         variant: 'destructive'
       });
@@ -82,6 +68,19 @@ export const UserDepartmentManager = () => {
   const handleDepartmentChange = (userId: string, departmentName: string) => {
     updateUserDepartmentMutation.mutate({ userId, departmentName });
   };
+
+  // Only show if user has admin permissions
+  if (!userPermissions?.canEdit) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-muted-foreground">No tienes permisos para administrar usuarios.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (usersLoading) {
     return (

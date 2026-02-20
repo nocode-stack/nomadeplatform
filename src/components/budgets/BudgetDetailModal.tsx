@@ -3,10 +3,8 @@ import React from 'react';
 import {
     Dialog,
     DialogContent,
-    DialogClose,
 } from '../ui/dialog';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Printer, Mail, X, Star } from 'lucide-react';
 import { JoinedNewBudget } from '@/types/budgets';
@@ -18,7 +16,7 @@ interface BudgetDetailModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     budget: JoinedNewBudget | null;
-    project?: any;
+    project?: { id: string; project_code?: string };
 }
 
 const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProps) => {

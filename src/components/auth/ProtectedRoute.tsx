@@ -15,7 +15,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({
   children,
-  requiredRoutes,
+  requiredRoutes: _requiredRoutes,
   requiredPermissions,
   requiredDepartment,
   redirectTo = '/login'

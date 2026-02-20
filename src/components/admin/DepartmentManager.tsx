@@ -29,19 +29,6 @@ export const DepartmentManager = () => {
   const { data: userPermissions } = useDepartmentPermissions();
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
 
-  // Only show if user has admin permissions
-  if (!userPermissions?.canEdit) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground">No tienes permisos para administrar departamentos.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Fetch departments
   const { data: departments, isLoading: departmentsLoading } = useQuery({
     queryKey: ['departments'],
@@ -61,7 +48,7 @@ export const DepartmentManager = () => {
     queryKey: ['department-permissions', selectedDepartment],
     queryFn: async (): Promise<DepartmentPermission[]> => {
       if (!selectedDepartment) return [];
-      
+
       const { data, error } = await supabase
         .from('department_permissions')
         .select('*')
@@ -88,13 +75,26 @@ export const DepartmentManager = () => {
       toast({ title: 'Departamento actualizado correctamente' });
     },
     onError: (error) => {
-      toast({ 
-        title: 'Error al actualizar departamento', 
+      toast({
+        title: 'Error al actualizar departamento',
         description: error.message,
         variant: 'destructive'
       });
     },
   });
+
+  // Only show if user has admin permissions
+  if (!userPermissions?.canEdit) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-muted-foreground">No tienes permisos para administrar departamentos.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (departmentsLoading) {
     return (
@@ -186,7 +186,7 @@ export const DepartmentManager = () => {
                   {['can_edit', 'can_delete', 'can_validate', 'can_create_projects'].map((permissionType) => {
                     const permission = permissions?.find(p => p.permission_type === permissionType);
                     const hasPermission = permission?.permission_value === 'true';
-                    
+
                     return (
                       <div key={permissionType} className="flex items-center space-x-2">
                         <div className={`w-3 h-3 rounded-full ${hasPermission ? 'bg-green-500' : 'bg-red-500'}`} />

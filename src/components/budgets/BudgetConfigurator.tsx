@@ -13,7 +13,7 @@ interface BudgetConfiguratorProps {
 }
 
 const BudgetConfigurator = ({
-  budgetId,
+  budgetId: _budgetId,
   initialPack,
   initialElectricSystem,
   onConfigurationChange
@@ -24,7 +24,7 @@ const BudgetConfigurator = ({
     autoSelected,
     packs,
     electricSystems,
-    electricSystemPricing,
+    electricSystemPricing: _electricSystemPricing,
     isLoading,
     handlePackSelect,
     handleElectricSystemSelect,
@@ -95,17 +95,17 @@ const BudgetConfigurator = ({
                         <span className="text-green-600 font-medium">Incluido (0€)</span>
                       ) : (
                         <span className="text-green-600 font-medium">
-                          {configuration.electricSystem.finalPrice.toLocaleString('es-ES', { 
-                            style: 'currency', 
-                            currency: 'EUR' 
+                          {configuration.electricSystem.finalPrice.toLocaleString('es-ES', {
+                            style: 'currency',
+                            currency: 'EUR'
                           })}
                         </span>
                       )}
                       {configuration.electricSystem.discount > 0 && !configuration.electricSystem.isFree && (
                         <span className="text-xs text-gray-500 ml-2">
-                          (Antes: {configuration.electricSystem.originalPrice.toLocaleString('es-ES', { 
-                            style: 'currency', 
-                            currency: 'EUR' 
+                          (Antes: {configuration.electricSystem.originalPrice.toLocaleString('es-ES', {
+                            style: 'currency',
+                            currency: 'EUR'
                           })})
                         </span>
                       )}

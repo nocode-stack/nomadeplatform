@@ -27,7 +27,7 @@ const Calidad = lazy(() => import("./pages/Calidad"));
 const Incidencias = lazy(() => import("./pages/Incidencias"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
-const PlaceholderPage = lazy(() => import("./pages/PlaceholderPage"));
+const _PlaceholderPage = lazy(() => import("./pages/PlaceholderPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({

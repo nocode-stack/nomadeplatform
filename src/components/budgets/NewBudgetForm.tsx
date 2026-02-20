@@ -518,11 +518,11 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
       });
 
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error al guardar presupuesto:', error);
       toast({
         title: "Error",
-        description: error.message || "No se pudo guardar el presupuesto.",
+        description: error instanceof Error ? error.message : "No se pudo guardar el presupuesto.",
         variant: "destructive",
       });
     }
