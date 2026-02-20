@@ -182,7 +182,7 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
       areItemsLoaded.current = true;
       if (import.meta.env.DEV) console.log('✅ Items cargados correctamente');
     }
-  }, [budgetItems, isEditing]);
+  }, [budgetItems, isEditing, setValue]);
 
   // Resetear flags cuando cambia el presupuesto o el modo
   useEffect(() => {
@@ -359,12 +359,10 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
   };
 
   const {
-    basePrice,
     enginePrice, // Extraer enginePrice
     packPrice,
     electricSystemPrice,
     colorModifier,
-    additionalItemsPrice,
     subtotal,
     ivaAmount,
     discountAmount,
@@ -701,7 +699,6 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {electricOptions.map((electric) => {
                     // Calcular precio dinámico para este sistema específico usando el hook
-                    const isSelected = selectedElectricId === electric.id;
                     const selectedPackData = packOptions.find(p => p.id === selectedPackId);
 
                     // Calcular precio dinámico para ESTE sistema específico (no solo el seleccionado)
@@ -725,9 +722,6 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
                     }
 
                     const originalPrice = electric.price;
-
-                    // Ya no hay auto-selección automática de sistemas eléctricos
-                    const isAutoSelected = false;
 
                     return (
                       <label key={electric.id} className="relative">

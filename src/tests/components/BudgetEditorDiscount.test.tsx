@@ -229,12 +229,15 @@ describe('BudgetEditorModal – Discount Fields', () => {
             expect(screen.getByText('Descuento (%)')).toBeInTheDocument();
         });
 
-        // Find percent input (value=10 from loaded data)
-        const inputs = screen.getAllByPlaceholderText('0');
-        const percentInput = inputs.find(
-            (input) => (input as HTMLInputElement).value === '10'
-        );
-        expect(percentInput).toBeTruthy();
+        // Wait for percent input to be populated (value=10 from loaded data)
+        let percentInput: HTMLInputElement | undefined;
+        await waitFor(() => {
+            const inputs = screen.getAllByPlaceholderText('0');
+            percentInput = inputs.find(
+                (input) => (input as HTMLInputElement).value === '10'
+            ) as HTMLInputElement | undefined;
+            expect(percentInput).toBeTruthy();
+        });
 
         // Change to 15%
         fireEvent.change(percentInput!, { target: { value: '15' } });
@@ -256,12 +259,15 @@ describe('BudgetEditorModal – Discount Fields', () => {
             expect(screen.getByText('Descuento (€)')).toBeInTheDocument();
         });
 
-        // Find fixed discount input (value=500 from loaded data)
-        const inputs = screen.getAllByPlaceholderText('0');
-        const fixedInput = inputs.find(
-            (input) => (input as HTMLInputElement).value === '500'
-        );
-        expect(fixedInput).toBeTruthy();
+        // Wait for fixed discount input (value=500 from loaded data)
+        let fixedInput: HTMLInputElement | undefined;
+        await waitFor(() => {
+            const inputs = screen.getAllByPlaceholderText('0');
+            fixedInput = inputs.find(
+                (input) => (input as HTMLInputElement).value === '500'
+            ) as HTMLInputElement | undefined;
+            expect(fixedInput).toBeTruthy();
+        });
 
         // Change to 1000€
         fireEvent.change(fixedInput!, { target: { value: '1000' } });

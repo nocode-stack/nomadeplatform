@@ -9,7 +9,6 @@ import { useNewBudgets, useDeleteNewBudget, useSetPrimaryBudget } from '../../ho
 import { useToast } from '../../hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
-import { useNavigate } from 'react-router-dom';
 import { JoinedNewBudget } from '../../types/budgets';
 import NewBudgetDialog from './NewBudgetDialog';
 import BudgetDetailModal from './BudgetDetailModal';
@@ -19,7 +18,6 @@ interface NewBudgetManagerProps {
 }
 
 const NewBudgetManager = ({ project }: NewBudgetManagerProps) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [budgetToDelete, setBudgetToDelete] = useState<string | null>(null);
@@ -30,7 +28,6 @@ const NewBudgetManager = ({ project }: NewBudgetManagerProps) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [budgetToView, setBudgetToView] = useState<JoinedNewBudget | null>(null);
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const { data: budgets = [], isLoading } = useNewBudgets(project.id);
@@ -53,7 +50,7 @@ const NewBudgetManager = ({ project }: NewBudgetManagerProps) => {
       });
       setDeleteDialogOpen(false);
       setBudgetToDelete(null);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "No se pudo eliminar el presupuesto.",
@@ -72,7 +69,7 @@ const NewBudgetManager = ({ project }: NewBudgetManagerProps) => {
     setPrimaryDialogOpen(true);
   };
 
-  const handleDownloadPdf = async (budgetId: string, budgetCode: string) => {
+  const handleDownloadPdf = async (budgetId: string, _budgetCode: string | null) => {
     setDownloadingPdf(budgetId);
 
     try {
@@ -126,7 +123,10 @@ const NewBudgetManager = ({ project }: NewBudgetManagerProps) => {
     if (!budgetToPrimary) return;
 
     try {
-      await setPrimaryBudget.mutateAsync({ budgetId: budgetToPrimary, confirmed: true });
+      if (!project.client_id) {
+        throw new Error("El proyecto no tiene un cliente asociado");
+      }
+      await setPrimaryBudget.mutateAsync({ budgetId: budgetToPrimary, clientId: project.client_id, confirmed: true });
 
       // Invalidar todas las queries relacionadas para refrescar los datos
       await queryClient.invalidateQueries({ queryKey: ['unified-project', project.id] });
