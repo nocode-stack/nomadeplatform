@@ -12,10 +12,7 @@ const mockBudgets = [
         is_primary: true,
         total: 50000,
         created_at: '2024-01-01',
-        project: {
-            project_code: 'PROJ-001',
-            NEW_Clients: { name: 'Cliente A' }
-        },
+        client: { name: 'Cliente A' },
         model_option: { name: 'Neo' }
     },
     {
@@ -24,10 +21,7 @@ const mockBudgets = [
         is_primary: false,
         total: 60000,
         created_at: '2024-01-02',
-        project: {
-            project_code: 'PROJ-002',
-            NEW_Clients: { name: 'Cliente B' }
-        },
+        client: { name: 'Cliente B' },
         model_option: { name: 'Neo XL' }
     }
 ];

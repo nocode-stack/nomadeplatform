@@ -78,6 +78,6 @@ describe('useDeleteLead hook', () => {
             wrapper: createWrapper()
         });
 
-        await expect(result.current.mutateAsync('id')).rejects.toThrow('Contracts deactivation failed');
+        await expect(result.current.mutateAsync('id')).rejects.toThrow('Error en contratos: Contracts deactivation failed');
     });
 });

@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
 // Shared mock objects for tracking
-const mockSingle = vi.fn(() => Promise.resolve({ data: { id: 'bud-123', project_id: 'proj-123' }, error: null }));
+const mockSingle = vi.fn(() => Promise.resolve({ data: { id: 'bud-123', client_id: 'client-123' }, error: null }));
 
 const mockUpdate = vi.fn(() => {
     const chain = {
@@ -73,7 +73,7 @@ describe('useNewBudgets hooks', () => {
                 wrapper: createWrapper()
             });
 
-            await expect(result.current.mutateAsync({ budgetId: 'bud-123', confirmed: false }))
+            await expect(result.current.mutateAsync({ budgetId: 'bud-123', clientId: 'client-123', confirmed: false }))
                 .rejects.toThrow('CONFIRMATION_REQUIRED');
         });
 
@@ -82,7 +82,7 @@ describe('useNewBudgets hooks', () => {
                 wrapper: createWrapper()
             });
 
-            await result.current.mutateAsync({ budgetId: 'bud-123', confirmed: true });
+            await result.current.mutateAsync({ budgetId: 'bud-123', clientId: 'client-123', confirmed: true });
 
             // Should check for project_id first
             expect(mockFrom).toHaveBeenCalledWith('NEW_Budget');

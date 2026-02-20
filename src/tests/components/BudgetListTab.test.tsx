@@ -161,6 +161,7 @@ describe('BudgetListTab', () => {
         await waitFor(() => {
             expect(mockSetPrimaryMutateAsync).toHaveBeenCalledWith({
                 budgetId: expect.any(String),
+                clientId: expect.any(String),
                 confirmed: true,
             });
         });
