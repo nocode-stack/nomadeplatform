@@ -1,21 +1,7 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Plus, FileText, Edit, Trash2, Download, Eye } from 'lucide-react';
+import React from 'react';
+import { Card, CardContent } from '../ui/card';
 import { UnifiedProject } from '../../types/database';
 import NewBudgetManager from './NewBudgetManager';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '../ui/alert-dialog';
 
 interface BudgetManagerProps {
   project: UnifiedProject;
@@ -36,7 +22,7 @@ const BudgetManager = ({ project }: BudgetManagerProps) => {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Nuevo sistema de presupuestos */}
       <NewBudgetManager project={project} />
     </div>

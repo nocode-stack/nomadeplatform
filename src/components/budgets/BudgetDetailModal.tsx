@@ -5,8 +5,7 @@ import {
     DialogContent,
 } from '../ui/dialog';
 import { Button } from '../ui/button';
-import { Separator } from '../ui/separator';
-import { Printer, Mail, X, Star } from 'lucide-react';
+import { Printer, Mail } from 'lucide-react';
 import { JoinedNewBudget } from '@/types/budgets';
 import { useNewBudgetItems } from '@/hooks/useNewBudgets';
 import { format } from 'date-fns';
@@ -35,14 +34,7 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
         window.location.href = `mailto:${client?.email || ''}?subject=${subject}&body=${body}`;
     };
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '-';
-        try {
-            return format(new Date(dateString), "d 'de' MMMM, yyyy", { locale: es });
-        } catch (e) {
-            return dateString;
-        }
-    };
+
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
