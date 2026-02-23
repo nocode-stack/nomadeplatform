@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Label } from '../../ui/label';
-import { Input } from '../../ui/input';
 import { NumericInput } from '../../ui/numeric-input';
 import { Check } from 'lucide-react';
 
@@ -95,7 +94,7 @@ const GeneralDiscountSection = ({
               </div>
             )}
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="iva-rate">Tasa de IVA (%)</Label>
             <div className="flex gap-2">

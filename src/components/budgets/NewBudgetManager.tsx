@@ -182,9 +182,7 @@ const NewBudgetManager = ({ project }: NewBudgetManagerProps) => {
             </p>
             <Button
               onClick={() => {
-                if (import.meta.env.DEV) console.log('🔘 Botón "Crear Primer Presupuesto" clickeado');
                 setCreateDialogOpen(true);
-                if (import.meta.env.DEV) console.log('📂 Estado createDialogOpen establecido a true');
               }}
               className="bg-primary hover:bg-primary/90"
             >

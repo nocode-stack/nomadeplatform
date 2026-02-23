@@ -22,21 +22,20 @@ interface ConvertProspectButtonProps {
   onSuccess?: () => void;
 }
 
-const ConvertProspectButton = ({ 
-  clientId, 
-  clientName, 
-  onSuccess 
+const ConvertProspectButton = ({
+  clientId,
+  clientName,
+  onSuccess
 }: ConvertProspectButtonProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const convertMutation = useMutation({
     mutationFn: async () => {
-      if (import.meta.env.DEV) console.log('🔄 Converting prospect to client:', clientId);
-      
+
       const { data, error } = await supabase
         .from('NEW_Clients')
-        .update({ 
+        .update({
           client_status: 'client',
           updated_at: new Date().toISOString()
         })
@@ -45,11 +44,10 @@ const ConvertProspectButton = ({
         .single();
 
       if (error) {
-        console.error('❌ Error converting prospect:', error);
         throw error;
       }
 
-      if (import.meta.env.DEV) console.log('✅ Prospect converted successfully:', data);
+
       return data;
     },
     onSuccess: (data) => {
@@ -57,18 +55,18 @@ const ConvertProspectButton = ({
         title: "Prospect convertido",
         description: `${clientName} ha sido convertido a cliente con código: ${data.client_code}`,
       });
-      
+
       // Invalidar las queries relacionadas para refrescar los datos
       queryClient.invalidateQueries({ queryKey: ['unified-projects'] });
       queryClient.invalidateQueries({ queryKey: ['unified-project'] });
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-      
+
       if (onSuccess) {
         onSuccess();
       }
     },
     onError: (error) => {
-      console.error('❌ Error converting prospect:', error);
+
       toast({
         title: "Error al convertir",
         description: "No se pudo convertir el prospect a cliente. Inténtalo de nuevo.",

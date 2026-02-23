@@ -9,6 +9,7 @@ import ContractForm from './ContractForm';
 interface ContractDetailDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     project: any;
     contractType: string;
     status: string;
@@ -24,12 +25,14 @@ const getContractTitle = (type: string) => {
 };
 
 const ContractDetailDialog = ({ open, onOpenChange, project, contractType, status }: ContractDetailDialogProps) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [formData, setFormData] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const { toast } = useToast();
     const { generateContract, sendContract } = useContractVersioning(project?.id || '');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleFormDataChange = useCallback((data: any) => {
         setFormData(data);
     }, []);

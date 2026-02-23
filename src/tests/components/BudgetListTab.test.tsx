@@ -4,6 +4,18 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import BudgetListTab from '../../components/crm/BudgetListTab';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+// Mock supabase client to avoid env var errors in test
+vi.mock('../../integrations/supabase/client', () => ({
+    supabase: {
+        from: vi.fn(() => ({
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        })),
+        functions: { invoke: vi.fn() },
+    },
+}));
+
 // ── Mock data ──────────────────────────────────────────────
 const mockBudgets = [
     {

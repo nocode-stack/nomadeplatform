@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { User, Search, Building } from 'lucide-react';
+import { User, Search } from 'lucide-react';
 
 interface ClientTypeSelectorProps {
   onSelect: (type: 'prospect' | 'client') => void;
@@ -20,7 +20,7 @@ const ClientTypeSelector = ({ onSelect, onCancel }: ClientTypeSelectorProps) => 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Prospect */}
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary/50"
           onClick={() => onSelect('prospect')}
         >
@@ -59,7 +59,7 @@ const ClientTypeSelector = ({ onSelect, onCancel }: ClientTypeSelectorProps) => 
         </Card>
 
         {/* Cliente */}
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary/50"
           onClick={() => onSelect('client')}
         >
