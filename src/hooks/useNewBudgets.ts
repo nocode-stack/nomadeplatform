@@ -13,6 +13,8 @@ type EngineOption = Tables<'engine_options'>;
 type InteriorColorOption = Tables<'interior_color_options'>;
 type ElectricSystem = Tables<'NEW_Budget_Electric'>;
 type BudgetPack = Tables<'NEW_Budget_Packs'>;
+type ExtraPack = Tables<'NEW_Budget_Packs_Extras'>;
+type ExtraPackComponent = Tables<'NEW_Budget_Packs_Extras_Components'>;
 
 // Hook para obtener un presupuesto específico
 export const useNewBudget = (budgetId: string) => {
@@ -449,5 +451,36 @@ export const useNewBudgetItems = (budgetId?: string) => {
       return data || [];
     },
     enabled: !!budgetId,
+  });
+};
+
+export const useNewBudgetExtraPacks = () => {
+  return useQuery({
+    queryKey: ['new-budget-extra-packs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('NEW_Budget_Packs_Extras')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index');
+
+      if (error) throw error;
+      return data as ExtraPack[];
+    },
+  });
+};
+
+export const useNewBudgetExtraPackComponents = () => {
+  return useQuery({
+    queryKey: ['new-budget-extra-pack-components'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('NEW_Budget_Packs_Extras_Components')
+        .select('*')
+        .order('order_index');
+
+      if (error) throw error;
+      return data as ExtraPackComponent[];
+    },
   });
 };

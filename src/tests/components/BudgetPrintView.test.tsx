@@ -189,30 +189,34 @@ describe('BudgetPrintView', () => {
             expect(screen.getByText('IVA (21%)')).toBeInTheDocument();
         });
 
-        it('should show IGIC label for canarias', () => {
-            const data = createMockPrintData({ location: 'canarias', ivaRate: 7 });
+        it('should show IVA label for canarias (0%)', () => {
+            const data = createMockPrintData({ location: 'canarias', ivaRate: 0, ivaAmount: 0 });
             render(<BudgetPrintView open={true} onOpenChange={vi.fn()} data={data} />);
-            expect(screen.getByText('IGIC (7%)')).toBeInTheDocument();
+            // Canarias now has IVA 0%, not IGIC — but the IVA line is hidden for internacional only,
+            // for canarias with 0% the line still shows
+            expect(screen.getByText('IVA (0%)')).toBeInTheDocument();
         });
 
         it('should show IEDMT section for peninsula', () => {
             const data = createMockPrintData({
                 location: 'peninsula',
-                iedmt: 2500,
+                iedmt: 4600,
                 totalWithIedmt: 55000,
             });
             render(<BudgetPrintView open={true} onOpenChange={vi.fn()} data={data} />);
-            expect(screen.getByText('+IEDMT (est.)')).toBeInTheDocument();
+            expect(screen.getByText('+IEDMT')).toBeInTheDocument();
             expect(screen.getByText('Total + IEDMT')).toBeInTheDocument();
         });
 
-        it('should NOT show IEDMT for canarias', () => {
+        it('should show IEDMT for Canarias too', () => {
             const data = createMockPrintData({
                 location: 'canarias',
-                iedmt: 0,
+                iedmt: 4300,
+                totalWithIedmt: 52100,
             });
             render(<BudgetPrintView open={true} onOpenChange={vi.fn()} data={data} />);
-            expect(screen.queryByText('+IEDMT (est.)')).not.toBeInTheDocument();
+            expect(screen.getByText('+IEDMT')).toBeInTheDocument();
+            expect(screen.getByText('Total + IEDMT')).toBeInTheDocument();
         });
 
         it('should show peninsula tax treatment (IVA)', () => {
@@ -221,10 +225,10 @@ describe('BudgetPrintView', () => {
             expect(screen.getByText('IVA (21%)')).toBeInTheDocument();
         });
 
-        it('should display Canarias tax treatment (IGIC)', () => {
-            const data = createMockPrintData({ location: 'canarias', ivaRate: 7 });
+        it('should display Canarias tax treatment (IVA 0%)', () => {
+            const data = createMockPrintData({ location: 'canarias', ivaRate: 0, ivaAmount: 0 });
             render(<BudgetPrintView open={true} onOpenChange={vi.fn()} data={data} />);
-            expect(screen.getByText('IGIC (7%)')).toBeInTheDocument();
+            expect(screen.getByText('IVA (0%)')).toBeInTheDocument();
         });
     });
 

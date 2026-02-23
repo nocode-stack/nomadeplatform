@@ -96,8 +96,8 @@ interface ContractData {
   payment_third_amount?: number;
 }
 
-const ContractForm: React.FC<ContractFormProps> = ({ 
-  project, 
+const ContractForm: React.FC<ContractFormProps> = ({
+  project,
   contractType,
   status,
   isEditMode = false,
@@ -107,7 +107,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
   const { toast } = useToast();
   const { autoSave } = useContractVersioning(project.id);
   const queryClient = useQueryClient();
-  
+
   const [formData, setFormData] = useState<ContractData>({
     project_id: project.id,
     client_id: project.new_clients?.id || '',
@@ -282,8 +282,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
         (payload) => {
           if (import.meta.env.DEV) console.log('Contract updated:', payload);
           // Invalidar query para refrescar datos
-          queryClient.invalidateQueries({ 
-            queryKey: ['contract', project.id, contractType] 
+          queryClient.invalidateQueries({
+            queryKey: ['contract', project.id, contractType]
           });
         }
       )
@@ -296,8 +296,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
         },
         () => {
           if (import.meta.env.DEV) console.log('Client data updated, refreshing contract form');
-          queryClient.invalidateQueries({ 
-            queryKey: ['clientBilling', project.new_clients?.id] 
+          queryClient.invalidateQueries({
+            queryKey: ['clientBilling', project.new_clients?.id]
           });
         }
       )
@@ -310,8 +310,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
         },
         () => {
           if (import.meta.env.DEV) console.log('Billing data updated, refreshing contract form');
-          queryClient.invalidateQueries({ 
-            queryKey: ['clientBilling', project.new_clients?.id] 
+          queryClient.invalidateQueries({
+            queryKey: ['clientBilling', project.new_clients?.id]
           });
         }
       )
@@ -448,14 +448,14 @@ const ContractForm: React.FC<ContractFormProps> = ({
       ...formData,
       [field]: value
     };
-    
+
     setFormData(newFormData);
-    
+
     // Notificar al padre sobre el cambio
     if (onFormDataChange) {
       onFormDataChange(newFormData);
     }
-    
+
     // Limpiar el campo de la lista de campos faltantes si se está completando
     if (value && missingFields.includes(field)) {
       setMissingFields(prev => prev.filter(f => f !== field));
@@ -465,22 +465,22 @@ const ContractForm: React.FC<ContractFormProps> = ({
   // Función para validar campos según el tipo de contrato
   const validateFields = () => {
     const missing: string[] = [];
-    
+
     // Campos básicos siempre recomendados
     if (!formData.client_full_name?.trim()) missing.push('client_full_name');
     if (!formData.client_email?.trim()) missing.push('client_email');
     if (!formData.billing_address?.trim()) missing.push('billing_address');
     if (!formData.vehicle_model?.trim()) missing.push('vehicle_model');
-    
+
     // Campos específicos por tipo de contrato
     if (contractType === 'reservation' && (!formData.payment_reserve || formData.payment_reserve <= 0)) {
       missing.push('payment_reserve');
     }
-    
+
     if ((contractType === 'purchase_agreement' || contractType === 'sale_contract') && (!formData.total_price || formData.total_price <= 0)) {
       missing.push('total_price');
     }
-    
+
     setMissingFields(missing);
     return missing;
   };
@@ -488,7 +488,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
   // Función para calcular automáticamente entre porcentaje y cantidad
   const handlePaymentChange = (type: 'first' | 'second' | 'third', field: 'percentage' | 'amount', value: string) => {
     const totalPrice = formData.total_price || 0;
-    
+
     // Si el campo está vacío, limpiar ambos campos relacionados
     if (value === '' || value === undefined) {
       const newFormData = {
@@ -502,10 +502,10 @@ const ContractForm: React.FC<ContractFormProps> = ({
       }
       return;
     }
-    
+
     const numericValue = parseFloat(value);
     if (isNaN(numericValue) || totalPrice === 0) return;
-    
+
     if (field === 'percentage') {
       const amount = (totalPrice * numericValue) / 100;
       const newFormData = {
@@ -537,13 +537,13 @@ const ContractForm: React.FC<ContractFormProps> = ({
     if (totalPrice > 0 && status === 'editing') {
       const firstPercentage = formData.payment_first_percentage || 0;
       const secondPercentage = formData.payment_second_percentage || 0;
-      
+
       const newFormData = {
         ...formData,
         payment_first_amount: (totalPrice * firstPercentage) / 100,
         payment_second_amount: (totalPrice * secondPercentage) / 100
       };
-      
+
       setFormData(newFormData);
       if (onFormDataChange) {
         onFormDataChange(newFormData);
@@ -561,7 +561,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
       payment_reserve: 'Importe de reserva',
       total_price: 'Precio total'
     };
-    
+
     return fields.map(field => labels[field] || field);
   };
 
@@ -571,7 +571,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
     let allFields: (keyof ContractData)[] = [
       // Información del Cliente
       'client_full_name',
-      'client_dni', 
+      'client_dni',
       'client_email',
       'client_phone',
       // Información de Facturación
@@ -594,7 +594,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
         'delivery_months',
         'payment_first_percentage',
         'payment_first_amount',
-        'payment_second_percentage', 
+        'payment_second_percentage',
         'payment_second_amount',
         'payment_third_percentage',
         'payment_third_amount'
@@ -639,7 +639,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
     if (status === 'editing') {
       return 'Editando contrato - modifica los campos necesarios';
     }
-    
+
     switch (status) {
       case 'draft':
         return 'Completar datos y generar el contrato';
@@ -655,25 +655,9 @@ const ContractForm: React.FC<ContractFormProps> = ({
   };
 
   // Determinar si un campo específico debe ser readonly
-  const isFieldReadOnly = (fieldName: string) => {
-    // Si el contrato está generado o enviado y no estamos en modo edición, bloquear todos los campos
-    if ((status === 'generated' || status === 'sent') && !isEditMode) {
-      return true;
-    }
-    
-    // Definir campos editables por tipo de contrato cuando está en modo edición
-    const editableFields: Record<string, string[]> = {
-      'reservation': ['iban', 'payment_reserve'],
-      'purchase_agreement': ['delivery_months', 'payment_first_percentage', 'payment_first_amount', 'payment_second_percentage', 'payment_second_amount'],
-      'sale_contract': [] // Ningún campo editable en contrato de venta
-    };
-    
-    // Obtener campos editables para el tipo de contrato actual
-    const currentEditableFields = editableFields[contractType] || [];
-    
-    // Solo permitir edición de campos específicos según el tipo de contrato
-    // Todos los demás campos están bloqueados permanentemente
-    return !currentEditableFields.includes(fieldName);
+  // TODOS los campos son siempre editables en el formulario
+  const isFieldReadOnly = (_fieldName: string) => {
+    return false;
   };
 
 
@@ -703,10 +687,10 @@ const ContractForm: React.FC<ContractFormProps> = ({
     const reserveAmount = reservationContract?.payment_reserve || 0;
     const firstAmount = formData.payment_first_amount || 0;
     const secondAmount = formData.payment_second_amount || 0;
-    
+
     const thirdAmount = totalPrice - reserveAmount - firstAmount - secondAmount;
     const thirdPercentage = totalPrice > 0 ? (thirdAmount / totalPrice) * 100 : 0;
-    
+
     return {
       amount: Math.max(0, thirdAmount),
       percentage: Math.max(0, thirdPercentage)
@@ -721,34 +705,34 @@ const ContractForm: React.FC<ContractFormProps> = ({
     const reserveAmount = reservationContract?.payment_reserve || 0;
     const firstAmount = formData.payment_first_amount || 0;
     const secondAmount = formData.payment_second_amount || 0;
-    
+
     const calculatedThirdAmount = totalPrice - reserveAmount - firstAmount - secondAmount;
     const calculatedThirdPercentage = totalPrice > 0 ? (calculatedThirdAmount / totalPrice) * 100 : 0;
-    
+
     const finalThirdAmount = Math.max(0, calculatedThirdAmount);
     const finalThirdPercentage = Math.max(0, calculatedThirdPercentage);
 
     // Solo actualizar si los valores han cambiado para evitar bucles infinitos
-    if (formData.payment_third_amount !== finalThirdAmount || 
-        formData.payment_third_percentage !== finalThirdPercentage) {
-      
+    if (formData.payment_third_amount !== finalThirdAmount ||
+      formData.payment_third_percentage !== finalThirdPercentage) {
+
       const newFormData = {
         ...formData,
         payment_third_amount: finalThirdAmount,
         payment_third_percentage: finalThirdPercentage
       };
-      
+
       setFormData(newFormData);
-      
+
       // Notificar al padre sobre el cambio
       if (onFormDataChange) {
         onFormDataChange(newFormData);
       }
     }
   }, [
-    formData.total_price, 
-    reservationContract?.payment_reserve, 
-    formData.payment_first_amount, 
+    formData.total_price,
+    reservationContract?.payment_reserve,
+    formData.payment_first_amount,
     formData.payment_second_amount,
     formData.payment_third_amount,
     formData.payment_third_percentage,
@@ -813,340 +797,342 @@ const ContractForm: React.FC<ContractFormProps> = ({
         {/* Información del Cliente */}
         <div className="space-y-4">
           <h4 className="font-semibold text-gray-900">Información del Cliente</h4>
-          
-           <div>
-             <Label htmlFor="client_full_name">Nombre Completo</Label>
-             <Input
-               id="client_full_name"
-               value={formData.client_full_name || ''}
-               onChange={(e) => handleInputChange('client_full_name', e.target.value)}
-               readOnly={true}
-               className="bg-muted"
-             />
-           </div>
 
-           <div>
-             <Label htmlFor="client_dni">DNI</Label>
-             <Input
-               id="client_dni"
-               value={formData.client_dni || ''}
-               onChange={(e) => handleInputChange('client_dni', e.target.value)}
-               readOnly={true}
-               className="bg-muted"
-             />
-           </div>
+          <div>
+            <Label htmlFor="client_full_name">Nombre Completo</Label>
+            <Input
+              id="client_full_name"
+              value={formData.client_full_name || ''}
+              onChange={(e) => handleInputChange('client_full_name', e.target.value)}
+              readOnly={isFieldReadOnly('client_full_name')}
+              className={isFieldReadOnly('client_full_name') ? "bg-muted" : ""}
+            />
+          </div>
 
-           <div>
-             <Label htmlFor="client_email">Email</Label>
-             <Input
-               id="client_email"
-               type="email"
-               value={formData.client_email || ''}
-               onChange={(e) => handleInputChange('client_email', e.target.value)}
-               readOnly={true}
-               className="bg-muted"
-             />
-           </div>
+          <div>
+            <Label htmlFor="client_dni">DNI</Label>
+            <Input
+              id="client_dni"
+              value={formData.client_dni || ''}
+              onChange={(e) => handleInputChange('client_dni', e.target.value)}
+              readOnly={isFieldReadOnly('client_dni')}
+              className={isFieldReadOnly('client_dni') ? "bg-muted" : ""}
+            />
+          </div>
 
-           <div>
-             <Label htmlFor="client_phone">Teléfono</Label>
-             <Input
-               id="client_phone"
-               value={formData.client_phone || ''}
-               onChange={(e) => handleInputChange('client_phone', e.target.value)}
-               readOnly={true}
-               className="bg-muted"
-             />
-           </div>
+          <div>
+            <Label htmlFor="client_email">Email</Label>
+            <Input
+              id="client_email"
+              type="email"
+              value={formData.client_email || ''}
+              onChange={(e) => handleInputChange('client_email', e.target.value)}
+              readOnly={isFieldReadOnly('client_email')}
+              className={isFieldReadOnly('client_email') ? "bg-muted" : ""}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="client_phone">Teléfono</Label>
+            <Input
+              id="client_phone"
+              value={formData.client_phone || ''}
+              onChange={(e) => handleInputChange('client_phone', e.target.value)}
+              readOnly={isFieldReadOnly('client_phone')}
+              className={isFieldReadOnly('client_phone') ? "bg-muted" : ""}
+            />
+          </div>
         </div>
 
         {/* Información de Facturación */}
         <div className="space-y-4">
           <h4 className="font-semibold text-gray-900">Información de Facturación</h4>
-          
-           <div>
-             <Label htmlFor="billing_entity_name">Entidad de Facturación</Label>
-             <Input
-               id="billing_entity_name"
-               value={formData.billing_entity_name || ''}
-               onChange={(e) => handleInputChange('billing_entity_name', e.target.value)}
-               readOnly={true}
-               className="bg-muted"
-             />
-           </div>
 
-           <div>
-             <Label htmlFor="billing_entity_nif">NIF Entidad</Label>
-             <Input
-               id="billing_entity_nif"
-               value={formData.billing_entity_nif || ''}
-               onChange={(e) => handleInputChange('billing_entity_nif', e.target.value)}
-               readOnly={true}
-               className="bg-muted"
-             />
-           </div>
+          <div>
+            <Label htmlFor="billing_entity_name">Entidad de Facturación</Label>
+            <Input
+              id="billing_entity_name"
+              value={formData.billing_entity_name || ''}
+              onChange={(e) => handleInputChange('billing_entity_name', e.target.value)}
+              readOnly={isFieldReadOnly('billing_entity_name')}
+              className={isFieldReadOnly('billing_entity_name') ? "bg-muted" : ""}
+            />
+          </div>
 
-           <div>
-             <Label htmlFor="billing_address">Dirección de Facturación</Label>
-             <Textarea
-               id="billing_address"
-               value={formData.billing_address || ''}
-               onChange={(e) => handleInputChange('billing_address', e.target.value)}
-               readOnly={true}
-               className="bg-muted"
-             />
-           </div>
+          <div>
+            <Label htmlFor="billing_entity_nif">NIF Entidad</Label>
+            <Input
+              id="billing_entity_nif"
+              value={formData.billing_entity_nif || ''}
+              onChange={(e) => handleInputChange('billing_entity_nif', e.target.value)}
+              readOnly={isFieldReadOnly('billing_entity_nif')}
+              className={isFieldReadOnly('billing_entity_nif') ? "bg-muted" : ""}
+            />
+          </div>
 
-           <div>
-             <Label htmlFor="iban">IBAN</Label>
-             <Input
-               id="iban"
-               value={formData.iban || 'ES80 0081 7011 1900 0384 8192'}
-               onChange={(e) => handleInputChange('iban', e.target.value)}
-               readOnly={isFieldReadOnly('iban')}
-               className={isFieldReadOnly('iban') ? "bg-muted" : ""}
-             />
-           </div>
-         </div>
+          <div>
+            <Label htmlFor="billing_address">Dirección de Facturación</Label>
+            <Textarea
+              id="billing_address"
+              value={formData.billing_address || ''}
+              onChange={(e) => handleInputChange('billing_address', e.target.value)}
+              readOnly={isFieldReadOnly('billing_address')}
+              className={isFieldReadOnly('billing_address') ? "bg-muted" : ""}
+            />
+          </div>
 
-         {/* Información del Vehículo */}
-         <div className="space-y-4">
-           <h4 className="font-semibold text-gray-900">Información del Vehículo</h4>
-           
-           {/* Mostrar alerta de discrepancias si las hay */}
-           {vehicleSpecsComparison.hasDiscrepancies && (
-             <VehicleSpecsAlert 
-               discrepancies={vehicleSpecsComparison.discrepancies}
-               className="mb-4"
-             />
-           )}
-           
-           <div>
-             <Label htmlFor="vehicle_model">Modelo Nomade</Label>
-             <Input
-               id="vehicle_model"
-               value={formData.vehicle_model || 'Modelo pendiente de especificar'}
-               onChange={(e) => handleInputChange('vehicle_model', e.target.value)}
-               readOnly={true}
-               className="bg-muted"
-             />
-           </div>
+          <div>
+            <Label htmlFor="iban">IBAN</Label>
+            <Input
+              id="iban"
+              value={formData.iban || 'ES80 0081 7011 1900 0384 8192'}
+              onChange={(e) => handleInputChange('iban', e.target.value)}
+              readOnly={isFieldReadOnly('iban')}
+              className={isFieldReadOnly('iban') ? "bg-muted" : ""}
+            />
+          </div>
+        </div>
 
-             <div>
-               <Label htmlFor="vehicle_engine">Motorización</Label>
-               <Input
-                 id="vehicle_engine"
-                 value={formData.vehicle_engine || ''}
-                 onChange={(e) => handleInputChange('vehicle_engine', e.target.value)}
-                 readOnly={true}
-                 className="bg-muted"
-               />
-             </div>
+        {/* Información del Vehículo */}
+        <div className="space-y-4">
+          <h4 className="font-semibold text-gray-900">Información del Vehículo</h4>
 
-           <div>
-             <Label htmlFor="vehicle_vin">Número de Bastidor</Label>
-             <Input
-               id="vehicle_vin"
-               value={formData.vehicle_vin || ''}
-               readOnly
-               className="bg-muted"
-             />
-           </div>
+          {/* Mostrar alerta de discrepancias si las hay */}
+          {vehicleSpecsComparison.hasDiscrepancies && (
+            <VehicleSpecsAlert
+              discrepancies={vehicleSpecsComparison.discrepancies}
+              className="mb-4"
+            />
+          )}
 
-           <div>
-             <Label htmlFor="vehicle_plate">Matrícula</Label>
-             <Input
-               id="vehicle_plate"
-               value={formData.vehicle_plate || ''}
-               readOnly
-               className="bg-muted"
-             />
-           </div>
+          <div>
+            <Label htmlFor="vehicle_model">Modelo Nomade</Label>
+            <Input
+              id="vehicle_model"
+              value={formData.vehicle_model || 'Modelo pendiente de especificar'}
+              onChange={(e) => handleInputChange('vehicle_model', e.target.value)}
+              readOnly={isFieldReadOnly('vehicle_model')}
+              className={isFieldReadOnly('vehicle_model') ? "bg-muted" : ""}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="vehicle_engine">Motorización</Label>
+            <Input
+              id="vehicle_engine"
+              value={formData.vehicle_engine || ''}
+              onChange={(e) => handleInputChange('vehicle_engine', e.target.value)}
+              readOnly={isFieldReadOnly('vehicle_engine')}
+              className={isFieldReadOnly('vehicle_engine') ? "bg-muted" : ""}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="vehicle_vin">Número de Bastidor</Label>
+            <Input
+              id="vehicle_vin"
+              value={formData.vehicle_vin || ''}
+              onChange={(e) => handleInputChange('vehicle_vin', e.target.value)}
+              readOnly={isFieldReadOnly('vehicle_vin')}
+              className={isFieldReadOnly('vehicle_vin') ? "bg-muted" : ""}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="vehicle_plate">Matrícula</Label>
+            <Input
+              id="vehicle_plate"
+              value={formData.vehicle_plate || ''}
+              onChange={(e) => handleInputChange('vehicle_plate', e.target.value)}
+              readOnly={isFieldReadOnly('vehicle_plate')}
+              className={isFieldReadOnly('vehicle_plate') ? "bg-muted" : ""}
+            />
+          </div>
         </div>
 
         {/* Información Específica del Contrato */}
         <div className="space-y-4">
           <h4 className="font-semibold text-gray-900">Información del Contrato</h4>
-          
-           {contractType === 'reservation' && (
-              <div>
-                <Label htmlFor="payment_reserve">Importe de Reserva</Label>
-                <div className="relative">
-                  <NumericInput
-                    id="payment_reserve"
-                    value={formData.payment_reserve || 0}
-                     onChange={(displayValue, numericValue) => handleNumericInputChange('payment_reserve', displayValue)}
-                     readOnly={isFieldReadOnly('payment_reserve')}
-                     className={`pr-8 ${isFieldReadOnly('payment_reserve') ? "bg-muted" : ""}`}
-                    allowDecimals={true}
-                    min={0}
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                </div>
-              </div>
-           )}
 
-            {(contractType === 'purchase_agreement' || contractType === 'sale_contract') && (
-              <div>
-                <Label htmlFor="total_price">Precio Total (del Presupuesto Primario)</Label>
-                <div className="relative">
-                  <Input
-                    id="total_price"
-                    type="number"
-                    step="0.01"
-                    value={formatInputValue(formData.total_price)}
-                    onChange={(e) => handleNumericInputChange('total_price', e.target.value)}
-                    readOnly={true}
-                    className="pr-8 bg-muted"
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                </div>
+          {contractType === 'reservation' && (
+            <div>
+              <Label htmlFor="payment_reserve">Importe de Reserva</Label>
+              <div className="relative">
+                <NumericInput
+                  id="payment_reserve"
+                  value={formData.payment_reserve || 0}
+                  onChange={(displayValue, numericValue) => handleNumericInputChange('payment_reserve', displayValue)}
+                  readOnly={isFieldReadOnly('payment_reserve')}
+                  className={`pr-8 ${isFieldReadOnly('payment_reserve') ? "bg-muted" : ""}`}
+                  allowDecimals={true}
+                  min={0}
+                />
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
               </div>
-            )}
+            </div>
+          )}
+
+          {(contractType === 'purchase_agreement' || contractType === 'sale_contract') && (
+            <div>
+              <Label htmlFor="total_price">Precio Total (del Presupuesto Primario)</Label>
+              <div className="relative">
+                <Input
+                  id="total_price"
+                  type="number"
+                  step="0.01"
+                  value={formatInputValue(formData.total_price)}
+                  onChange={(e) => handleNumericInputChange('total_price', e.target.value)}
+                  readOnly={isFieldReadOnly('total_price')}
+                  className={`pr-8 ${isFieldReadOnly('total_price') ? "bg-muted" : ""}`}
+                />
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+              </div>
+            </div>
+          )}
 
           {contractType === 'purchase_agreement' && (
             <>
-               <div>
-                 <Label htmlFor="delivery_months">Entrega del Vehículo (meses)</Label>
-                   <NumericInput
-                     id="delivery_months"
-                     value={formData.delivery_months || 0}
-                     onChange={(displayValue, numericValue) => handleNumericInputChange('delivery_months', displayValue)}
-                     readOnly={isFieldReadOnly('delivery_months')}
-                     className={isFieldReadOnly('delivery_months') ? "bg-muted" : ""}
-                     allowDecimals={false}
-                     min={0}
-                   />
-               </div>
+              <div>
+                <Label htmlFor="delivery_months">Entrega del Vehículo (meses)</Label>
+                <NumericInput
+                  id="delivery_months"
+                  value={formData.delivery_months || 0}
+                  onChange={(displayValue, numericValue) => handleNumericInputChange('delivery_months', displayValue)}
+                  readOnly={isFieldReadOnly('delivery_months')}
+                  className={isFieldReadOnly('delivery_months') ? "bg-muted" : ""}
+                  allowDecimals={false}
+                  min={0}
+                />
+              </div>
 
               {/* Sistema de Pagos */}
               <div className="space-y-4">
                 <h5 className="font-medium text-gray-800">Sistema de Pagos</h5>
-                
-                 {/* Reserva */}
-                 <div>
-                   <Label>Reserva</Label>
-                   <div className="relative">
-                     <Input
-                       type="number"
-                       step="0.01"
-                       value={reservationContract?.payment_reserve || 0}
-                       readOnly
-                       className="bg-muted pr-8"
-                     />
-                     <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                   </div>
-                 </div>
 
-                  {/* Primer Pago */}
-                 <div className="grid grid-cols-2 gap-2">
-                   <div>
-                     <Label htmlFor="payment_first_percentage">Primer Pago</Label>
-                     <div className="relative">
-                        <NumericInput
-                          id="payment_first_percentage"
-                          value={formData.payment_first_percentage || 0}
-                           onChange={(displayValue, numericValue) => handlePaymentChange('first', 'percentage', displayValue)}
-                           readOnly={isFieldReadOnly('payment_first_percentage')}
-                           className={`pr-8 ${isFieldReadOnly('payment_first_percentage') ? "bg-muted" : ""}`}
-                          allowDecimals={true}
-                          min={0}
-                          max={100}
-                        />
-                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                     </div>
-                   </div>
-                   <div>
-                     <Label htmlFor="payment_first_amount">Primer Pago</Label>
-                     <div className="relative">
-                        <NumericInput
-                          id="payment_first_amount"
-                          value={formData.payment_first_amount || 0}
-                           onChange={(displayValue, numericValue) => handlePaymentChange('first', 'amount', displayValue)}
-                           readOnly={isFieldReadOnly('payment_first_amount')}
-                           className={`pr-8 ${isFieldReadOnly('payment_first_amount') ? "bg-muted" : ""}`}
-                          allowDecimals={true}
-                          min={0}
-                        />
-                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                     </div>
-                   </div>
-                 </div>
+                {/* Reserva */}
+                <div>
+                  <Label>Reserva</Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={reservationContract?.payment_reserve || 0}
+                      readOnly
+                      className="bg-muted pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                  </div>
+                </div>
 
-                 {/* Segundo Pago */}
-                 <div className="grid grid-cols-2 gap-2">
-                   <div>
-                     <Label htmlFor="payment_second_percentage">Segundo Pago</Label>
-                     <div className="relative">
-                        <NumericInput
-                          id="payment_second_percentage"
-                          value={formData.payment_second_percentage || 0}
-                           onChange={(displayValue, numericValue) => handlePaymentChange('second', 'percentage', displayValue)}
-                           readOnly={isFieldReadOnly('payment_second_percentage')}
-                           className={`pr-8 ${isFieldReadOnly('payment_second_percentage') ? "bg-muted" : ""}`}
-                          allowDecimals={true}
-                          min={0}
-                          max={100}
-                        />
-                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                     </div>
-                   </div>
-                   <div>
-                     <Label htmlFor="payment_second_amount">Segundo Pago</Label>
-                     <div className="relative">
-                        <NumericInput
-                          id="payment_second_amount"
-                          value={formData.payment_second_amount || 0}
-                           onChange={(displayValue, numericValue) => handlePaymentChange('second', 'amount', displayValue)}
-                           readOnly={isFieldReadOnly('payment_second_amount')}
-                           className={`pr-8 ${isFieldReadOnly('payment_second_amount') ? "bg-muted" : ""}`}
-                          allowDecimals={true}
-                          min={0}
-                        />
-                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                     </div>
-                   </div>
-                 </div>
+                {/* Primer Pago */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="payment_first_percentage">Primer Pago</Label>
+                    <div className="relative">
+                      <NumericInput
+                        id="payment_first_percentage"
+                        value={formData.payment_first_percentage || 0}
+                        onChange={(displayValue, numericValue) => handlePaymentChange('first', 'percentage', displayValue)}
+                        readOnly={isFieldReadOnly('payment_first_percentage')}
+                        className={`pr-8 ${isFieldReadOnly('payment_first_percentage') ? "bg-muted" : ""}`}
+                        allowDecimals={true}
+                        min={0}
+                        max={100}
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="payment_first_amount">Primer Pago</Label>
+                    <div className="relative">
+                      <NumericInput
+                        id="payment_first_amount"
+                        value={formData.payment_first_amount || 0}
+                        onChange={(displayValue, numericValue) => handlePaymentChange('first', 'amount', displayValue)}
+                        readOnly={isFieldReadOnly('payment_first_amount')}
+                        className={`pr-8 ${isFieldReadOnly('payment_first_amount') ? "bg-muted" : ""}`}
+                        allowDecimals={true}
+                        min={0}
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                    </div>
+                  </div>
+                </div>
 
-                 {/* Tercer Pago - Calculado automáticamente */}
-                 <div className="grid grid-cols-2 gap-2">
-                   <div>
-                     <Label htmlFor="payment_third_percentage">Tercer Pago - Automático</Label>
-                     <div className="relative">
-                       <Input
-                         id="payment_third_percentage"
-                         type="number"
-                         step="0.01"
-                         value={thirdPayment.percentage.toFixed(2)}
-                         readOnly
-                         className="bg-muted pr-8"
-                       />
-                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                     </div>
-                   </div>
-                   <div>
-                     <Label htmlFor="payment_third_amount">Tercer Pago - Automático</Label>
-                     <div className="relative">
-                       <Input
-                         id="payment_third_amount"
-                         type="number"
-                         step="0.01"
-                         value={thirdPayment.amount.toFixed(2)}
-                         readOnly
-                         className="bg-muted pr-8"
-                       />
-                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                     </div>
-                   </div>
-                 </div>
+                {/* Segundo Pago */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="payment_second_percentage">Segundo Pago</Label>
+                    <div className="relative">
+                      <NumericInput
+                        id="payment_second_percentage"
+                        value={formData.payment_second_percentage || 0}
+                        onChange={(displayValue, numericValue) => handlePaymentChange('second', 'percentage', displayValue)}
+                        readOnly={isFieldReadOnly('payment_second_percentage')}
+                        className={`pr-8 ${isFieldReadOnly('payment_second_percentage') ? "bg-muted" : ""}`}
+                        allowDecimals={true}
+                        min={0}
+                        max={100}
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="payment_second_amount">Segundo Pago</Label>
+                    <div className="relative">
+                      <NumericInput
+                        id="payment_second_amount"
+                        value={formData.payment_second_amount || 0}
+                        onChange={(displayValue, numericValue) => handlePaymentChange('second', 'amount', displayValue)}
+                        readOnly={isFieldReadOnly('payment_second_amount')}
+                        className={`pr-8 ${isFieldReadOnly('payment_second_amount') ? "bg-muted" : ""}`}
+                        allowDecimals={true}
+                        min={0}
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tercer Pago - Calculado automáticamente */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="payment_third_percentage">Tercer Pago - Automático</Label>
+                    <div className="relative">
+                      <Input
+                        id="payment_third_percentage"
+                        type="number"
+                        step="0.01"
+                        value={thirdPayment.percentage.toFixed(2)}
+                        readOnly
+                        className="bg-muted pr-8"
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="payment_third_amount">Tercer Pago - Automático</Label>
+                    <div className="relative">
+                      <Input
+                        id="payment_third_amount"
+                        type="number"
+                        step="0.01"
+                        value={thirdPayment.amount.toFixed(2)}
+                        readOnly
+                        className="bg-muted pr-8"
+                      />
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </>
           )}
-         </div>
-       </div>
+        </div>
+      </div>
 
-     </div>
-   );
- };
+    </div>
+  );
+};
 
 export default ContractForm;

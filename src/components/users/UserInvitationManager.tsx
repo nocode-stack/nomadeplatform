@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Mail, Shield, Briefcase, Clock, CheckCircle2, Users, AlertCircle, Plus, Search, Filter, X, MoreVertical, Trash2 } from 'lucide-react';
+import { UserPlus, Mail, Briefcase, Clock, CheckCircle2, Users, AlertCircle, Plus, Search, Filter, X, MoreVertical, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { InviteUserModal } from './InviteUserModal';
 import {
@@ -26,7 +26,6 @@ interface AuthorizedUser {
     email: string;
     name: string;
     department: string;
-    role: string;
     status: 'pending' | 'active' | 'inactive';
     created_at: string;
 }
@@ -38,7 +37,7 @@ export const UserInvitationManager = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
     const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-    const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+
 
     const { data: allUsers, isLoading, error: queryError } = useQuery({
         queryKey: ['user-profiles-list'],
@@ -85,7 +84,6 @@ export const UserInvitationManager = () => {
 
     // Extract unique values for filters
     const departments = Array.from(new Set(allUsers?.map(u => u.department).filter(Boolean) || []));
-    const roles = Array.from(new Set(allUsers?.map(u => u.role).filter(Boolean) || []));
     const statuses = ['active', 'pending', 'inactive'];
 
     const filteredUsers = allUsers?.filter(user => {
@@ -95,18 +93,16 @@ export const UserInvitationManager = () => {
 
         const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(user.status);
         const matchesDept = selectedDepartments.length === 0 || selectedDepartments.includes(user.department);
-        const matchesRole = selectedRoles.length === 0 || selectedRoles.includes(user.role);
 
-        return matchesSearch && matchesStatus && matchesDept && matchesRole;
+        return matchesSearch && matchesStatus && matchesDept;
     });
 
-    const isFiltered = searchTerm !== '' || selectedStatuses.length > 0 || selectedDepartments.length > 0 || selectedRoles.length > 0;
+    const isFiltered = searchTerm !== '' || selectedStatuses.length > 0 || selectedDepartments.length > 0;
 
     const resetFilters = () => {
         setSearchTerm('');
         setSelectedStatuses([]);
         setSelectedDepartments([]);
-        setSelectedRoles([]);
     };
 
     if (isLoading) {
@@ -168,7 +164,7 @@ export const UserInvitationManager = () => {
                                     <span>Filtros</span>
                                     {isFiltered && (
                                         <span className="ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] rounded-full font-bold">
-                                            {(selectedStatuses.length > 0 ? 1 : 0) + (selectedDepartments.length > 0 ? 1 : 0) + (selectedRoles.length > 0 ? 1 : 0)}
+                                            {(selectedStatuses.length > 0 ? 1 : 0) + (selectedDepartments.length > 0 ? 1 : 0)}
                                         </span>
                                     )}
                                 </Button>
@@ -223,19 +219,7 @@ export const UserInvitationManager = () => {
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Rol</p>
-                                            <div className="space-y-2 max-h-40 overflow-y-auto pr-2 no-scrollbar">
-                                                {roles.map(role => (
-                                                    <div key={role} className="flex items-center space-x-3 group cursor-pointer" onClick={() => {
-                                                        setSelectedRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
-                                                    }}>
-                                                        <Checkbox id={`role-${role}`} checked={selectedRoles.includes(role)} />
-                                                        <Label htmlFor={`role-${role}`} className="text-sm font-medium capitalize cursor-pointer">{role.replace('_', ' ')}</Label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
+
                                     </div>
                                 </div>
                             </PopoverContent>
@@ -313,20 +297,11 @@ export const UserInvitationManager = () => {
                             </div>
                         </CardHeader>
                         <CardContent className="pt-4 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Departamento</p>
-                                    <div className="flex items-center text-sm font-medium">
-                                        <Briefcase className="w-3 h-3 mr-2 text-primary/60" />
-                                        {user.department || 'Sin asignar'}
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Rol</p>
-                                    <div className="flex items-center text-sm font-medium capitalize">
-                                        <Shield className="w-3 h-3 mr-2 text-primary/60" />
-                                        {user.role ? user.role.replace('_', ' ') : 'Sin rol'}
-                                    </div>
+                            <div className="space-y-1">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Departamento</p>
+                                <div className="flex items-center text-sm font-medium">
+                                    <Briefcase className="w-3 h-3 mr-2 text-primary/60" />
+                                    {user.department || 'Sin asignar'}
                                 </div>
                             </div>
                         </CardContent>

@@ -81,6 +81,14 @@ vi.mock('../../hooks/useNewBudgets', () => ({
         data: [],
         isLoading: false,
     }),
+    useNewBudgetExtraPacks: () => ({
+        data: [],
+        isLoading: false,
+    }),
+    useNewBudgetExtraPackComponents: () => ({
+        data: [],
+        isLoading: false,
+    }),
     useProjectBudgets: () => ({
         data: [],
         isLoading: false,

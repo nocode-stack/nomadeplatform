@@ -26,7 +26,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Label } from '../ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
-import { Loader2, User, FileText, Mail, Phone, Calendar, Users, Wallet, Flame } from 'lucide-react';
+import { Loader2, User, FileText, Mail, Phone, Calendar, Users, Wallet } from 'lucide-react';
+import AnimatedFlame from '../ui/AnimatedFlame';
 import BillingInfoForm from '../projects/BillingInfoForm';
 import BudgetListTab from './BudgetListTab';
 import ContractsTab from './ContractsTab';
@@ -325,7 +326,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                     }`}
                                 title={isHotLead ? 'Desactivar Hot Lead' : 'Activar Hot Lead'}
                             >
-                                <Flame className={`w-3.5 h-3.5 transition-all duration-300 ${isHotLead ? 'text-orange-500 animate-pulse' : ''}`} />
+                                <AnimatedFlame size="sm" active={isHotLead} />
                                 <span className="text-[10px] tracking-wider uppercase">Hot Lead</span>
                             </button>
                         </DialogTitle>

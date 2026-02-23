@@ -18,6 +18,8 @@ import {
     useElectricSystems,
     useNewBudgetAdditionalItems,
     useNewBudgetItems,
+    useNewBudgetExtraPacks,
+    useNewBudgetExtraPackComponents,
 } from '../../hooks/useNewBudgets';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -99,14 +101,15 @@ const fmtDecimal = (n: number) =>
     n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // ── Section Header ─────────────────────────────────────────
-const SectionHeader = ({ title, price, checked, onCheck, isRadio }: {
+const SectionHeader = ({ title, price, checked, onCheck, isRadio, bgColor }: {
     title: string;
     price?: number;
     checked?: boolean;
     onCheck?: () => void;
     isRadio?: boolean;
+    bgColor?: string;
 }) => (
-    <div className="flex items-center justify-between bg-[#2C3E50] text-white px-4 py-2.5 rounded-t-lg">
+    <div className="flex items-center justify-between text-white px-4 py-2.5 rounded-t-lg" style={{ backgroundColor: bgColor || '#2C3E50' }}>
         <span className="font-bold text-sm tracking-wide uppercase">{title}</span>
         <div className="flex items-center gap-3">
             {price !== undefined && (
@@ -206,6 +209,8 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
     const { data: packs = [] } = useNewBudgetPacks();
     const { data: electricSystems = [] } = useElectricSystems();
     const { data: additionalItems = [] } = useNewBudgetAdditionalItems();
+    const { data: extraPacks = [] } = useNewBudgetExtraPacks();
+    const { data: extraPackComponents = [] } = useNewBudgetExtraPackComponents();
     const { data: existingBudgetItems = [] } = useNewBudgetItems(budgetId);
     const { data: regionalConfigs } = useRegionalConfig();
 
@@ -216,6 +221,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
     const [selectedPacks, setSelectedPacks] = useState<Set<string>>(new Set());
     const [selectedElectric, setSelectedElectric] = useState<string | null>(null);
     const [selectedAdditionals, setSelectedAdditionals] = useState<Set<string>>(new Set());
+    const [selectedExtraPacks, setSelectedExtraPacks] = useState<Set<string>>(new Set());
     const [customItems, setCustomItems] = useState<CustomItem[]>([
         { id: crypto.randomUUID(), name: '', price: 0, selected: false },
         { id: crypto.randomUUID(), name: '', price: 0, selected: false },
@@ -255,6 +261,8 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
     useEffect(() => {
         if (existingBudgetItems.length > 0) {
             const additionalIds = new Set<string>();
+            const extraPackIds = new Set<string>();
+            const extraPackIdSet = new Set(extraPacks.map((ep: any) => ep.id));
             const customs: CustomItem[] = [];
             existingBudgetItems.forEach((item: any) => {
                 if (item.is_custom) {
@@ -265,10 +273,16 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                         selected: true,
                     });
                 } else if (item.concept_id) {
-                    additionalIds.add(item.concept_id);
+                    // Check if this concept_id belongs to an extra pack
+                    if (extraPackIdSet.has(item.concept_id)) {
+                        extraPackIds.add(item.concept_id);
+                    } else {
+                        additionalIds.add(item.concept_id);
+                    }
                 }
             });
             if (additionalIds.size > 0) setSelectedAdditionals(additionalIds);
+            if (extraPackIds.size > 0) setSelectedExtraPacks(extraPackIds);
             if (customs.length > 0) {
                 // Merge with defaults, ensure minimum 3 rows
                 const merged = [...customs];
@@ -278,7 +292,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                 setCustomItems(merged);
             }
         }
-    }, [existingBudgetItems]);
+    }, [existingBudgetItems, extraPacks]);
 
     // Toggle pack with hierarchy logic
     const togglePack = useCallback((packId: string, packName: string) => {
@@ -312,6 +326,13 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             }
         });
 
+        let extraPacksTotal = 0;
+        extraPacks.forEach((ep: any) => {
+            if (selectedExtraPacks.has(ep.id)) {
+                extraPacksTotal += getPrice(ep, location);
+            }
+        });
+
         const electricObj = electricSystems.find(e => e.id === selectedElectric);
         const electricPrice = getPrice(electricObj, location);
 
@@ -329,7 +350,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             }
         });
 
-        const optionalsTotal = packsTotal + electricPrice + additionalsTotal + customTotal;
+        const optionalsTotal = packsTotal + extraPacksTotal + electricPrice + additionalsTotal + customTotal;
         const pvpTotal = basePrice + optionalsTotal;
 
         // Apply discounts (cumulative: % first, then fixed)
@@ -338,13 +359,18 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
 
         // IVA from regional_config (fallback hardcoded)
         const { rate: ivaRate } = getRegionalIva(regionalConfigs, location);
-        const precioBase = totalAfterDiscounts / (1 + ivaRate / 100);
-        const ivaAmount = totalAfterDiscounts - precioBase;
-        const total = totalAfterDiscounts;
+        // Prices are NET — add tax on top for España/Canarias, nothing for Internacional
+        const precioBase = totalAfterDiscounts;
+        const ivaAmount = totalAfterDiscounts * (ivaRate / 100);
+        const total = totalAfterDiscounts + ivaAmount;
 
-        // IEDMT from regional_config
-        const { rate: iedmtRate, applies: iedmtApplies } = getRegionalIedmt(regionalConfigs, location);
-        const iedmt = iedmtApplies ? Math.round(totalAfterDiscounts * (iedmtRate / 100)) : 0;
+        // IEDMT — fixed amounts from regional_config
+        const { applies: iedmtApplies, autoAmount, manualAmount } = getRegionalIedmt(regionalConfigs, location);
+        let iedmt = 0;
+        if (iedmtApplies) {
+            const engineName = engines.find(e => e.id === selectedEngine)?.name || '';
+            iedmt = engineName.toLowerCase().includes('automático') ? autoAmount : manualAmount;
+        }
         const totalWithIedmt = total + iedmt;
 
         return {
@@ -361,13 +387,14 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             iedmt,
             totalWithIedmt,
             packsTotal,
+            extraPacksTotal,
             electricPrice,
             additionalsTotal,
             customTotal,
         };
     }, [selectedModel, selectedEngine, selectedInteriorColor, selectedPacks,
-        selectedElectric, selectedAdditionals, customItems, location,
-        models, engines, interiorColors, packs, electricSystems, additionalItems,
+        selectedExtraPacks, selectedElectric, selectedAdditionals, customItems, location,
+        models, engines, interiorColors, packs, extraPacks, electricSystems, additionalItems,
         discountPercent, discountFixed, regionalConfigs]);
 
     // ── Save Handler ───────────────────────────────────────
@@ -446,6 +473,24 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                 }
             });
 
+            // Insert selected extra packs as budget items
+            extraPacks.forEach((ep: any) => {
+                if (selectedExtraPacks.has(ep.id)) {
+                    const epPrice = getPrice(ep, location);
+                    itemsToInsert.push({
+                        budget_id: activeBudgetId,
+                        concept_id: ep.id,
+                        name: ep.name,
+                        price: epPrice,
+                        quantity: 1,
+                        line_total: epPrice,
+                        is_custom: false,
+                        is_discount: false,
+                        order_index: itemsToInsert.length,
+                    });
+                }
+            });
+
             // Insert custom items
             customItems.forEach(item => {
                 if (item.selected && item.name.trim()) {
@@ -498,10 +543,16 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
         internacional: 'Internacional',
     };
 
-    const locationLegalText: Record<Location, string> = {
-        peninsula: getRegionalLegalText(regionalConfigs, 'peninsula') || 'Precios con IVA (21%) incluido. IEDMT no incluido en el PVP, se calcula según la normativa vigente. Presupuesto válido 30 días.',
-        canarias: getRegionalLegalText(regionalConfigs, 'canarias') || 'Precios con IGIC (7%) incluido. Exento de IEDMT. Gastos de transporte a Canarias no incluidos. Presupuesto válido 30 días.',
-        internacional: getRegionalLegalText(regionalConfigs, 'internacional') || 'Precios sin impuestos locales. Transporte internacional no incluido. Presupuesto válido 30 días.',
+    const locationLegalText: Record<Location, string[]> = {
+        peninsula: getRegionalLegalText(regionalConfigs, 'peninsula').length > 0
+            ? getRegionalLegalText(regionalConfigs, 'peninsula')
+            : ['Precios con IVA (21%) incluido. IEDMT no incluido en el PVP, se calcula según la normativa vigente. Presupuesto válido 30 días.'],
+        canarias: getRegionalLegalText(regionalConfigs, 'canarias').length > 0
+            ? getRegionalLegalText(regionalConfigs, 'canarias')
+            : ['Precios sin IVA. IEDMT incluido en el presupuesto. Gastos de transporte a Canarias no incluidos. Presupuesto válido 30 días.'],
+        internacional: getRegionalLegalText(regionalConfigs, 'internacional').length > 0
+            ? getRegionalLegalText(regionalConfigs, 'internacional')
+            : ['Precios sin impuestos locales. Transporte internacional no incluido. Presupuesto válido 30 días.'],
     };
 
     // ── Build Print Data ────────────────────────────────────
@@ -539,6 +590,23 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                 unitPrice: packPrice,
                 total: packPrice,
                 subItems: getPackComponents(p.name),
+            });
+        });
+
+        // Extra Packs
+        extraPacks.filter((ep: any) => selectedExtraPacks.has(ep.id)).forEach((ep: any) => {
+            const epPrice = getPrice(ep, location);
+            const epComponents = extraPackComponents
+                .filter((c: any) => c.pack_extra_id === ep.id)
+                .sort((a: any, b: any) => a.order_index - b.order_index)
+                .map((c: any) => c.name);
+            lineItems.push({
+                name: 'Extra Pack',
+                subtitle: ep.name,
+                quantity: 1,
+                unitPrice: epPrice,
+                total: epPrice,
+                subItems: epComponents.length > 0 ? epComponents : undefined,
             });
         });
 
@@ -602,9 +670,9 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             totalWithIedmt: calculations.totalWithIedmt,
         };
     }, [budgetCode, location, clientName, projectId, selectedModel, selectedEngine,
-        selectedInteriorColor, selectedElectric, selectedPacks, selectedAdditionals,
-        customItems, models, engines, interiorColors, packs, electricSystems,
-        additionalItems, calculations]);
+        selectedInteriorColor, selectedElectric, selectedPacks, selectedExtraPacks,
+        selectedAdditionals, customItems, models, engines, interiorColors, packs,
+        extraPacks, extraPackComponents, electricSystems, additionalItems, calculations]);
 
     const [printData, setPrintData] = useState<BudgetPrintData | null>(null);
 
@@ -788,6 +856,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                             title={pack.name}
                                             price={getPrice(pack, location)}
                                             checked={selectedPacks.has(pack.id)}
+                                            bgColor="#2E7D6F"
                                             onCheck={() => togglePack(pack.id, pack.name)}
                                         />
                                         {components.length > 0 && (
@@ -807,10 +876,56 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                 );
                             })}
 
+                            {/* Extra Packs */}
+                            {extraPacks.length > 0 && (
+                                <>
+                                    <div style={{ paddingTop: '1.5rem', paddingBottom: '0.75rem' }}>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1 h-5 bg-[#E8734A] rounded-full" />
+                                            <h3 className="text-xs font-bold uppercase tracking-widest text-[#9CA3AF]">Extra Packs</h3>
+                                        </div>
+                                    </div>
+                                    {[...extraPacks].sort((a: any, b: any) => a.order_index - b.order_index).map((ep: any) => {
+                                        const epComponents = extraPackComponents
+                                            .filter((c: any) => c.pack_extra_id === ep.id)
+                                            .sort((a: any, b: any) => a.order_index - b.order_index);
+                                        return (
+                                            <div key={ep.id} className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-3 shadow-sm">
+                                                <SectionHeader
+                                                    title={ep.name}
+                                                    price={getPrice(ep, location)}
+                                                    checked={selectedExtraPacks.has(ep.id)}
+                                                    onCheck={() => {
+                                                        setSelectedExtraPacks(prev => {
+                                                            const next = new Set(prev);
+                                                            next.has(ep.id) ? next.delete(ep.id) : next.add(ep.id);
+                                                            return next;
+                                                        });
+                                                    }}
+                                                />
+                                                {epComponents.length > 0 && (
+                                                    <div className="px-4 py-2.5 border-t border-[#F3F4F6] bg-[#FAFBFC]">
+                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF] mb-1.5">Incluye:</p>
+                                                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                                            {epComponents.map((comp: any) => (
+                                                                <div key={comp.id} className="flex items-center gap-1.5">
+                                                                    <div className="w-1 h-1 rounded-full bg-[#C59D5F]/40 flex-shrink-0" />
+                                                                    <span className="text-[11px] text-[#6B7280]">{comp.name}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </>
+                            )}
+
                             {/* Individual Optionals */}
                             {additionalItems.length > 0 && (
                                 <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-3 shadow-sm">
-                                    <SectionHeader title="Opcionales Individuales" />
+                                    <SectionHeader title="Opcionales Individuales" bgColor="#2E7D6F" />
                                     {additionalItems
                                         .filter((item: any) => {
                                             // Hide items already included in the selected pack
@@ -867,7 +982,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                             </div>
 
                             <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden shadow-sm">
-                                <SectionHeader title="Petición Cliente" />
+                                <SectionHeader title="Petición Cliente" bgColor="#2E7D6F" />
                                 {customItems.map((item, idx) => (
                                     <div
                                         key={item.id}
@@ -979,10 +1094,18 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
 
                         {/* ── Legal Footer Text ────────── */}
                         <div className="pt-4 pb-8">
-                            <p className="text-[11px] text-[#9CA3AF] leading-relaxed">
-                                {locationLegalText[location]}
+                            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#374151] mb-2">
+                                Condiciones Generales
                             </p>
-                            <p className="text-[10px] text-[#CBD5E1] mt-1">
+                            <div className="space-y-1.5">
+                                {locationLegalText[location].map((text, idx) => (
+                                    <div key={idx} className="flex items-start gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-[#CBD5E1] mt-1.5 flex-shrink-0" />
+                                        <p className="text-[11px] text-[#9CA3AF] leading-relaxed">{text}</p>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-[10px] text-[#CBD5E1] mt-2">
                                 © {new Date().getFullYear()} Nomade Vans S.L. – Todos los derechos reservados.
                             </p>
                         </div>
@@ -1033,6 +1156,31 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                                                 <div key={idx} className="flex items-center gap-1.5">
                                                                     <div className="w-0.5 h-0.5 rounded-full bg-[#E8734A]/40 flex-shrink-0" />
                                                                     <span className="text-[10px] text-[#9CA3AF]">{comp}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+
+                                        {/* Extra Packs */}
+                                        {extraPacks.filter((ep: any) => selectedExtraPacks.has(ep.id)).map((ep: any) => {
+                                            const epComponents = extraPackComponents
+                                                .filter((c: any) => c.pack_extra_id === ep.id)
+                                                .sort((a: any, b: any) => a.order_index - b.order_index);
+                                            return (
+                                                <div key={ep.id}>
+                                                    <div className="flex justify-between">
+                                                        <p className="text-xs text-[#4B5563] truncate pr-2">{ep.name}</p>
+                                                        <p className="text-xs font-medium tabular-nums whitespace-nowrap">{fmt(getPrice(ep, location))} €</p>
+                                                    </div>
+                                                    {epComponents.length > 0 && (
+                                                        <div className="ml-2 mt-0.5 mb-1 space-y-0.5">
+                                                            {epComponents.map((comp: any) => (
+                                                                <div key={comp.id} className="flex items-center gap-1.5">
+                                                                    <div className="w-0.5 h-0.5 rounded-full bg-[#C59D5F]/40 flex-shrink-0" />
+                                                                    <span className="text-[10px] text-[#9CA3AF]">{comp.name}</span>
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -1111,19 +1259,21 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                         <span className="text-[#9CA3AF]">Precio base</span>
                                         <span className="tabular-nums">{fmtDecimal(calculations.precioBase)} €</span>
                                     </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-[#9CA3AF]">
-                                            {location === 'canarias' ? 'IGIC' : 'IVA'} {calculations.ivaRate}%
-                                        </span>
-                                        <span className="tabular-nums">{fmtDecimal(calculations.ivaAmount)} €</span>
-                                    </div>
+                                    {location !== 'internacional' && (
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-[#9CA3AF]">
+                                                IVA {calculations.ivaRate}%
+                                            </span>
+                                            <span className="tabular-nums">{fmtDecimal(calculations.ivaAmount)} €</span>
+                                        </div>
+                                    )}
                                     <Separator className="bg-[#E5E7EB]" />
                                     <div className="flex justify-between text-sm">
                                         <span className="font-bold">Total</span>
                                         <span className="font-bold tabular-nums">{fmtDecimal(calculations.total)} €</span>
                                     </div>
 
-                                    {location === 'peninsula' && (
+                                    {location !== 'internacional' && (
                                         <>
                                             <div className="flex justify-between text-xs">
                                                 <span className="text-[#9CA3AF]">+IEDMT</span>
@@ -1138,7 +1288,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                         </>
                                     )}
 
-                                    {location !== 'peninsula' && (
+                                    {location === 'internacional' && (
                                         <div className="flex justify-between items-center bg-[#2C3E50] -mx-6 px-6 py-3 rounded-lg mt-2">
                                             <span className="text-white font-bold text-xs uppercase tracking-wider">Total</span>
                                             <span className="text-white font-black text-lg tabular-nums">
@@ -1157,6 +1307,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                     open={showPrintView}
                     onOpenChange={setShowPrintView}
                     data={printData}
+                    legalTexts={locationLegalText[location]}
                 />
             </DialogContent>
         </Dialog>

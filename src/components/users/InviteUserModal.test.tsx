@@ -109,8 +109,7 @@ describe('InviteUserModal', () => {
         fireEvent.change(screen.getByPlaceholderText(/juan@example.com/i), { target: { value: 'otro@gmail.com' } });
 
         const selects = screen.getAllByTestId('select');
-        fireEvent.change(selects[0], { target: { value: 'Operario' } });
-        fireEvent.change(selects[1], { target: { value: 'operator' } });
+        fireEvent.change(selects[0], { target: { value: 'Ventas' } });
 
         fireEvent.click(screen.getByRole('button', { name: /^Enviar Invitación$/i }));
 
@@ -119,8 +118,7 @@ describe('InviteUserModal', () => {
                 body: expect.objectContaining({
                     email: 'otro@gmail.com',
                     name: 'Juan Perez',
-                    department: 'Operario',
-                    role: 'operator',
+                    department: 'Ventas',
                 }),
             });
         }, { timeout: 4000 });
@@ -146,8 +144,7 @@ describe('InviteUserModal', () => {
         fireEvent.change(screen.getByPlaceholderText(/juan@example.com/i), { target: { value: 'juan@example.com' } });
 
         const selects = screen.getAllByTestId('select');
-        fireEvent.change(selects[0], { target: { value: 'Operario' } });
-        fireEvent.change(selects[1], { target: { value: 'operator' } });
+        fireEvent.change(selects[0], { target: { value: 'Dirección' } });
 
         fireEvent.click(screen.getByRole('button', { name: /^Enviar Invitación$/i }));
 

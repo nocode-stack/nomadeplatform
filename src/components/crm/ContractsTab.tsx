@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { Bookmark, Handshake, FileCheck, FileText, ExternalLink, Loader2, Plus, Star, Eye } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { Bookmark, Handshake, FileCheck, Loader2, Plus, Star, Eye, ArrowLeft, Save, Send, X } from 'lucide-react';
 import { useOptimizedContractQuery } from '../../hooks/useOptimizedContractQuery';
 import { useContractVersioning } from '../../hooks/useContractVersioning';
 import { useToggleContractPrimary } from '../../hooks/useToggleContractPrimary';
-import { useNewBudgets, useProjectBudgets } from '../../hooks/useNewBudgets';
+import { useProjectBudgets } from '../../hooks/useNewBudgets';
 import { useToast } from '../../hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import ContractDetailDialog from '../contracts/ContractDetailDialog';
+import { Button } from '../ui/button';
+import ContractForm from '../contracts/ContractForm';
 
 // The 3 contract types that every project must have
 const CONTRACT_TYPES = [
@@ -32,6 +33,15 @@ const getStatusDetails = (status: string) => {
     }
 };
 
+const getContractTitle = (type: string) => {
+    switch (type) {
+        case 'reservation': return 'Contrato de Reserva';
+        case 'purchase_agreement': return 'Acuerdo de Compraventa';
+        case 'sale_contract': return 'Contrato de Compraventa';
+        default: return 'Contrato';
+    }
+};
+
 interface ContractsTabProps {
     projectId?: string;
     leadStatus?: string;
@@ -49,13 +59,16 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
     // Aggregated loading state
     const isLoading = isLoadingBudgets || isLoadingContracts;
 
-    const { generateContract } = useContractVersioning(projectId || '');
+    const { generateContract, sendContract } = useContractVersioning(projectId || '');
     const togglePrimary = useToggleContractPrimary();
     const { toast } = useToast();
     const [creatingType, setCreatingType] = useState<string | null>(null);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [selectedContractType, setSelectedContractType] = useState<string>('');
-    const [projectData, setProjectData] = useState<any>(null);
+
+    // Inline form state — when set, shows the form instead of the list
+    const [activeForm, setActiveForm] = useState<{ contractType: string; project: any } | null>(null);
+    const [formData, setFormData] = useState<any>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSending, setIsSending] = useState(false);
 
     // Find an existing contract for the given type
     const findContract = (type: string) => {
@@ -77,7 +90,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
         if (!client) return null;
 
         // Fetch primary budget with model/engine options
-        const { data: primaryBudget } = await supabase
+        const { data: budget } = await supabase
             .from('NEW_Budget')
             .select(`
                 *,
@@ -90,7 +103,6 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
             .maybeSingle();
 
         // Fetch billing data
-        let billingData: any = null;
         const { data: billing } = await supabase
             .from('NEW_Billing')
             .select('*')
@@ -98,95 +110,90 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
-        billingData = billing;
 
-        return { id: projectId, new_clients: client, primaryBudget, billingData, new_vehicles: null };
+        return { id: projectId, new_clients: client, primaryBudget: budget, billingData: billing, new_vehicles: null };
     };
 
-    // Handle creating a new contract
-    const handleCreate = async (contractType: string) => {
-        if (!projectId) return;
+    // Open the inline form
+    const openForm = async (contractType: string) => {
         setCreatingType(contractType);
-
         try {
-            // Get project + client + primary budget data
             const project = await fetchProjectData();
             if (!project) {
                 toast({ title: 'Error', description: 'No se pudo obtener los datos del proyecto.', variant: 'destructive' });
-                setCreatingType(null);
                 return;
             }
-
-            const clientId = project.new_clients?.id || '';
-            if (!clientId) {
-                toast({ title: 'Error', description: 'El proyecto no tiene un cliente asociado.', variant: 'destructive' });
-                setCreatingType(null);
-                return;
-            }
-
-            const budget = project.primaryBudget;
-            if (!budget) {
-                toast({ title: 'Aviso', description: 'No hay presupuesto principal. Se creará el contrato con datos parciales.' });
-            }
-
-            const billing: any = project.billingData;
-            const client: any = project.new_clients;
-            const vehicle: any = project.new_vehicles;
-
-            // Build contract data from client + primary budget
-            const vehicleModel = budget?.model_option?.name || vehicle?.engine || 'Modelo pendiente';
-            const vehicleEngine = budget?.engine_option?.name || vehicle?.engine || '';
-            const totalPrice = budget?.total || 0;
-            const reservationAmount = budget?.reservation_amount || (contractType === 'reservation' ? 2000 : 0);
-
-            await generateContract.mutateAsync({
-                contractData: {
-                    project_id: projectId,
-                    client_id: clientId,
-                    budget_id: budget?.id || '',
-                    contract_type: contractType,
-                    client_full_name: client?.name || '',
-                    client_dni: client?.dni || '',
-                    client_email: client?.email || '',
-                    client_phone: client?.phone || '',
-                    billing_entity_name: billing?.name !== client?.name ? (billing?.name || '') : '',
-                    billing_entity_nif: billing?.nif || '',
-                    billing_address: billing?.billing_address || client?.address || '',
-                    vehicle_model: vehicleModel,
-                    vehicle_vin: vehicle?.numero_bastidor || '',
-                    vehicle_plate: vehicle?.matricula || '',
-                    vehicle_engine: vehicleEngine,
-                    total_price: totalPrice,
-                    payment_reserve: contractType === 'reservation' ? reservationAmount : 0,
-                    payment_conditions: '',
-                    iban: 'ES80 0081 7011 1900 0384 8192',
-                },
-                contractType,
-            });
-
-            // Store project data and open dialog
-            setProjectData(project);
-            setSelectedContractType(contractType);
-            setDialogOpen(true);
+            setFormData(null);
+            setActiveForm({ contractType, project });
         } catch (error) {
-            console.error('Error creating contract:', error);
-            toast({ title: 'Error', description: 'No se pudo crear el contrato.', variant: 'destructive' });
+            console.error('Error fetching project data:', error);
+            toast({ title: 'Error', description: 'No se pudo obtener los datos.', variant: 'destructive' });
         } finally {
             setCreatingType(null);
         }
     };
 
-    // Handle opening the detail dialog for an existing contract
-    const handleView = async (contractType: string) => {
-        const project = await fetchProjectData();
-        if (!project) {
-            toast({ title: 'Error', description: 'No se pudo obtener los datos del proyecto.', variant: 'destructive' });
-            return;
-        }
-        setProjectData(project);
-        setSelectedContractType(contractType);
-        setDialogOpen(true);
+    // Close the inline form
+    const closeForm = () => {
+        setActiveForm(null);
+        setFormData(null);
     };
+
+    // Save contract
+    const handleSave = async () => {
+        if (!formData || !activeForm) return;
+        setIsSaving(true);
+        try {
+            await generateContract.mutateAsync({
+                contractData: {
+                    ...formData,
+                    project_id: projectId,
+                    client_id: activeForm.project.new_clients?.id || formData.client_id || '',
+                    contract_type: activeForm.contractType,
+                    contract_status: 'generado',
+                },
+                contractType: activeForm.contractType,
+            });
+            toast({ title: 'Contrato guardado', description: 'Los cambios se han guardado correctamente.' });
+        } catch (error) {
+            console.error('Error saving contract:', error);
+            toast({ title: 'Error', description: 'No se pudo guardar el contrato.', variant: 'destructive' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Send contract
+    const handleSend = async () => {
+        if (!activeForm) return;
+        setIsSending(true);
+        try {
+            // Save first if there's form data
+            if (formData) {
+                await generateContract.mutateAsync({
+                    contractData: {
+                        ...formData,
+                        project_id: projectId,
+                        client_id: activeForm.project.new_clients?.id || formData.client_id || '',
+                        contract_type: activeForm.contractType,
+                        contract_status: 'generado',
+                    },
+                    contractType: activeForm.contractType,
+                });
+            }
+            await sendContract.mutateAsync(activeForm.contractType);
+            toast({ title: 'Contrato enviado', description: 'El contrato ha sido enviado al cliente.' });
+        } catch (error) {
+            console.error('Error sending contract:', error);
+            toast({ title: 'Error', description: 'No se pudo enviar el contrato.', variant: 'destructive' });
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    const handleFormDataChange = useCallback((data: any) => {
+        setFormData(data);
+    }, []);
 
     // Handle toggling is_primary
     const handleTogglePrimary = (contract: any) => {
@@ -208,6 +215,86 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
         );
     }
 
+    // ==========================================
+    // INLINE FORM VIEW — shows the contract form
+    // ==========================================
+    if (activeForm) {
+        const contract = findContract(activeForm.contractType);
+        const contractStatus = contract?.estado_visual || 'generated';
+
+        return (
+            <div className="space-y-4 animate-fade-in-up">
+                {/* Header with back button */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={closeForm}
+                            disabled={isSaving || isSending}
+                            className="p-2 rounded-lg hover:bg-muted transition-colors"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                        </button>
+                        <div>
+                            <h3 className="text-lg font-bold text-foreground">
+                                {getContractTitle(activeForm.contractType)}
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                                Todos los campos son editables
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={closeForm}
+                            disabled={isSaving || isSending}
+                        >
+                            <X className="w-4 h-4 mr-1" />
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSave}
+                            disabled={isSaving || isSending}
+                        >
+                            {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                            {isSaving ? 'Guardando...' : 'Guardar'}
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleSend}
+                            disabled={isSaving || isSending}
+                        >
+                            {isSending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />}
+                            {isSending ? 'Enviando...' : 'Enviar a DocuSeal'}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* The actual form */}
+                <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+                    <ContractForm
+                        project={activeForm.project}
+                        contractType={activeForm.contractType}
+                        status={contractStatus}
+                        isEditMode={true}
+                        onFormDataChange={handleFormDataChange}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    // ==========================================
+    // LIST VIEW — shows the 3 contract types
+    // ==========================================
     return (
         <div className="space-y-6 animate-fade-in-up">
             <div className="flex flex-col gap-1">
@@ -233,6 +320,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                                 <div className="flex items-center space-x-4">
                                     {/* Star for primary */}
                                     <button
+                                        type="button"
                                         onClick={() => exists && handleTogglePrimary(contract)}
                                         disabled={!exists || togglePrimary.isPending}
                                         className={`p-1 rounded-lg transition-all ${exists
@@ -279,7 +367,8 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                                     {exists ? (
                                         /* View button for existing contracts */
                                         <button
-                                            onClick={() => handleView(type.key)}
+                                            type="button"
+                                            onClick={() => openForm(type.key)}
                                             className="p-2 rounded-lg border border-border text-primary hover:bg-primary/5 hover:border-primary/30 transition-all shadow-sm"
                                             title="Ver contrato"
                                         >
@@ -288,7 +377,8 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                                     ) : (
                                         /* Create button for non-existing contracts */
                                         <button
-                                            onClick={() => handleCreate(type.key)}
+                                            type="button"
+                                            onClick={() => openForm(type.key)}
                                             disabled={isCreating || !projectId}
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
@@ -312,17 +402,6 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                     Nota: Solo los contratos marcados con ★ se mostrarán como principales en la ficha de contacto.
                 </p>
             </div>
-
-            {/* Contract Detail Dialog */}
-            {projectData && (
-                <ContractDetailDialog
-                    open={dialogOpen}
-                    onOpenChange={setDialogOpen}
-                    project={projectData}
-                    contractType={selectedContractType}
-                    status={findContract(selectedContractType)?.estado_visual || 'generated'}
-                />
-            )}
         </div>
     );
 };

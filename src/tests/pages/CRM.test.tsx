@@ -129,7 +129,8 @@ describe('Componente CRM - Filtros', () => {
                         is_primary: true,
                         model_option: { name: 'Neo' }
                     }],
-                    NEW_Billing: []
+                    NEW_Billing: [],
+                    NEW_Contracts: [{ id: 'contract-1' }]
                 },
                 {
                     id: '2',
@@ -140,7 +141,8 @@ describe('Componente CRM - Filtros', () => {
                         is_primary: true,
                         model_option: { name: 'Neo XL' }
                     }],
-                    NEW_Billing: []
+                    NEW_Billing: [],
+                    NEW_Contracts: []
                 }
             ],
             isLoading: false,
@@ -232,5 +234,30 @@ describe('Componente CRM - Filtros', () => {
         // Solo Juan García es hot lead
         expect(screen.getByText('Juan García')).toBeInTheDocument();
         expect(screen.queryByText('Marta Ruiz')).not.toBeInTheDocument();
+    });
+
+    it('debería deshabilitar botones de presupuestos/contratos cuando no hay datos', () => {
+        (useClients as any).mockReturnValue({
+            data: [
+                {
+                    id: '3',
+                    name: 'Carlos Sin Datos',
+                    client_status: 'prospect',
+                    is_hot_lead: false,
+                    NEW_Budget: [],
+                    NEW_Billing: [],
+                    NEW_Contracts: []
+                }
+            ],
+            isLoading: false,
+            error: null
+        });
+        renderCRM();
+
+        const budgetBtn = screen.getByTitle('Sin presupuestos');
+        const contractBtn = screen.getByTitle('Sin contratos');
+
+        expect(budgetBtn).toBeDisabled();
+        expect(contractBtn).toBeDisabled();
     });
 });

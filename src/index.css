@@ -127,6 +127,133 @@
       opacity: 0.95;
     }
   }
+
+  /* ── Animated Flame Icon ── */
+  .animated-flame-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Outer pulsating glow */
+  .animated-flame-glow {
+    position: absolute;
+    inset: -3px;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(234, 88, 12, 0.3) 0%, transparent 70%);
+    animation: flame-glow 1.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* Base flame – largest, slowest sway */
+  .animated-flame-base {
+    position: absolute;
+    color: #ea580c;
+    filter: drop-shadow(0 0 4px rgba(234, 88, 12, 0.7));
+    animation: flame-dance-base 0.8s ease-in-out infinite alternate;
+  }
+
+  /* Middle flame – medium, offset timing */
+  .animated-flame-mid {
+    position: absolute;
+    color: #f97316;
+    filter: drop-shadow(0 0 3px rgba(249, 115, 22, 0.6));
+    animation: flame-dance-mid 0.6s ease-in-out infinite alternate;
+    animation-delay: 0.15s;
+  }
+
+  /* Top flame – brightest, fastest flicker */
+  .animated-flame-top {
+    position: relative;
+    /* stays in flow for sizing */
+    color: #f59e0b;
+    filter: drop-shadow(0 0 3px rgba(249, 115, 22, 0.5));
+    animation: flame-dance-top 0.45s ease-in-out infinite alternate;
+    animation-delay: 0.3s;
+  }
+
+  /* ── Keyframes ── */
+  @keyframes flame-dance-base {
+    0% {
+      transform: scaleY(1) scaleX(1) rotate(-2deg);
+      opacity: 0.85;
+      color: #ea580c;
+    }
+
+    50% {
+      transform: scaleY(1.08) scaleX(0.95) rotate(1deg);
+      opacity: 1;
+      color: #dc2626;
+    }
+
+    100% {
+      transform: scaleY(0.96) scaleX(1.03) rotate(-1deg);
+      opacity: 0.9;
+      color: #ea580c;
+    }
+  }
+
+  @keyframes flame-dance-mid {
+    0% {
+      transform: scaleY(1) rotate(1deg) translateY(0);
+      opacity: 0.7;
+      color: #f97316;
+    }
+
+    50% {
+      transform: scaleY(1.12) rotate(-2deg) translateY(-1px);
+      opacity: 1;
+      color: #fb923c;
+    }
+
+    100% {
+      transform: scaleY(0.94) rotate(2deg) translateY(0);
+      opacity: 0.75;
+      color: #f97316;
+    }
+  }
+
+  @keyframes flame-dance-top {
+    0% {
+      transform: scaleY(1) rotate(-1deg) translateY(0);
+      opacity: 0.65;
+      color: #f59e0b;
+    }
+
+    33% {
+      transform: scaleY(1.15) rotate(2deg) translateY(-1px);
+      opacity: 1;
+      color: #fbbf24;
+    }
+
+    66% {
+      transform: scaleY(0.9) rotate(-2deg) translateY(0);
+      opacity: 0.8;
+      color: #f97316;
+    }
+
+    100% {
+      transform: scaleY(1.05) rotate(1deg) translateY(-0.5px);
+      opacity: 0.85;
+      color: #f59e0b;
+    }
+  }
+
+  @keyframes flame-glow {
+
+    0%,
+    100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 0.8;
+      transform: scale(1.3);
+    }
+  }
 }
 
 @layer utilities {
@@ -142,5 +269,27 @@
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+  }
+}
+
+/* ── Global Print Styles ─────────────────────────────────────
+   Ensures app chrome (sidebar, header, etc.) is hidden when
+   printing a budget PDF. Works with BudgetPrintView inline styles. */
+@media print {
+
+  /* Hide the entire main app — the Radix portal lives outside #root */
+  #root {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html {
+    overflow: visible !important;
   }
 }

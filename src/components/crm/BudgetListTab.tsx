@@ -10,6 +10,8 @@ import type { BudgetPrintData, LineItem } from './BudgetPrintView';
 import { JoinedNewBudget } from '@/types/budgets';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useRegionalConfig, getRegionalLegalText, getRegionalIedmt, getRegionalIva } from '../../hooks/useRegionalPricing';
+import type { Location, RegionalConfig } from '../../hooks/useRegionalPricing';
 
 interface BudgetListTabProps {
     projectId?: string;
@@ -52,14 +54,12 @@ const getPackComponents = (packName: string): string[] => {
 // ── Helper to build BudgetPrintData from JoinedNewBudget ──
 const buildPrintDataFromBudget = (
     budget: JoinedNewBudget,
-    budgetItems: any[]
+    budgetItems: any[],
+    regionalConfigs?: RegionalConfig[]
 ): BudgetPrintData => {
     const client = budget.client;
-    const location = (() => {
-        if (budget.iva_rate === 7) return 'canarias' as const;
-        if (budget.iva_rate === 0) return 'internacional' as const;
-        return 'peninsula' as const;
-    })();
+    // Use the stored location field; fall back to inference only if missing
+    const location: Location = (budget.location as Location) || 'peninsula';
 
     const lineItems: LineItem[] = [];
 
@@ -121,11 +121,18 @@ const buildPrintDataFromBudget = (
     const discountFixed = budget.discount_amount || 0;
 
     const totalAfterDiscounts = Math.max(0, subtotal - discountPercentAmount - discountFixed);
-    const ivaRate = budget.iva_rate || 21;
-    const precioBase = totalAfterDiscounts / (1 + ivaRate / 100);
-    const ivaAmount = totalAfterDiscounts - precioBase;
-    const total = budget.total || totalAfterDiscounts;
-    const iedmt = location === 'peninsula' ? Math.round(totalAfterDiscounts * 0.0475) : 0;
+    // IVA: NET + tax (same approach as BudgetEditorModal)
+    const { rate: ivaRate } = getRegionalIva(regionalConfigs, location);
+    const ivaAmount = totalAfterDiscounts * (ivaRate / 100);
+    const total = budget.total || (totalAfterDiscounts + ivaAmount);
+
+    // IEDMT: fixed amounts from regional config
+    const { applies: iedmtApplies, autoAmount, manualAmount } = getRegionalIedmt(regionalConfigs, location);
+    let iedmt = 0;
+    if (iedmtApplies) {
+        const engineName = budget.engine_option?.name || '';
+        iedmt = engineName.toLowerCase().includes('automático') ? autoAmount : manualAmount;
+    }
     const totalWithIedmt = total + iedmt;
 
     const dateStr = budget.created_at
@@ -161,6 +168,7 @@ const BudgetListTab = ({ projectId, clientName }: BudgetListTabProps) => {
     const { data: budgets, isLoading } = useProjectBudgets(projectId || '');
     const setPrimaryMutation = useSetPrimaryBudget();
     const { toast } = useToast();
+    const { data: regionalConfigs } = useRegionalConfig();
     const [editorOpen, setEditorOpen] = useState(false);
     const [editingBudgetId, setEditingBudgetId] = useState<string | undefined>();
 
@@ -204,21 +212,21 @@ const BudgetListTab = ({ projectId, clientName }: BudgetListTabProps) => {
 
     const handleView = useCallback((budget: any) => {
         setSelectedBudgetId(budget.id);
-        const data = buildPrintDataFromBudget(budget as JoinedNewBudget, []);
+        const data = buildPrintDataFromBudget(budget as JoinedNewBudget, [], regionalConfigs);
         setPrintData(data);
         setPrintViewOpen(true);
-    }, []);
+    }, [regionalConfigs]);
 
     // Re-build print data when budgetItems load
     React.useEffect(() => {
         if (selectedBudgetId && budgetItems.length > 0 && printViewOpen && budgets) {
             const budget = budgets.find(b => b.id === selectedBudgetId);
             if (budget) {
-                const data = buildPrintDataFromBudget(budget as JoinedNewBudget, budgetItems);
+                const data = buildPrintDataFromBudget(budget as JoinedNewBudget, budgetItems, regionalConfigs);
                 setPrintData(data);
             }
         }
-    }, [budgetItems, selectedBudgetId, printViewOpen, budgets]);
+    }, [budgetItems, selectedBudgetId, printViewOpen, budgets, regionalConfigs]);
 
     const handleEdit = (budgetId: string) => {
         setEditingBudgetId(budgetId);
@@ -392,6 +400,11 @@ const BudgetListTab = ({ projectId, clientName }: BudgetListTabProps) => {
                     }
                 }}
                 data={printData}
+                legalTexts={(() => {
+                    if (!printData || !regionalConfigs) return undefined;
+                    const dbTexts = getRegionalLegalText(regionalConfigs, printData.location as Location);
+                    return dbTexts.length > 0 ? dbTexts : undefined;
+                })()}
             />
         </div>
     );

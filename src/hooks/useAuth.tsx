@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, AuthState, UserRole } from '../types/auth';
+import { User, AuthState } from '../types/auth';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from './use-toast';
 
@@ -29,29 +29,27 @@ const validatePassword = (password: string): { valid: boolean; message: string }
   return { valid: true, message: '' };
 };
 
-// Helper to fetch role from user_profiles table
-const fetchRoleFromProfile = async (userId: string): Promise<UserRole | null> => {
+// Helper to fetch department from user_profiles table
+const fetchDepartmentFromProfile = async (userId: string): Promise<string | null> => {
   try {
     const { data, error } = await supabase
       .from('user_profiles')
-      .select('*')
+      .select('department')
       .eq('user_id', userId)
       .maybeSingle();
 
     if (error || !data) return null;
-    const role = (data as Record<string, unknown>)['role'] as string | null;
-    return role ? (role as UserRole) : null;
+    return (data as Record<string, unknown>)['department'] as string | null;
   } catch {
     return null;
   }
 };
 
-// Helper to build a User object from a Supabase session user (initial, may update role later)
+// Helper to build a User object from a Supabase session user
 const buildUserFromSession = (sessionUser: { id: string; email?: string; user_metadata?: Record<string, any>; created_at: string }): User => ({
   id: sessionUser.id,
   email: sessionUser.email || '',
   name: sessionUser.user_metadata?.name || sessionUser.email || '',
-  role: (sessionUser.user_metadata?.role as UserRole) || 'operator', // Restrictive default; overwritten by user_profiles role
   department: sessionUser.user_metadata?.department,
   avatar: sessionUser.user_metadata?.avatar,
   createdAt: sessionUser.created_at
@@ -127,12 +125,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             isLoading: false
           });
 
-          // Fetch role from user_profiles in background, then update
-          fetchRoleFromProfile(session.user.id).then(profileRole => {
-            if (profileRole && profileRole !== userData.role) {
+          // Fetch department from user_profiles in background, then update
+          fetchDepartmentFromProfile(session.user.id).then(profileDept => {
+            if (profileDept && profileDept !== userData.department) {
               setAuthState(prev => prev.user ? {
                 ...prev,
-                user: { ...prev.user, role: profileRole }
+                user: { ...prev.user, department: profileDept }
               } : prev);
             }
           });
@@ -174,12 +172,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           isLoading: false
         });
 
-        // Fetch role from user_profiles in background, then update
-        fetchRoleFromProfile(session.user.id).then(profileRole => {
-          if (profileRole && profileRole !== userData.role) {
+        // Fetch department from user_profiles in background, then update
+        fetchDepartmentFromProfile(session.user.id).then(profileDept => {
+          if (profileDept && profileDept !== userData.department) {
             setAuthState(prev => prev.user ? {
               ...prev,
-              user: { ...prev.user, role: profileRole }
+              user: { ...prev.user, department: profileDept }
             } : prev);
           }
         });
@@ -193,9 +191,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; needsConfirmation?: boolean; needsActivation?: boolean }> => {
     try {
-      // Attempt direct login with Supabase Auth
-      // Supabase returns generic 'Invalid login credentials' for both
-      // non-existent users and wrong passwords, preventing enumeration.
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -203,7 +198,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          // Check if profile exists but user hasn't activated — offer activation
           const { data: userProfile } = await supabase
             .from('user_profiles')
             .select('id')
@@ -211,7 +205,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .maybeSingle();
 
           if (userProfile) {
-            // Profile exists but login failed — could need activation
             return {
               success: false,
               error: 'Email o contraseña incorrectos.'
@@ -267,96 +260,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return {
         success: false,
         error: 'Error inesperado enviando email de activación'
-      };
-    }
-  };
-
-  const register = async (email: string, password: string, name: string, role: UserRole): Promise<{ success: boolean; error?: string; needsConfirmation?: boolean; needsActivation?: boolean }> => {
-    try {
-      // 1. Check if user profile exists in the system (invited users have profiles)
-      const { data: existingProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (profileError) {
-        return {
-          success: false,
-          error: 'Error verificando el email. Inténtalo de nuevo.'
-        };
-      }
-
-      if (!existingProfile) {
-        return {
-          success: false,
-          error: 'Este email no está preconfigurado en el sistema. Contacta al administrador.'
-        };
-      }
-
-      // 3. If profile exists, attempt normal login
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (signInError) {
-        if (signInError.message.includes('Invalid login credentials')) {
-          return {
-            success: false,
-            error: 'Email o contraseña incorrectos. Verifica tus credenciales.'
-          };
-        }
-        if (signInError.message.includes('Email not confirmed')) {
-          return {
-            success: false,
-            error: 'Email no confirmado. Contacta al administrador.'
-          };
-        }
-        return {
-          success: false,
-          error: `Error de autenticación: ${signInError.message}`
-        };
-      }
-
-      if (!signInData.user) {
-        return {
-          success: false,
-          error: 'No se pudo autenticar al usuario.'
-        };
-      }
-
-      const authUserId = signInData.user.id;
-
-      // 4. Update existing profile
-      await supabase
-        .from('user_profiles')
-        .update({
-          name,
-          department: role === 'ceo' ? 'Dirección' : 'Sin departamento',
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', authUserId);
-
-      // 5. Update auth user metadata
-      try {
-        await supabase.auth.updateUser({
-          data: {
-            name,
-            role,
-            department: role === 'ceo' ? 'Dirección' : 'Sin departamento'
-          }
-        });
-      } catch {
-        // Non-critical metadata update failure
-      }
-
-      return { success: true };
-
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Error inesperado. Por favor, inténtalo de nuevo.'
       };
     }
   };

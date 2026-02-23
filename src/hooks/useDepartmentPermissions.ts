@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useUserProfile } from './useUserProfile';
+import { getDepartmentPermissions } from '@/types/auth';
 
 export interface DepartmentPermission {
   id: string;
@@ -33,27 +34,22 @@ export const useDepartmentPermissions = () => {
   return useQuery({
     queryKey: ['department-permissions', profile?.department],
     queryFn: async (): Promise<UserPermissions> => {
-      const isDirection = profile?.department === 'Dirección' || user?.department === 'Dirección' || user?.role === 'ceo' || user?.role === 'cfo';
+      const userDept = profile?.department || user?.department;
+      const deptConfig = getDepartmentPermissions(userDept);
 
-      const routes = ['/', '/intro', '/proyectos', '/vehiculos', '/planificacion-produccion', '/produccion', '/calidad', '/entregas', '/incidencias', '/ventas', '/customer', '/admin'];
-
-      if (isDirection) {
-        routes.push('/usuarios');
-      }
-
-      const department = profile?.department ? {
+      const department = userDept ? {
         id: 'temp',
-        name: profile.department,
-        description: 'Departamento temporal',
+        name: userDept,
+        description: 'Departamento',
         is_active: true
       } : undefined;
 
       return {
-        routes,
-        canEdit: true,
-        canDelete: true,
-        canValidate: true,
-        canCreateProjects: true,
+        routes: [...deptConfig.routes],
+        canEdit: deptConfig.canEdit,
+        canDelete: deptConfig.canDelete,
+        canValidate: deptConfig.canValidate,
+        canCreateProjects: deptConfig.canCreateProjects,
         department,
       };
     },

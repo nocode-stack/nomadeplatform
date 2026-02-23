@@ -71,7 +71,7 @@ const createWrapper = () => {
 
 describe('Logout Functionality', () => {
     const mockLogout = vi.fn();
-    const mockUser = { id: 'user-123', name: 'Test User', email: 'test@nomade-nation.com', role: 'admin' };
+    const mockUser = { id: 'user-123', name: 'Test User', email: 'test@nomade-nation.com', department: 'Dirección' };
     const mockProfile = { name: 'Test User', email: 'test@nomade-nation.com', department: 'IT', avatar_url: null };
 
     beforeEach(() => {

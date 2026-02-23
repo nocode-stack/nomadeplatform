@@ -11,9 +11,14 @@ export interface RegionalConfig {
     iva_label: string;
     iedmt_rate: number;
     iedmt_applies: boolean;
+    iedmt_auto_amount: number;
+    iedmt_manual_amount: number;
     legal_text: string;
-    transport_note: string;
+    legal_text_extra: string | null;
+    budget_footer: string | null;
+    currency: string;
     created_at: string;
+    updated_at: string;
 }
 
 // ── Hook: fetch regional_config ────────────────────────────
@@ -69,7 +74,7 @@ export const getRegionalIva = (
     }
     // Fallback hardcoded
     switch (location) {
-        case 'canarias': return { rate: 7, label: 'IGIC' };
+        case 'canarias': return { rate: 0, label: 'IVA' };
         case 'internacional': return { rate: 0, label: 'Sin impuestos' };
         default: return { rate: 21, label: 'IVA' };
     }
@@ -79,15 +84,21 @@ export const getRegionalIva = (
 export const getRegionalIedmt = (
     configs: RegionalConfig[] | undefined,
     location: Location
-): { rate: number; applies: boolean } => {
+): { applies: boolean; autoAmount: number; manualAmount: number } => {
     const config = configs?.find(c => c.location === location);
     if (config) {
-        return { rate: config.iedmt_rate, applies: config.iedmt_applies };
+        return {
+            applies: config.iedmt_applies,
+            autoAmount: Number(config.iedmt_auto_amount) || 0,
+            manualAmount: Number(config.iedmt_manual_amount) || 0,
+        };
     }
     // Fallback
+    const applies = location !== 'internacional';
     return {
-        rate: location === 'peninsula' ? 4.75 : 0,
-        applies: location === 'peninsula',
+        applies,
+        autoAmount: applies ? 4600 : 0,
+        manualAmount: applies ? 4300 : 0,
     };
 };
 
@@ -95,7 +106,11 @@ export const getRegionalIedmt = (
 export const getRegionalLegalText = (
     configs: RegionalConfig[] | undefined,
     location: Location
-): string => {
+): string[] => {
     const config = configs?.find(c => c.location === location);
-    return config?.legal_text || '';
+    if (!config) return [];
+    const texts: string[] = [];
+    if (config.legal_text) texts.push(config.legal_text);
+    if (config.legal_text_extra) texts.push(config.legal_text_extra);
+    return texts;
 };

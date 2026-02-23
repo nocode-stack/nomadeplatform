@@ -8,6 +8,8 @@ import { Button } from '../ui/button';
 import { Printer, Mail } from 'lucide-react';
 import { JoinedNewBudget } from '@/types/budgets';
 import { useNewBudgetItems } from '@/hooks/useNewBudgets';
+import { useRegionalConfig, getRegionalLegalText } from '@/hooks/useRegionalPricing';
+import type { Location } from '@/hooks/useRegionalPricing';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -20,6 +22,7 @@ interface BudgetDetailModalProps {
 
 const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProps) => {
     const { data: budgetItems = [] } = useNewBudgetItems(budget?.id);
+    const { data: regionalConfigs } = useRegionalConfig();
 
     if (!budget) return null;
 
@@ -309,11 +312,44 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
                             </div>
 
                             {/* 6. Footer / Conditions */}
-                            <div className="pt-12 text-[10px] text-[#94a3b8] text-center space-y-2">
-                                <p className="font-bold uppercase tracking-widest text-[#1A1A1A]">Condiciones Generales</p>
-                                <p>Este presupuesto tiene una validez de 30 días. Sujeto a disponibilidad de componentes y slots de producción.</p>
-                                <p>© 2024 Nomade Vans S.L. - Todos los derechos reservados.</p>
-                            </div>
+                            {(() => {
+                                const location: Location = budget.iva_rate === 7
+                                    ? 'canarias'
+                                    : budget.iva_rate === 0
+                                        ? 'internacional'
+                                        : 'peninsula';
+
+                                const dbTexts = getRegionalLegalText(regionalConfigs, location);
+                                const conditionLines = dbTexts.length > 0
+                                    ? dbTexts
+                                    : [
+                                        location === 'peninsula'
+                                            ? 'Precios con IVA (21%) incluido. IEDMT no incluido en el PVP — se calcula según normativa vigente.'
+                                            : location === 'canarias'
+                                                ? 'Precios con IGIC (7%) incluido. Exento de IEDMT. Gastos de transporte a Canarias no incluidos.'
+                                                : 'Precios sin impuestos locales del país de destino. Transporte internacional no incluido.',
+                                        'Este presupuesto tiene una validez de 30 días naturales desde la fecha de emisión.',
+                                    ];
+
+                                return (
+                                    <div className="pt-8 print:break-inside-avoid">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#374151] mb-3">
+                                            Condiciones Generales
+                                        </p>
+                                        <div className="space-y-1.5">
+                                            {conditionLines.map((text, idx) => (
+                                                <div key={idx} className="flex items-start gap-2">
+                                                    <div className="w-1 h-1 rounded-full bg-[#CBD5E1] mt-1.5 flex-shrink-0" />
+                                                    <p className="text-[10px] text-[#6B7280] leading-relaxed">{text}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-[9px] text-[#CBD5E1] text-center mt-4">
+                                            © {new Date().getFullYear()} Nomade Vans S.L. — Todos los derechos reservados
+                                        </p>
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                     </div>

@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Search, Bell, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserProfile } from '../../hooks/useUserProfile';
-import { ROLE_PERMISSIONS } from '../../types/auth';
+
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import ProfileDialog from '../user/ProfileDialog';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
@@ -51,10 +51,9 @@ const Header = ({ title, subtitle, isDashboard = false, currentPhase }: HeaderPr
 
   if (!user) return null;
 
-  const userPermissions = ROLE_PERMISSIONS[user.role];
   const displayName = profile?.name || user.name || 'Usuario';
   const displayAvatar = profile?.avatar_url || user.avatar;
-  const displayDepartment = profile?.department || user.department || userPermissions.name;
+  const displayDepartment = profile?.department || user.department || 'Sin departamento';
 
   return (
     <header

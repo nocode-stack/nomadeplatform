@@ -16,6 +16,8 @@ import { useNewBudgets, useNewBudgetItems } from '../hooks/useNewBudgets';
 import BudgetPrintView from '../components/crm/BudgetPrintView';
 import BudgetEditorModal from '../components/crm/BudgetEditorModal';
 import type { BudgetPrintData, LineItem } from '../components/crm/BudgetPrintView';
+import { useRegionalConfig, getRegionalLegalText, getRegionalIva, getRegionalIedmt } from '../hooks/useRegionalPricing';
+import type { Location, RegionalConfig } from '../hooks/useRegionalPricing';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Switch } from '../components/ui/switch';
@@ -51,15 +53,12 @@ const getPackComponents = (packName: string): string[] => {
 // ── Helper to build BudgetPrintData from JoinedNewBudget ──
 const buildPrintDataFromBudget = (
     budget: JoinedNewBudget,
-    budgetItems: any[]
+    budgetItems: any[],
+    regionalConfigs?: RegionalConfig[]
 ): BudgetPrintData => {
     const client = budget.client;
-    const location = (() => {
-        // Infer location from iva_rate
-        if (budget.iva_rate === 7) return 'canarias' as const;
-        if (budget.iva_rate === 0) return 'internacional' as const;
-        return 'peninsula' as const;
-    })();
+    // Use the stored location field; fall back to inference only if missing
+    const location: Location = (budget.location as Location) || 'peninsula';
 
     // Build line items from budget items
     const lineItems: LineItem[] = [];
@@ -128,11 +127,18 @@ const buildPrintDataFromBudget = (
     const discountFixed = budget.discount_amount || 0;
 
     const totalAfterDiscounts = Math.max(0, subtotal - discountPercentAmount - discountFixed);
-    const ivaRate = budget.iva_rate || 21;
-    const precioBase = totalAfterDiscounts / (1 + ivaRate / 100);
-    const ivaAmount = totalAfterDiscounts - precioBase;
-    const total = budget.total || totalAfterDiscounts;
-    const iedmt = location === 'peninsula' ? Math.round(totalAfterDiscounts * 0.0475) : 0;
+    // IVA: NET + tax (same approach as BudgetEditorModal)
+    const { rate: ivaRate } = getRegionalIva(regionalConfigs, location);
+    const ivaAmount = totalAfterDiscounts * (ivaRate / 100);
+    const total = budget.total || (totalAfterDiscounts + ivaAmount);
+
+    // IEDMT: fixed amounts from regional config
+    const { applies: iedmtApplies, autoAmount, manualAmount } = getRegionalIedmt(regionalConfigs, location);
+    let iedmt = 0;
+    if (iedmtApplies) {
+        const engineName = budget.engine_option?.name || '';
+        iedmt = engineName.toLowerCase().includes('automático') ? autoAmount : manualAmount;
+    }
     const totalWithIedmt = total + iedmt;
 
     const dateStr = budget.created_at
@@ -169,6 +175,7 @@ const Presupuestos = () => {
     const [searchParams] = useSearchParams();
     const searchTerm = searchParams.get('search') || '';
     const { data: budgets = [], isLoading } = useNewBudgets();
+    const { data: regionalConfigs } = useRegionalConfig();
 
     // Print view state
     const [printViewOpen, setPrintViewOpen] = useState(false);
@@ -192,21 +199,21 @@ const Presupuestos = () => {
     const handleViewPrint = useCallback((budget: JoinedNewBudget) => {
         setSelectedBudgetId(budget.id);
         // Build print data immediately with empty items, will re-render when items load
-        const data = buildPrintDataFromBudget(budget, []);
+        const data = buildPrintDataFromBudget(budget, [], regionalConfigs);
         setPrintData(data);
         setPrintViewOpen(true);
-    }, []);
+    }, [regionalConfigs]);
 
     // Re-build print data when budgetItems load
     React.useEffect(() => {
         if (selectedBudgetId && budgetItems.length > 0 && printViewOpen) {
             const budget = budgets.find(b => b.id === selectedBudgetId);
             if (budget) {
-                const data = buildPrintDataFromBudget(budget, budgetItems);
+                const data = buildPrintDataFromBudget(budget, budgetItems, regionalConfigs);
                 setPrintData(data);
             }
         }
-    }, [budgetItems, selectedBudgetId, printViewOpen, budgets]);
+    }, [budgetItems, selectedBudgetId, printViewOpen, budgets, regionalConfigs]);
 
     const handleEdit = useCallback((budget: JoinedNewBudget, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -385,6 +392,11 @@ const Presupuestos = () => {
                     }
                 }}
                 data={printData}
+                legalTexts={(() => {
+                    if (!printData || !regionalConfigs) return undefined;
+                    const dbTexts = getRegionalLegalText(regionalConfigs, printData.location as Location);
+                    return dbTexts.length > 0 ? dbTexts : undefined;
+                })()}
             />
 
             {/* Budget Editor Modal */}

@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { UserRole } from '@/types/auth';
 import { Loader2, Mail } from 'lucide-react';
 
 interface InviteUserModalProps {
@@ -23,27 +22,9 @@ interface InviteUserModalProps {
 }
 
 const DEPARTMENTS = [
-    'CEO',
-    'CFO',
-    'Dir. Producción',
-    'Dir. Customer',
-    'Dir. Marketing',
-    'Comercial',
-    'Administrador',
-    'Operario',
-    'Control de Calidad',
-    'Atención al Cliente'
-];
-
-const ROLES: { label: string; value: UserRole }[] = [
-    { label: 'CEO', value: 'ceo' },
-    { label: 'CFO', value: 'cfo' },
-    { label: 'Director de Producción', value: 'production_director' },
-    { label: 'Director de Customer', value: 'customer_director' },
-    { label: 'Director de Marketing', value: 'marketing_director' },
-    { label: 'Comercial', value: 'commercial' },
-    { label: 'Operario', value: 'operator' },
-    { label: 'Calidad', value: 'quality' },
+    'Dirección',
+    'Superadmin',
+    'Ventas',
 ];
 
 export const InviteUserModal = ({ isOpen, onClose }: InviteUserModalProps) => {
@@ -53,7 +34,6 @@ export const InviteUserModal = ({ isOpen, onClose }: InviteUserModalProps) => {
         email: '',
         name: '',
         department: '',
-        role: '' as UserRole | '',
     });
 
     const inviteMutation = useMutation({
@@ -76,7 +56,7 @@ export const InviteUserModal = ({ isOpen, onClose }: InviteUserModalProps) => {
                 title: "Invitación enviada",
                 description: `Se ha enviado un email de invitación a ${formData.email}`,
             });
-            setFormData({ email: '', name: '', department: '', role: '' });
+            setFormData({ email: '', name: '', department: '' });
             onClose();
         },
         onError: async (error: any) => {
@@ -148,46 +128,24 @@ export const InviteUserModal = ({ isOpen, onClose }: InviteUserModalProps) => {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="department">Departamento</Label>
-                            <Select
-                                value={formData.department}
-                                onValueChange={(val) => setFormData({ ...formData, department: val })}
-                                required
-                            >
-                                <SelectTrigger id="department">
-                                    <SelectValue placeholder="Seleccionar" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {DEPARTMENTS.map((dept) => (
-                                        <SelectItem key={dept} value={dept}>
-                                            {dept}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="role">Rol</Label>
-                            <Select
-                                value={formData.role}
-                                onValueChange={(val) => setFormData({ ...formData, role: val as UserRole })}
-                                required
-                            >
-                                <SelectTrigger id="role">
-                                    <SelectValue placeholder="Seleccionar" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {ROLES.map((role) => (
-                                        <SelectItem key={role.value} value={role.value}>
-                                            {role.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="department">Departamento</Label>
+                        <Select
+                            value={formData.department}
+                            onValueChange={(val) => setFormData({ ...formData, department: val })}
+                            required
+                        >
+                            <SelectTrigger id="department">
+                                <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {DEPARTMENTS.map((dept) => (
+                                    <SelectItem key={dept} value={dept}>
+                                        {dept}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <DialogFooter className="pt-4">

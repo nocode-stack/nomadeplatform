@@ -14,9 +14,9 @@ import {
     Filter,
     X,
     Loader2,
-    Trash2,
-    Flame
+    Trash2
 } from 'lucide-react';
+import AnimatedFlame from '../components/ui/AnimatedFlame';
 import { useNavigate } from 'react-router-dom';
 import NewLeadModal from '../components/crm/NewLeadModal';
 import LeadDetailModal from '../components/crm/LeadDetailModal';
@@ -79,6 +79,7 @@ const CRM = () => {
     const leads = (clientsData || []).map(client => {
         try {
             const budgets = (client as any).NEW_Budget || [];
+            const contracts = (client as any).NEW_Contracts || [];
             const primaryBudget = budgets.find((b: any) => b.is_primary) || budgets[0];
             const billing = client.NEW_Billing?.[0];
 
@@ -109,6 +110,8 @@ const CRM = () => {
                 reservationAmount: (primaryBudget as any)?.reservation_amount?.toString() || (primaryBudget as any)?.reservation_price?.toString() || '1500',
                 items: (primaryBudget as any)?.NEW_Budget_Items || [],
                 budgetId: primaryBudget?.id,
+                hasBudgets: budgets.length > 0,
+                hasContracts: contracts.length > 0,
                 billingType: billing?.type || 'personal',
                 clientBillingName: billing?.name || '',
                 clientBillingEmail: billing?.email || '',
@@ -316,7 +319,7 @@ const CRM = () => {
                                                     htmlFor="filter-hot-lead"
                                                     className="text-sm font-medium text-foreground group-hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5"
                                                 >
-                                                    <Flame className="w-4 h-4 text-orange-500" />
+                                                    <AnimatedFlame size="sm" active={true} />
                                                     Solo Hot Leads
                                                 </Label>
                                             </div>
@@ -454,7 +457,7 @@ const CRM = () => {
                                                 <p className="font-bold text-sm text-foreground flex items-center gap-1.5">
                                                     {lead.name}
                                                     {lead.isHotLead && (
-                                                        <Flame className="w-4 h-4 text-orange-500 shrink-0" data-testid="hot-lead-icon" />
+                                                        <AnimatedFlame size="sm" active={true} data-testid="hot-lead-icon" />
                                                     )}
                                                 </p>
                                             </div>
@@ -476,21 +479,33 @@ const CRM = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex space-x-2">
                                                 <button
-                                                    className="p-2 rounded-lg bg-muted/50 text-muted-foreground hover:bg-primary hover:text-white transition-all tooltip"
-                                                    title="Ver Presupuestos"
+                                                    className={`p-2 rounded-lg transition-all tooltip ${lead.hasBudgets
+                                                        ? 'bg-muted/50 text-muted-foreground hover:bg-primary hover:text-white cursor-pointer'
+                                                        : 'bg-muted/20 text-muted-foreground/30 cursor-not-allowed'
+                                                        }`}
+                                                    title={lead.hasBudgets ? 'Ver Presupuestos' : 'Sin presupuestos'}
+                                                    disabled={!lead.hasBudgets}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        navigate(`/presupuestos?search=${lead.name}`);
+                                                        if (lead.hasBudgets) {
+                                                            navigate(`/presupuestos?search=${lead.name}`);
+                                                        }
                                                     }}
                                                 >
                                                     <Euro className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    className="p-2 rounded-lg bg-muted/50 text-muted-foreground hover:bg-primary hover:text-white transition-all tooltip"
-                                                    title="Ver Contratos"
+                                                    className={`p-2 rounded-lg transition-all tooltip ${lead.hasContracts
+                                                        ? 'bg-muted/50 text-muted-foreground hover:bg-primary hover:text-white cursor-pointer'
+                                                        : 'bg-muted/20 text-muted-foreground/30 cursor-not-allowed'
+                                                        }`}
+                                                    title={lead.hasContracts ? 'Ver Contratos' : 'Sin contratos'}
+                                                    disabled={!lead.hasContracts}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        navigate(`/contratos?search=${lead.name}`);
+                                                        if (lead.hasContracts) {
+                                                            navigate(`/contratos?search=${lead.name}`);
+                                                        }
                                                     }}
                                                 >
                                                     <FileText className="w-4 h-4" />
@@ -500,7 +515,7 @@ const CRM = () => {
                                                     title="Enviar Email"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        window.location.href = `mailto:${lead.email}`;
+                                                        window.open(`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(lead.email)}`, '_blank');
                                                     }}
                                                 >
                                                     <Mail className="w-4 h-4" />

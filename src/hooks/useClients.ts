@@ -34,6 +34,9 @@ export const useClients = () => {
           ),
           NEW_Billing (
             *
+          ),
+          NEW_Contracts (
+            id
           )
         `)
         .or('is_active.is.null,is_active.eq.true')
