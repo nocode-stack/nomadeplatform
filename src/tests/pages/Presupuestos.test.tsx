@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Presupuestos from '../../pages/Presupuestos';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
 // Mock supabase client to avoid env var errors in test
@@ -10,10 +11,20 @@ vi.mock('../../integrations/supabase/client', () => ({
         from: vi.fn(() => ({
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
             single: vi.fn().mockResolvedValue({ data: null, error: null }),
         })),
         functions: { invoke: vi.fn() },
     },
+}));
+
+// Mock useRegionalPricing hook
+vi.mock('../../hooks/useRegionalPricing', () => ({
+    useRegionalConfig: () => ({ data: [], isLoading: false }),
+    getPrice: () => 0,
+    getRegionalIva: () => ({ rate: 21, label: 'IVA' }),
+    getRegionalIedmt: () => ({ applies: true, autoAmount: 4600, manualAmount: 4300 }),
+    getRegionalLegalText: () => [],
 }));
 
 // Mock de useNewBudgets
@@ -125,11 +136,17 @@ vi.mock('../../components/budgets/BudgetDetailModal', () => ({
     default: () => <div data-testid="budget-detail-modal" />
 }));
 
+const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+});
+
 const renderPresupuestos = () => {
     return render(
-        <BrowserRouter>
-            <Presupuestos />
-        </BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+                <Presupuestos />
+            </BrowserRouter>
+        </QueryClientProvider>
     );
 };
 
