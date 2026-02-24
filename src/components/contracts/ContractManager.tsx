@@ -42,6 +42,7 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [editModes, setEditModes] = useState<{ [key: string]: boolean }>({});
   const [contractData, setContractData] = useState<{ [key: string]: any }>({});
+  const [progressStates, setProgressStates] = useState<{ [key: string]: number }>({});
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [pendingContractType, setPendingContractType] = useState<string>('');
   const [pendingMissingFields, setPendingMissingFields] = useState<string[]>([]);
@@ -121,13 +122,13 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
         actions.sendDisabled = true;
         break;
       case 'generated':
-        // Contrato generado: Editar disponible, enviar habilitado
+        // Contrato generado: Editar disponible, enviar solo si 100% completo
         actions.editText = 'Editar';
         actions.editVariant = 'outline';
         actions.editIcon = Edit;
         actions.sendText = 'Enviar';
         actions.sendVariant = 'default';
-        actions.sendDisabled = false;
+        actions.sendDisabled = (progressStates[contractType] || 0) < 100;
         break;
       case 'sent':
         // Enviado: Puede crear nueva versión
@@ -327,6 +328,14 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
     setContractData(prev => ({
       ...prev,
       [contractType]: formData
+    }));
+  };
+
+  // Función para manejar cambios en el progreso del formulario
+  const handleProgressChange = (contractType: string) => (progress: number) => {
+    setProgressStates(prev => ({
+      ...prev,
+      [contractType]: progress
     }));
   };
 
@@ -554,6 +563,7 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
                         size="sm"
                         variant={actions.sendVariant}
                         className="flex items-center space-x-2"
+                        title={actions.sendDisabled && status === 'generated' ? `Completa todos los campos (${progressStates[type.contractType] || 0}% completado)` : undefined}
                       >
                         {(sendingStates[type.contractType] || sendContract.isPending) ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -574,6 +584,7 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
                     isEditMode={isEditMode}
                     onEditModeChange={(editMode) => handleEditModeChange(type.contractType, editMode)}
                     onFormDataChange={handleFormDataChange(type.contractType)}
+                    onProgressChange={handleProgressChange(type.contractType)}
                   />
                 </CardContent>
               </Card>

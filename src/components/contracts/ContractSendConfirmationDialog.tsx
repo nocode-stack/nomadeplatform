@@ -96,8 +96,8 @@ const ContractSendConfirmationDialog: React.FC<ContractSendConfirmationDialogPro
                   </li>
                 ))}
               </ul>
-              <div className="mt-3 text-sm">
-                Puedes enviar el contrato con campos incompletos, pero se recomienda completar toda la información antes del envío.
+              <div className="mt-3 text-sm font-medium">
+                No es posible enviar el contrato con campos incompletos. Por favor, completa toda la información antes del envío.
               </div>
             </AlertDescription>
           </Alert>
@@ -124,7 +124,7 @@ const ContractSendConfirmationDialog: React.FC<ContractSendConfirmationDialogPro
           </Button>
           <Button
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={isLoading || hasMissingFields}
             variant={hasMissingFields ? "destructive" : "default"}
             className="w-full sm:w-auto"
           >
@@ -132,7 +132,7 @@ const ContractSendConfirmationDialog: React.FC<ContractSendConfirmationDialogPro
             {isLoading ? (
               "Enviando..."
             ) : hasMissingFields ? (
-              "Enviar de todas formas"
+              "Completa los campos para enviar"
             ) : (
               "Confirmar envío"
             )}

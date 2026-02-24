@@ -67,6 +67,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
     // Inline form state — when set, shows the form instead of the list
     const [activeForm, setActiveForm] = useState<{ contractType: string; project: any } | null>(null);
     const [formData, setFormData] = useState<any>(null);
+    const [formProgress, setFormProgress] = useState<number>(0);
     const [isSaving, setIsSaving] = useState(false);
     const [isSending, setIsSending] = useState(false);
 
@@ -195,6 +196,10 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
         setFormData(data);
     }, []);
 
+    const handleProgressChange = useCallback((progress: number) => {
+        setFormProgress(progress);
+    }, []);
+
     // Handle toggling is_primary
     const handleTogglePrimary = (contract: any) => {
         if (!contract) return;
@@ -270,10 +275,11 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                             type="button"
                             size="sm"
                             onClick={handleSend}
-                            disabled={isSaving || isSending}
+                            disabled={isSaving || isSending || formProgress < 100}
+                            title={formProgress < 100 ? `Completa todos los campos (${formProgress}% completado)` : undefined}
                         >
                             {isSending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />}
-                            {isSending ? 'Enviando...' : 'Enviar a DocuSeal'}
+                            {isSending ? 'Enviando...' : `Enviar a DocuSeal${formProgress < 100 ? ` (${formProgress}%)` : ''}`}
                         </Button>
                     </div>
                 </div>
@@ -286,6 +292,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                         status={contractStatus}
                         isEditMode={true}
                         onFormDataChange={handleFormDataChange}
+                        onProgressChange={handleProgressChange}
                     />
                 </div>
             </div>

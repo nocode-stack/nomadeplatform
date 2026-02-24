@@ -170,4 +170,24 @@ describe('hook useAuth - login', () => {
         expect(response.success).toBe(false);
         expect(response.error).toBe('Email o contraseña incorrectos.');
     });
+
+    it('debería bloquear login de usuario inactivo', async () => {
+        const { result } = renderHook(() => useAuth(), { wrapper });
+        await vi.waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        // Mock: signInWithPassword succeeds
+        mockSignIn.mockResolvedValueOnce({
+            data: { user: { id: 'inactive-user-123', email: 'inactivo@example.com' } },
+            error: null
+        });
+
+        // Mock: user_profiles returns inactive status
+        mockMaybeSingle.mockResolvedValueOnce({ data: { status: 'inactive' }, error: null });
+
+        const response = await result.current.login('inactivo@example.com', 'Password1');
+
+        expect(response.success).toBe(false);
+        expect(response.error).toBe('Tu cuenta ha sido desactivada. Contacta con el administrador.');
+        expect(supabase.auth.signOut).toHaveBeenCalled();
+    });
 });

@@ -350,19 +350,22 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             }
         });
 
-        const optionalsTotal = packsTotal + extraPacksTotal + electricPrice + additionalsTotal + customTotal;
-        const pvpTotal = basePrice + optionalsTotal;
+        const sumOptionals = packsTotal + extraPacksTotal + electricPrice + additionalsTotal + customTotal;
+
+        // All item prices (PVP) ALREADY include VAT.
+        // Sum of all items is the PVP Total including VAT.
+        const pvpTotal = basePrice + sumOptionals;
 
         // Apply discounts (cumulative: % first, then fixed)
         const discountPercentAmount = pvpTotal * (discountPercent / 100);
-        const totalAfterDiscounts = Math.max(0, pvpTotal - discountPercentAmount - discountFixed);
+        // The total after discounts is our FINAL TOTAL with VAT.
+        const total = Math.max(0, pvpTotal - discountPercentAmount - discountFixed);
 
-        // IVA from regional_config (fallback hardcoded)
+        // Extract IVA from total (Reverse calculation)
         const { rate: ivaRate } = getRegionalIva(regionalConfigs, location);
-        // Prices are NET — add tax on top for España/Canarias, nothing for Internacional
-        const precioBase = totalAfterDiscounts;
-        const ivaAmount = totalAfterDiscounts * (ivaRate / 100);
-        const total = totalAfterDiscounts + ivaAmount;
+        // Reverse calculation: Base = Total / (1 + Rate/100)
+        const precioBase = total / (1 + (ivaRate / 100));
+        const ivaAmount = total - precioBase;
 
         // IEDMT — fixed amounts from regional_config
         const { applies: iedmtApplies, autoAmount, manualAmount } = getRegionalIedmt(regionalConfigs, location);
@@ -376,10 +379,10 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
         return {
             basePrice,
             modelPrice,
-            optionalsTotal,
+            sumOptionals,
             pvpTotal,
             discountPercentAmount,
-            totalAfterDiscounts,
+            totalAfterDiscounts: total, // Legacy support
             precioBase,
             ivaRate,
             ivaAmount,
@@ -1137,7 +1140,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                 </div>
 
                                 {/* Opcionales - desglose detallado */}
-                                {calculations.optionalsTotal > 0 && (
+                                {calculations.sumOptionals > 0 && (
                                     <div className="space-y-1.5 pl-3 border-l-2 border-[#E8734A]/20">
                                         <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] mb-1">Opcionales</p>
 
@@ -1216,7 +1219,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                         {/* Subtotal opcionales */}
                                         <div className="flex justify-between pt-1 border-t border-dashed border-[#E5E7EB]">
                                             <p className="text-xs font-semibold text-[#4B5563]">Total Opcionales</p>
-                                            <p className="text-xs font-bold tabular-nums">{fmt(calculations.optionalsTotal)} €</p>
+                                            <p className="text-xs font-bold tabular-nums">{fmt(calculations.sumOptionals)} €</p>
                                         </div>
                                     </div>
                                 )}
@@ -1245,11 +1248,11 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                     </div>
                                 )}
 
-                                {/* PVP with discounts applied */}
+                                {/* PVP with discounts applied - This is our Total with IVA */}
                                 <div className="flex justify-between items-center bg-[#F3F4F6] -mx-6 px-6 py-3">
-                                    <p className="text-sm font-bold uppercase">PVP Total</p>
+                                    <p className="text-sm font-bold uppercase">Precio TOTAL</p>
                                     <p className="text-xl font-black text-[#1A1A1A] tabular-nums">
-                                        {fmtDecimal(calculations.totalAfterDiscounts)} €
+                                        {fmtDecimal(calculations.total)} €
                                     </p>
                                 </div>
 
@@ -1262,16 +1265,12 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                     {location !== 'internacional' && (
                                         <div className="flex justify-between text-xs">
                                             <span className="text-[#9CA3AF]">
-                                                IVA {calculations.ivaRate}%
+                                                IVA ({calculations.ivaRate}%)
                                             </span>
                                             <span className="tabular-nums">{fmtDecimal(calculations.ivaAmount)} €</span>
                                         </div>
                                     )}
-                                    <Separator className="bg-[#E5E7EB]" />
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-bold">Total</span>
-                                        <span className="font-bold tabular-nums">{fmtDecimal(calculations.total)} €</span>
-                                    </div>
+                                    <Separator className="bg-[#E5E7EB] my-2" />
 
                                     {location !== 'internacional' && (
                                         <>

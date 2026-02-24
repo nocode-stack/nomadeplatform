@@ -4,6 +4,7 @@ import {
     DialogContent,
 } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { Separator } from '../ui/separator';
 import { Printer, Mail, X } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────
@@ -516,7 +517,7 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                                     {/* Subtotal area */}
                                     <div className="bg-[#F8F9FA] px-6 py-4 space-y-3">
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-[#9CA3AF]">Subtotal (PVP Bruto)</span>
+                                            <span className="text-[#9CA3AF]">Suma de los conceptos (PVP)</span>
                                             <span className="font-bold tabular-nums">{fmt(data.subtotal)} €</span>
                                         </div>
                                         {data.discountPercentage != null && data.discountPercentage > 0 && (
@@ -531,12 +532,19 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                                                 <span className="font-bold tabular-nums">-{fmt(data.discountFixed)} €</span>
                                             </div>
                                         )}
+
+                                        <Separator className="bg-[#E5E7EB] my-1" />
+
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-[#9CA3AF]">Precio base</span>
+                                            <span className="font-medium tabular-nums">{fmt(data.total / (1 + (data.ivaRate / 100)))} €</span>
+                                        </div>
                                         {data.location !== 'internacional' && (
-                                            <div className="flex justify-between text-sm">
+                                            <div className="flex justify-between text-xs">
                                                 <span className="text-[#9CA3AF]">
                                                     IVA ({data.ivaRate}%)
                                                 </span>
-                                                <span className="font-bold tabular-nums">{fmt(data.ivaAmount)} €</span>
+                                                <span className="font-medium tabular-nums">{fmt(data.total - (data.total / (1 + (data.ivaRate / 100))))} €</span>
                                             </div>
                                         )}
                                     </div>
@@ -544,7 +552,7 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                                     {/* Total highlight */}
                                     <div className="bg-gradient-to-r from-[#2C3E50] to-[#34495E] px-6 py-4 flex justify-between items-center">
                                         <span className="text-white font-bold text-xs uppercase tracking-[0.15em]">
-                                            Total Presupuesto
+                                            Precio TOTAL
                                         </span>
                                         <span className="text-2xl font-black text-[#C59D5F] tabular-nums">
                                             {fmt(data.total)} €

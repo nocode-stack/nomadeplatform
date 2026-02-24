@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import Layout from '../components/layout/Layout';
-import NewLeadModal from '../components/crm/NewLeadModal';
 import { useUnifiedProjectsList } from '../hooks/useUnifiedProjects';
 import { useNewIncidentsList } from '../hooks/useNewIncidents';
 import { useClients } from '../hooks/useClients';
@@ -10,7 +9,6 @@ import { useUserProfile } from '../hooks/useUserProfile';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import {
-  Users,
   AlertTriangle,
   Clock,
   CheckCircle,
@@ -21,7 +19,6 @@ import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const { data: projects = [], refetch } = useUnifiedProjectsList();
   const { data: incidents = [] } = useNewIncidentsList();
   const { data: clients = [] } = useClients();
@@ -31,7 +28,7 @@ const Dashboard = () => {
   const stats = [
     {
       title: 'Prospects Activos',
-      value: projects.filter(p => p.new_clients?.client_status === 'prospect' && p.new_clients?.is_active !== false).length,
+      value: clients.filter(c => c.client_status === 'prospect' && c.is_active !== false).length,
       icon: Folder,
       color: 'from-primary/80 to-primary',
       bgColor: 'bg-primary/5',
@@ -79,28 +76,11 @@ const Dashboard = () => {
   return (
     <Layout title="Dashboard" subtitle="Panel de control de Nomade Nation" isDashboard={true}>
       <div className="space-y-8 pb-12 animate-blur-in">
-        {/* Quick Actions */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground tracking-tight">Panel de Control</h2>
-            <p className="text-muted-foreground mt-0.5">Resumen de proyectos e incidencias</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
-              onClick={() => setIsLeadModalOpen(true)}
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Nuevo Lead
-            </Button>
-          </div>
+        {/* Header */}
+        <div>
+          <h2 className="text-2xl font-bold text-foreground tracking-tight">Panel de Control</h2>
+          <p className="text-muted-foreground mt-0.5">Resumen de proyectos e incidencias</p>
         </div>
-
-        <NewLeadModal
-          open={isLeadModalOpen}
-          onOpenChange={setIsLeadModalOpen}
-          onLeadCreated={() => refetch()}
-        />
 
         {/* Original Style Stats Grid - Purple Scheme */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">

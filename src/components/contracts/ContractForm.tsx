@@ -58,6 +58,7 @@ interface ContractFormProps {
   isEditMode?: boolean;
   onEditModeChange?: (editMode: boolean) => void;
   onFormDataChange?: (formData: any) => void;
+  onProgressChange?: (progress: number) => void;
 }
 
 interface ContractData {
@@ -102,7 +103,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
   status,
   isEditMode = false,
   onEditModeChange,
-  onFormDataChange
+  onFormDataChange,
+  onProgressChange
 }) => {
   const { toast } = useToast();
   const { autoSave } = useContractVersioning(project.id);
@@ -739,6 +741,15 @@ const ContractForm: React.FC<ContractFormProps> = ({
     onFormDataChange
   ]);
 
+  const progressPercentage = calculateProgress();
+
+  // Notificar al padre sobre cambios en el progreso
+  useEffect(() => {
+    if (onProgressChange) {
+      onProgressChange(progressPercentage);
+    }
+  }, [progressPercentage, onProgressChange]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -747,8 +758,6 @@ const ContractForm: React.FC<ContractFormProps> = ({
       </div>
     );
   }
-
-  const progressPercentage = calculateProgress();
 
   return (
     <div className="space-y-6">

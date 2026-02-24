@@ -45,6 +45,39 @@ const fetchDepartmentFromProfile = async (userId: string): Promise<string | null
   }
 };
 
+// Helper to check if user is active in user_profiles
+const checkUserActiveStatus = async (userId: string, email: string): Promise<boolean> => {
+  try {
+    // Try by user_id first, then by email
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('status')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (data) {
+      return (data as Record<string, unknown>)['status'] !== 'inactive';
+    }
+
+    // Fallback: check by email (for users who haven't completed profile setup)
+    const { data: emailData } = await supabase
+      .from('user_profiles')
+      .select('status')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (emailData) {
+      return (emailData as Record<string, unknown>)['status'] !== 'inactive';
+    }
+
+    // No profile found — allow login (profile will be created)
+    return true;
+  } catch {
+    // On error, allow login to avoid blocking legitimate users
+    return true;
+  }
+};
+
 // Helper to build a User object from a Supabase session user
 const buildUserFromSession = (sessionUser: { id: string; email?: string; user_metadata?: Record<string, any>; created_at: string }): User => ({
   id: sessionUser.id,
@@ -125,6 +158,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             isLoading: false
           });
 
+          // Check if user is active in the background — kick out if inactive
+          checkUserActiveStatus(session.user.id, session.user.email || '').then(isActive => {
+            if (!isActive) {
+              supabase.auth.signOut();
+              setAuthState({ user: null, isAuthenticated: false, isLoading: false });
+            }
+          });
+
           // Fetch department from user_profiles in background, then update
           fetchDepartmentFromProfile(session.user.id).then(profileDept => {
             if (profileDept && profileDept !== userData.department) {
@@ -170,6 +211,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           user: userData,
           isAuthenticated: true,
           isLoading: false
+        });
+
+        // Check if user is active in the background — kick out if inactive
+        checkUserActiveStatus(session.user.id, session.user.email || '').then(isActive => {
+          if (!isActive) {
+            supabase.auth.signOut();
+            setAuthState({ user: null, isAuthenticated: false, isLoading: false });
+          }
         });
 
         // Fetch department from user_profiles in background, then update
@@ -229,6 +278,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return {
             success: false,
             error: 'Error de conexión. Verifica tu conexión a internet.'
+          };
+        }
+      }
+
+      // Check if the user is active after successful Supabase auth
+      if (data?.user) {
+        const isActive = await checkUserActiveStatus(data.user.id, email);
+        if (!isActive) {
+          // Sign out the inactive user immediately
+          await supabase.auth.signOut();
+          return {
+            success: false,
+            error: 'Tu cuenta ha sido desactivada. Contacta con el administrador.'
           };
         }
       }
