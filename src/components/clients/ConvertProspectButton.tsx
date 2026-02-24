@@ -65,7 +65,7 @@ const ConvertProspectButton = ({
         onSuccess();
       }
     },
-    onError: (error) => {
+    onError: (_error) => {
 
       toast({
         title: "Error al convertir",

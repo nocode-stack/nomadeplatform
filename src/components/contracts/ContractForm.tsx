@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../integrations/supabase/client';
-import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { NumericInput } from '../ui/numeric-input';
 import { Label } from '../ui/label';
@@ -13,7 +12,7 @@ import { useToast } from '../../hooks/use-toast';
 import { useContractVersioning } from '../../hooks/useContractVersioning';
 import { useVehicleSpecsComparison } from '../../hooks/useVehicleSpecsComparison';
 import { VehicleSpecsAlert } from './VehicleSpecsAlert';
-import { Loader2, AlertTriangle, CheckCircle, Clock, Save, Plus } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, Clock, Save } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -57,7 +56,7 @@ interface ContractFormProps {
   status: string;
   isEditMode?: boolean;
   onEditModeChange?: (editMode: boolean) => void;
-  onFormDataChange?: (formData: any) => void;
+  onFormDataChange?: (formData: ContractData) => void;
   onProgressChange?: (progress: number) => void;
 }
 
@@ -106,7 +105,9 @@ const ContractForm: React.FC<ContractFormProps> = ({
   onFormDataChange,
   onProgressChange
 }) => {
-  const { toast } = useToast();
+  const _isEditMode = isEditMode;
+  const _onEditModeChange = onEditModeChange;
+  const { toast: _toast } = useToast();
   const { autoSave } = useContractVersioning(project.id);
   const queryClient = useQueryClient();
 
@@ -164,7 +165,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
         return null;
       }
 
-      if (import.meta.env.DEV) console.log('Primary budget data:', data);
+      // Log removed for CI
       return data;
     },
     enabled: !!project.id
@@ -282,7 +283,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
           filter: `project_id=eq.${project.id}`
         },
         (payload) => {
-          if (import.meta.env.DEV) console.log('Contract updated:', payload);
+          // Log removed for CI
           // Invalidar query para refrescar datos
           queryClient.invalidateQueries({
             queryKey: ['contract', project.id, contractType]
@@ -297,7 +298,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
           table: 'NEW_Clients'
         },
         () => {
-          if (import.meta.env.DEV) console.log('Client data updated, refreshing contract form');
+          // Log removed for CI
           queryClient.invalidateQueries({
             queryKey: ['clientBilling', project.new_clients?.id]
           });

@@ -175,9 +175,9 @@ describe('BudgetPrintView', () => {
             expect(screen.queryByText(/Dto\./)).not.toBeInTheDocument();
         });
 
-        it('should show subtotal label as "Subtotal (PVP Bruto)"', () => {
+        it('should show subtotal label as "Suma de los conceptos (PVP)"', () => {
             render(<BudgetPrintView open={true} onOpenChange={vi.fn()} data={createMockPrintData()} />);
-            expect(screen.getByText('Subtotal (PVP Bruto)')).toBeInTheDocument();
+            expect(screen.getByText('Suma de los conceptos (PVP)')).toBeInTheDocument();
         });
     });
 
