@@ -46,13 +46,13 @@ const AnimatedFlame: React.FC<AnimatedFlameProps> = ({
       <span className="animated-flame-glow" />
 
       {/* Base flame (largest, slowest) */}
-      <Flame className={`animated-flame-base ${s.icon}`} />
+      <Flame className={`animated-flame-base ${s.icon}`} fill="currentColor" strokeWidth={1.5} />
 
       {/* Middle flame (medium, offset timing) */}
-      <Flame className={`animated-flame-mid ${s.icon}`} />
+      <Flame className={`animated-flame-mid ${s.icon}`} fill="currentColor" strokeWidth={1} />
 
       {/* Top flame (smallest, fastest flicker) */}
-      <Flame className={`animated-flame-top ${s.icon}`} />
+      <Flame className={`animated-flame-top ${s.icon}`} fill="currentColor" strokeWidth={0.5} />
     </span>
   );
 };

@@ -152,10 +152,9 @@ const ContractForm: React.FC<ContractFormProps> = ({
           total,
           model_option_id,
           model_options(name),
-          engine_option:engine_options(name, power, transmission),
-          exterior_color:exterior_color_options(name)
+          engine_option:engine_options(name)
         `)
-        .eq('project_id', project.id)
+        .eq('client_id', project.id)
         .eq('is_primary', true)
         .limit(1)
         .maybeSingle();
@@ -380,10 +379,10 @@ const ContractForm: React.FC<ContractFormProps> = ({
   }, [clientBillingData, existingContract, formData.id]);
 
   // Usar hook para comparar especificaciones
-  const vehicleSpecsComparison = useVehicleSpecsComparison(vehicleData, {
-    engine_option: primaryBudget?.engine_option,
-    exterior_color: primaryBudget?.exterior_color,
-    model_option: primaryBudget?.model_options
+  const vehicleSpecsComparison = useVehicleSpecsComparison((vehicleData as any) ?? null, {
+    engine_option: primaryBudget?.engine_option as any,
+    exterior_color: null as any,
+    model_option: primaryBudget?.model_options as any
   });
 
   // Actualizar precio total desde presupuesto primario
@@ -411,16 +410,23 @@ const ContractForm: React.FC<ContractFormProps> = ({
     }
   }, [vehicleData]);
 
-  // Actualizar model desde presupuesto primario
+  // Actualizar model y motorización desde presupuesto primario
   useEffect(() => {
     if (import.meta.env.DEV) console.log('Primary budget effect triggered:', primaryBudget);
     if (primaryBudget) {
       // Obtener el nombre del modelo desde la relación model_options
       const modelName = primaryBudget.model_options?.name || 'Modelo pendiente de especificar';
       if (import.meta.env.DEV) console.log('Model name from budget:', modelName);
+
+      // Construir la descripción del motor desde engine_option
+      const engineOption = primaryBudget.engine_option as any;
+      const engineDesc = engineOption?.name || '';
+
       setFormData(prev => ({
         ...prev,
-        vehicle_model: modelName
+        vehicle_model: modelName,
+        // Solo rellenar vehicle_engine si está vacío (no sobreescribir datos de un contrato existente)
+        vehicle_engine: prev.vehicle_engine || engineDesc
       }));
     }
   }, [primaryBudget]);
@@ -663,6 +669,22 @@ const ContractForm: React.FC<ContractFormProps> = ({
     return false;
   };
 
+  // Helper: determinar si un campo está vacío para resaltarlo visualmente
+  const isFieldEmpty = (field: keyof ContractData) => {
+    const value = formData[field];
+    if (typeof value === 'string') return !value || value.trim() === '';
+    if (typeof value === 'number') return value === 0;
+    return !value;
+  };
+
+  // Helper: devolver clases CSS para campos vacíos (amber) vs rellenos
+  const getFieldStyle = (field: keyof ContractData, extraClass = '') => {
+    const empty = isFieldEmpty(field);
+    const base = isFieldReadOnly(field as string) ? 'bg-muted' : '';
+    const highlight = empty ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : '';
+    return `${base} ${highlight} ${extraClass}`.trim();
+  };
+
 
   // Función para formatear valores de input que pueden estar vacíos
   const formatInputValue = (value: number | undefined | null) => {
@@ -786,6 +808,13 @@ const ContractForm: React.FC<ContractFormProps> = ({
           </div>
           <Progress value={progressPercentage} className="h-2" />
         </div>
+        {/* Leyenda de colores */}
+        {progressPercentage < 100 && (
+          <div className="flex items-center gap-2 pt-1">
+            <span className="inline-block w-3 h-3 rounded border-2 border-amber-400 bg-amber-50"></span>
+            <span className="text-xs text-muted-foreground">Los campos resaltados en <span className="font-semibold text-amber-600">amarillo</span> están pendientes de rellenar</span>
+          </div>
+        )}
       </div>
 
       {/* Alert de discrepancias de especificaciones - solo para acuerdo de compraventa */}
@@ -815,7 +844,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
               value={formData.client_full_name || ''}
               onChange={(e) => handleInputChange('client_full_name', e.target.value)}
               readOnly={isFieldReadOnly('client_full_name')}
-              className={isFieldReadOnly('client_full_name') ? "bg-muted" : ""}
+              placeholder="Pendiente de rellenar"
+              className={getFieldStyle('client_full_name')}
             />
           </div>
 
@@ -826,7 +856,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
               value={formData.client_dni || ''}
               onChange={(e) => handleInputChange('client_dni', e.target.value)}
               readOnly={isFieldReadOnly('client_dni')}
-              className={isFieldReadOnly('client_dni') ? "bg-muted" : ""}
+              placeholder="Pendiente de rellenar"
+              className={getFieldStyle('client_dni')}
             />
           </div>
 
@@ -838,7 +869,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
               value={formData.client_email || ''}
               onChange={(e) => handleInputChange('client_email', e.target.value)}
               readOnly={isFieldReadOnly('client_email')}
-              className={isFieldReadOnly('client_email') ? "bg-muted" : ""}
+              placeholder="Pendiente de rellenar"
+              className={getFieldStyle('client_email')}
             />
           </div>
 
@@ -849,7 +881,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
               value={formData.client_phone || ''}
               onChange={(e) => handleInputChange('client_phone', e.target.value)}
               readOnly={isFieldReadOnly('client_phone')}
-              className={isFieldReadOnly('client_phone') ? "bg-muted" : ""}
+              placeholder="Pendiente de rellenar"
+              className={getFieldStyle('client_phone')}
             />
           </div>
         </div>
@@ -865,7 +898,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
               value={formData.billing_entity_name || ''}
               onChange={(e) => handleInputChange('billing_entity_name', e.target.value)}
               readOnly={isFieldReadOnly('billing_entity_name')}
-              className={isFieldReadOnly('billing_entity_name') ? "bg-muted" : ""}
+              placeholder="Pendiente de rellenar"
+              className={getFieldStyle('billing_entity_name')}
             />
           </div>
 
@@ -876,7 +910,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
               value={formData.billing_entity_nif || ''}
               onChange={(e) => handleInputChange('billing_entity_nif', e.target.value)}
               readOnly={isFieldReadOnly('billing_entity_nif')}
-              className={isFieldReadOnly('billing_entity_nif') ? "bg-muted" : ""}
+              placeholder="Pendiente de rellenar"
+              className={getFieldStyle('billing_entity_nif')}
             />
           </div>
 
@@ -887,7 +922,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
               value={formData.billing_address || ''}
               onChange={(e) => handleInputChange('billing_address', e.target.value)}
               readOnly={isFieldReadOnly('billing_address')}
-              className={isFieldReadOnly('billing_address') ? "bg-muted" : ""}
+              placeholder="Pendiente de rellenar"
+              className={getFieldStyle('billing_address')}
             />
           </div>
 
@@ -919,10 +955,11 @@ const ContractForm: React.FC<ContractFormProps> = ({
             <Label htmlFor="vehicle_model">Modelo Nomade</Label>
             <Input
               id="vehicle_model"
-              value={formData.vehicle_model || 'Modelo pendiente de especificar'}
+              value={formData.vehicle_model || ''}
               onChange={(e) => handleInputChange('vehicle_model', e.target.value)}
               readOnly={isFieldReadOnly('vehicle_model')}
-              className={isFieldReadOnly('vehicle_model') ? "bg-muted" : ""}
+              placeholder="Pendiente — se rellenará desde el presupuesto"
+              className={getFieldStyle('vehicle_model')}
             />
           </div>
 
@@ -933,7 +970,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
               value={formData.vehicle_engine || ''}
               onChange={(e) => handleInputChange('vehicle_engine', e.target.value)}
               readOnly={isFieldReadOnly('vehicle_engine')}
-              className={isFieldReadOnly('vehicle_engine') ? "bg-muted" : ""}
+              placeholder="Pendiente — se rellenará desde el presupuesto"
+              className={getFieldStyle('vehicle_engine')}
             />
           </div>
 
@@ -944,7 +982,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
               value={formData.vehicle_vin || ''}
               onChange={(e) => handleInputChange('vehicle_vin', e.target.value)}
               readOnly={isFieldReadOnly('vehicle_vin')}
-              className={isFieldReadOnly('vehicle_vin') ? "bg-muted" : ""}
+              placeholder="Pendiente de rellenar"
+              className={getFieldStyle('vehicle_vin')}
             />
           </div>
 
@@ -955,7 +994,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
               value={formData.vehicle_plate || ''}
               onChange={(e) => handleInputChange('vehicle_plate', e.target.value)}
               readOnly={isFieldReadOnly('vehicle_plate')}
-              className={isFieldReadOnly('vehicle_plate') ? "bg-muted" : ""}
+              placeholder="Pendiente de rellenar"
+              className={getFieldStyle('vehicle_plate')}
             />
           </div>
         </div>

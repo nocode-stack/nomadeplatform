@@ -69,14 +69,14 @@ const Contratos = () => {
         }
     };
 
-    const allContracts = (rawContracts || []).map(c => ({
+    const allContracts = (rawContracts || []).map((c: any) => ({
         id: c.id.substring(0, 8).toUpperCase(),
         realId: c.id,
         projectId: c.client_id, // Usar client_id ahora para acciones
         contractType: c.contract_type,
         client: c.client_full_name || c.client?.name || 'Sin nombre',
         status: mapContractStatus(c.estado_visual),
-        date: (c.updated_at || c.created_at) ? format(new Date(c.updated_at || c.created_at), 'dd/MM/yyyy', { locale: es }) : 'N/A',
+        date: c.created_at ? format(new Date(c.created_at), 'dd/MM/yyyy', { locale: es }) : 'N/A',
         budgetCode: c.budget?.budget_code || 'Presupuesto no asignado',
         type: mapContractType(c.contract_type),
         isPrimary: c.budget?.is_primary || false,
@@ -396,7 +396,7 @@ const Contratos = () => {
 
                                     <div className="flex items-center space-x-8">
                                         <div className="hidden md:block text-right">
-                                            <p className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider mb-1">Última actualización</p>
+                                            <p className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider mb-1">Fecha de creación</p>
                                             <p className="text-xs font-bold text-foreground/80">{c.date}</p>
                                         </div>
 

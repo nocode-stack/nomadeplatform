@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Bookmark, Handshake, FileCheck, Loader2, Plus, Star, Eye, ArrowLeft, Save, Send, X } from 'lucide-react';
+import { Bookmark, Handshake, FileCheck, Loader2, Plus, Star, Eye, ArrowLeft, Save, Send, X, AlertTriangle } from 'lucide-react';
 import { useOptimizedContractQuery } from '../../hooks/useOptimizedContractQuery';
 import { useContractVersioning } from '../../hooks/useContractVersioning';
 import { useToggleContractPrimary } from '../../hooks/useToggleContractPrimary';
@@ -59,6 +59,9 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
     // Aggregated loading state
     const isLoading = isLoadingBudgets || isLoadingContracts;
 
+    // Block contract creation when there is no associated budget
+    const noBudget = !isLoading && !primaryBudgetId;
+
     const { generateContract, sendContract } = useContractVersioning(projectId || '');
     const togglePrimary = useToggleContractPrimary();
     const { toast } = useToast();
@@ -117,6 +120,10 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
 
     // Open the inline form
     const openForm = async (contractType: string) => {
+        if (noBudget) {
+            toast({ title: 'Sin presupuesto', description: 'Debes crear un presupuesto antes de generar un contrato.', variant: 'destructive' });
+            return;
+        }
         setCreatingType(contractType);
         try {
             const project = await fetchProjectData();
@@ -143,6 +150,10 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
     // Save contract
     const handleSave = async () => {
         if (!formData || !activeForm) return;
+        if (noBudget) {
+            toast({ title: 'Sin presupuesto', description: 'No se puede guardar un contrato sin presupuesto asociado.', variant: 'destructive' });
+            return;
+        }
         setIsSaving(true);
         try {
             await generateContract.mutateAsync({
@@ -150,6 +161,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                     ...formData,
                     project_id: projectId,
                     client_id: activeForm.project.new_clients?.id || formData.client_id || '',
+                    budget_id: primaryBudgetId,
                     contract_type: activeForm.contractType,
                     contract_status: 'generado',
                 },
@@ -167,6 +179,10 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
     // Send contract
     const handleSend = async () => {
         if (!activeForm) return;
+        if (noBudget) {
+            toast({ title: 'Sin presupuesto', description: 'No se puede enviar un contrato sin presupuesto asociado.', variant: 'destructive' });
+            return;
+        }
         setIsSending(true);
         try {
             // Save first if there's form data
@@ -176,6 +192,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                         ...formData,
                         project_id: projectId,
                         client_id: activeForm.project.new_clients?.id || formData.client_id || '',
+                        budget_id: primaryBudgetId,
                         contract_type: activeForm.contractType,
                         contract_status: 'generado',
                     },
@@ -309,6 +326,16 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                 <p className="text-sm text-muted-foreground">Cada proyecto requiere 3 contratos. Crea y gestiona cada uno de forma independiente.</p>
             </div>
 
+            {noBudget && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
+                    <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-500" />
+                    <div>
+                        <p className="text-sm font-semibold">No hay presupuesto asociado</p>
+                        <p className="text-xs text-amber-700">Para crear contratos, primero debes crear y aprobar un presupuesto en la pestaña de Presupuestos.</p>
+                    </div>
+                </div>
+            )}
+
             <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
                 <div className="divide-y divide-border/50">
                     {CONTRACT_TYPES.map((type) => {
@@ -386,8 +413,9 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                                         <button
                                             type="button"
                                             onClick={() => openForm(type.key)}
-                                            disabled={isCreating || !projectId}
+                                            disabled={isCreating || !projectId || noBudget}
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title={noBudget ? 'Crea un presupuesto primero' : undefined}
                                         >
                                             {isCreating ? (
                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

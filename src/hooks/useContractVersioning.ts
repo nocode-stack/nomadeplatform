@@ -52,11 +52,11 @@ export const useContractVersioning = (projectId: string) => {
 
       // Obtener datos actuales del proyecto con vehículo, cliente y presupuesto
       // removed debug log
+      // Obtener datos actuales del cliente y los vehículos
       const { data: projectData, error: projectError } = await supabase
-        .from('NEW_Projects')
+        .from('NEW_Clients')
         .select(`
           *,
-          new_clients:NEW_Clients(*),
           new_vehicles:NEW_Vehicles(*),
           budgets:NEW_Budget(
             *,
@@ -71,53 +71,49 @@ export const useContractVersioning = (projectId: string) => {
 
       if (projectError) {
         console.warn('⚠️ Non-fatal error fetching project data, will try fallback data:', projectError);
-      } else {
-        // removed debug log
       }
 
       // Obtener datos de facturación
       let billingData: any = null;
-      if (contractData.client_id) {
+      if (contractData.client_id || activeProjectId) {
         try {
-          // removed debug log
           const { data: bData } = await supabase
             .from('NEW_Billing')
             .select('*')
-            .eq('client_id', contractData.client_id)
+            .eq('client_id', contractData.client_id || activeProjectId)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
           billingData = bData;
-          // removed debug log
         } catch (e) {
           console.warn('⚠️ Error fetching billing data:', e);
         }
       }
 
       // Preparar datos combinados con información correcta del modelo
-      const primaryBudget = projectData?.budgets?.find(b => b.is_primary) || projectData?.budgets?.[0];
+      const primaryBudget = projectData?.budgets?.find((b: any) => b.is_primary) || projectData?.budgets?.[0];
 
       const vehicleModel = contractData.vehicle_model ||
         primaryBudget?.model_option?.name ||
-        (projectData?.new_vehicles as any)?.model ||
+        (projectData?.new_vehicles?.[0] as any)?.model ||
         'Modelo pendiente';
 
       // Construir el objeto de datos que se enviará al RPC
       // NOTA: Favorecemos los datos pasados explícitamente en contractData
       const combinedData = {
-        client_id: contractData.client_id,
-        client_full_name: contractData.client_full_name || projectData?.new_clients?.name || projectData?.client_name || '',
-        client_dni: contractData.client_dni || projectData?.new_clients?.dni || 'N/A',
-        client_email: contractData.client_email || projectData?.new_clients?.email || '',
-        client_phone: contractData.client_phone || projectData?.new_clients?.phone || '',
-        billing_entity_name: contractData.billing_entity_name || (billingData?.name !== (projectData?.new_clients?.name || contractData.client_full_name) ? billingData?.name : null),
+        client_id: contractData.client_id || activeProjectId,
+        client_full_name: contractData.client_full_name || projectData?.name || '',
+        client_dni: contractData.client_dni || projectData?.dni || 'N/A',
+        client_email: contractData.client_email || projectData?.email || '',
+        client_phone: contractData.client_phone || projectData?.phone || '',
+        billing_entity_name: contractData.billing_entity_name || (billingData?.name !== (projectData?.name || contractData.client_full_name) ? billingData?.name : null),
         billing_entity_nif: contractData.billing_entity_nif || billingData?.nif || null,
-        billing_address: contractData.billing_address || billingData?.billing_address || projectData?.new_clients?.address || 'Dirección pendiente',
+        billing_address: contractData.billing_address || billingData?.billing_address || projectData?.address || 'Dirección pendiente',
         budget_id: contractData.budget_id || primaryBudget?.id || null,
         vehicle_model: vehicleModel,
-        vehicle_vin: contractData.vehicle_vin || projectData?.new_vehicles?.numero_bastidor || '',
-        vehicle_plate: contractData.vehicle_plate || projectData?.new_vehicles?.matricula || '',
-        vehicle_engine: contractData.vehicle_engine || primaryBudget?.engine_option?.name || projectData?.new_vehicles?.engine || '',
+        vehicle_vin: contractData.vehicle_vin || projectData?.new_vehicles?.[0]?.numero_bastidor || '',
+        vehicle_plate: contractData.vehicle_plate || projectData?.new_vehicles?.[0]?.matricula || '',
+        vehicle_engine: contractData.vehicle_engine || primaryBudget?.engine_option?.name || projectData?.new_vehicles?.[0]?.engine || '',
         total_price: contractData.total_price || primaryBudget?.total || 0,
         payment_reserve: contractData.payment_reserve || 0,
         payment_conditions: contractData.payment_conditions || '',
