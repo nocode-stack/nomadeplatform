@@ -14,6 +14,649 @@ export type Database = {
   }
   public: {
     Tables: {
+      additional_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_general: boolean | null
+          name: string
+          order_index: number
+          price: number
+          price_export: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_general?: boolean | null
+          name: string
+          order_index?: number
+          price?: number
+          price_export?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_general?: boolean | null
+          name?: string
+          order_index?: number
+          price?: number
+          price_export?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      billing: {
+        Row: {
+          billing_address: string | null
+          client_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+          nif: string | null
+          phone: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_address?: string | null
+          client_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          nif?: string | null
+          phone?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_address?: string | null
+          client_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          nif?: string | null
+          phone?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget: {
+        Row: {
+          base_price: number
+          budget_code: string | null
+          client_id: string | null
+          color_modifier: number
+          comunidad_autonoma: string | null
+          created_at: string
+          created_by: string | null
+          discount_amount: number
+          discount_percentage: number | null
+          electric_system_id: string | null
+          electric_system_price: number
+          engine_option_id: string | null
+          id: string
+          interior_color_id: string | null
+          is_active: boolean | null
+          is_primary: boolean | null
+          iva_rate: number | null
+          location: string | null
+          model_option_id: string | null
+          notes: string | null
+          pack_id: string | null
+          pack_price: number
+          reservation_amount: number | null
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          base_price?: number
+          budget_code?: string | null
+          client_id?: string | null
+          color_modifier?: number
+          comunidad_autonoma?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_amount: number
+          discount_percentage?: number | null
+          electric_system_id?: string | null
+          electric_system_price?: number
+          engine_option_id?: string | null
+          id?: string
+          interior_color_id?: string | null
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          iva_rate?: number | null
+          location?: string | null
+          model_option_id?: string | null
+          notes?: string | null
+          pack_id?: string | null
+          pack_price?: number
+          reservation_amount?: number | null
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          budget_code?: string | null
+          client_id?: string | null
+          color_modifier?: number
+          comunidad_autonoma?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number
+          discount_percentage?: number | null
+          electric_system_id?: string | null
+          electric_system_price?: number
+          engine_option_id?: string | null
+          id?: string
+          interior_color_id?: string | null
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          iva_rate?: number | null
+          location?: string | null
+          model_option_id?: string | null
+          notes?: string | null
+          pack_id?: string | null
+          pack_price?: number
+          reservation_amount?: number | null
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_electric_system_id_fkey"
+            columns: ["electric_system_id"]
+            isOneToOne: false
+            referencedRelation: "electric_system"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_engine_option_id_fkey"
+            columns: ["engine_option_id"]
+            isOneToOne: false
+            referencedRelation: "engine_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_interior_color_id_fkey"
+            columns: ["interior_color_id"]
+            isOneToOne: false
+            referencedRelation: "interior_color_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_model_option_id_fkey"
+            columns: ["model_option_id"]
+            isOneToOne: false
+            referencedRelation: "model_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "budget_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_items: {
+        Row: {
+          budget_id: string | null
+          concept_id: string | null
+          created_at: string
+          discount_percentage: number | null
+          discount_reason_id: string | null
+          id: string
+          is_custom: boolean
+          is_discount: boolean
+          line_total: number
+          name: string
+          order_index: number | null
+          pack_id: string | null
+          price: number
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          budget_id?: string | null
+          concept_id?: string | null
+          created_at?: string
+          discount_percentage?: number | null
+          discount_reason_id?: string | null
+          id?: string
+          is_custom?: boolean
+          is_discount?: boolean
+          line_total: number
+          name: string
+          order_index?: number | null
+          pack_id?: string | null
+          price: number
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          budget_id?: string | null
+          concept_id?: string | null
+          created_at?: string
+          discount_percentage?: number | null
+          discount_reason_id?: string | null
+          id?: string
+          is_custom?: boolean
+          is_discount?: boolean
+          line_total?: number
+          name?: string
+          order_index?: number | null
+          pack_id?: string | null
+          price?: number
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_items_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budget"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_pack_components: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          order_index: number
+          pack_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          order_index?: number
+          pack_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          order_index?: number
+          pack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_pack_components_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "budget_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_packs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number | null
+          price_export: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number | null
+          price_export?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number | null
+          price_export?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      budget_packs_extras: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          order_index: number
+          price: number
+          price_export: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          order_index?: number
+          price?: number
+          price_export?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          order_index?: number
+          price?: number
+          price_export?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      budget_packs_extras_components: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          order_index: number
+          pack_extra_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          order_index?: number
+          pack_extra_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          order_index?: number
+          pack_extra_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_packs_extras_components_pack_extra_id_fkey"
+            columns: ["pack_extra_id"]
+            isOneToOne: false
+            referencedRelation: "budget_packs_extras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_transport: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          order_index: number
+          price: number
+          price_export: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          order_index?: number
+          price?: number
+          price_export?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          order_index?: number
+          price?: number
+          price_export?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          address: string | null
+          birthdate: string | null
+          client_code: string | null
+          client_status: string
+          client_type: string | null
+          created_at: string
+          dni: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          is_hot_lead: boolean | null
+          name: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          birthdate?: string | null
+          client_code?: string | null
+          client_status?: string
+          client_type?: string | null
+          created_at?: string
+          dni?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_hot_lead?: boolean | null
+          name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          birthdate?: string | null
+          client_code?: string | null
+          client_status?: string
+          client_type?: string | null
+          created_at?: string
+          dni?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_hot_lead?: boolean | null
+          name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      contracts: {
+        Row: {
+          billing_address: string
+          billing_entity_name: string | null
+          billing_entity_nif: string | null
+          budget_id: string | null
+          client_dni: string | null
+          client_email: string
+          client_full_name: string
+          client_id: string
+          client_phone: string | null
+          contract_status: string
+          contract_type: string
+          created_at: string
+          delivery_months: number | null
+          estado_visual: string
+          iban: string
+          id: string
+          is_active: boolean
+          is_latest: boolean | null
+          is_primary: boolean | null
+          parent_contract_id: string | null
+          payment_conditions: string | null
+          payment_first_amount: number | null
+          payment_first_percentage: number | null
+          payment_reserve: number | null
+          payment_second_amount: number | null
+          payment_second_percentage: number | null
+          payment_third_amount: number | null
+          payment_third_percentage: number | null
+          project_id: string
+          signaturit_id: string | null
+          signed_pdf_url: string | null
+          total_price: number
+          updated_at: string
+          vehicle_engine: string | null
+          vehicle_model: string
+          vehicle_plate: string | null
+          vehicle_vin: string | null
+          version: number
+        }
+        Insert: {
+          billing_address: string
+          billing_entity_name?: string | null
+          billing_entity_nif?: string | null
+          budget_id?: string | null
+          client_dni?: string | null
+          client_email: string
+          client_full_name: string
+          client_id: string
+          client_phone?: string | null
+          contract_status?: string
+          contract_type: string
+          created_at?: string
+          delivery_months?: number | null
+          estado_visual?: string
+          iban: string
+          id?: string
+          is_active?: boolean
+          is_latest?: boolean | null
+          is_primary?: boolean | null
+          parent_contract_id?: string | null
+          payment_conditions?: string | null
+          payment_first_amount?: number | null
+          payment_first_percentage?: number | null
+          payment_reserve?: number | null
+          payment_second_amount?: number | null
+          payment_second_percentage?: number | null
+          payment_third_amount?: number | null
+          payment_third_percentage?: number | null
+          project_id: string
+          signaturit_id?: string | null
+          signed_pdf_url?: string | null
+          total_price: number
+          updated_at?: string
+          vehicle_engine?: string | null
+          vehicle_model: string
+          vehicle_plate?: string | null
+          vehicle_vin?: string | null
+          version?: number
+        }
+        Update: {
+          billing_address?: string
+          billing_entity_name?: string | null
+          billing_entity_nif?: string | null
+          budget_id?: string | null
+          client_dni?: string | null
+          client_email?: string
+          client_full_name?: string
+          client_id?: string
+          client_phone?: string | null
+          contract_status?: string
+          contract_type?: string
+          created_at?: string
+          delivery_months?: number | null
+          estado_visual?: string
+          iban?: string
+          id?: string
+          is_active?: boolean
+          is_latest?: boolean | null
+          is_primary?: boolean | null
+          parent_contract_id?: string | null
+          payment_conditions?: string | null
+          payment_first_amount?: number | null
+          payment_first_percentage?: number | null
+          payment_reserve?: number | null
+          payment_second_amount?: number | null
+          payment_second_percentage?: number | null
+          payment_third_amount?: number | null
+          payment_third_percentage?: number | null
+          project_id?: string
+          signaturit_id?: string | null
+          signed_pdf_url?: string | null
+          total_price?: number
+          updated_at?: string
+          vehicle_engine?: string | null
+          vehicle_model?: string
+          vehicle_plate?: string | null
+          vehicle_vin?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "budget"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_parent_contract_id_fkey"
+            columns: ["parent_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       department_permissions: {
         Row: {
           created_at: string
@@ -72,6 +715,60 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      electric_system: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_price: number | null
+          discount_price_export: number | null
+          id: string
+          is_active: boolean
+          is_standalone: boolean
+          name: string
+          order_index: number
+          pack_pricing_rules: Json | null
+          price: number
+          price_export: number
+          required_packs: string[] | null
+          system_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_price?: number | null
+          discount_price_export?: number | null
+          id?: string
+          is_active?: boolean
+          is_standalone?: boolean
+          name: string
+          order_index?: number
+          pack_pricing_rules?: Json | null
+          price?: number
+          price_export?: number
+          required_packs?: string[] | null
+          system_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_price?: number | null
+          discount_price_export?: number | null
+          id?: string
+          is_active?: boolean
+          is_standalone?: boolean
+          name?: string
+          order_index?: number
+          pack_pricing_rules?: Json | null
+          price?: number
+          price_export?: number
+          required_packs?: string[] | null
+          system_type?: string
           updated_at?: string
         }
         Relationships: []
@@ -178,952 +875,7 @@ export type Database = {
         }
         Relationships: []
       }
-      NEW_Billing: {
-        Row: {
-          billing_address: string | null
-          client_id: string | null
-          created_at: string
-          email: string | null
-          id: string
-          name: string | null
-          nif: string | null
-          phone: string | null
-          type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          billing_address?: string | null
-          client_id?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          name?: string | null
-          nif?: string | null
-          phone?: string | null
-          type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          billing_address?: string | null
-          client_id?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          name?: string | null
-          nif?: string | null
-          phone?: string | null
-          type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Billing_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      NEW_Budget: {
-        Row: {
-          base_price: number
-          budget_code: string | null
-          client_id: string | null
-          color_modifier: number
-          comunidad_autonoma: string | null
-          created_at: string
-          created_by: string | null
-          discount_amount: number
-          discount_percentage: number | null
-          electric_system_id: string | null
-          electric_system_price: number
-          engine_option_id: string | null
-          id: string
-          interior_color_id: string | null
-          is_active: boolean | null
-          is_primary: boolean | null
-          iva_rate: number | null
-          location: string | null
-          model_option_id: string | null
-          notes: string | null
-          pack_id: string | null
-          pack_price: number
-          project_id: string | null
-          reservation_amount: number | null
-          status: string
-          subtotal: number
-          total: number
-          updated_at: string
-        }
-        Insert: {
-          base_price?: number
-          budget_code?: string | null
-          client_id?: string | null
-          color_modifier?: number
-          comunidad_autonoma?: string | null
-          created_at?: string
-          created_by?: string | null
-          discount_amount: number
-          discount_percentage?: number | null
-          electric_system_id?: string | null
-          electric_system_price?: number
-          engine_option_id?: string | null
-          id?: string
-          interior_color_id?: string | null
-          is_active?: boolean | null
-          is_primary?: boolean | null
-          iva_rate?: number | null
-          location?: string | null
-          model_option_id?: string | null
-          notes?: string | null
-          pack_id?: string | null
-          pack_price?: number
-          project_id?: string | null
-          reservation_amount?: number | null
-          status?: string
-          subtotal?: number
-          total?: number
-          updated_at?: string
-        }
-        Update: {
-          base_price?: number
-          budget_code?: string | null
-          client_id?: string | null
-          color_modifier?: number
-          comunidad_autonoma?: string | null
-          created_at?: string
-          created_by?: string | null
-          discount_amount?: number
-          discount_percentage?: number | null
-          electric_system_id?: string | null
-          electric_system_price?: number
-          engine_option_id?: string | null
-          id?: string
-          interior_color_id?: string | null
-          is_active?: boolean | null
-          is_primary?: boolean | null
-          iva_rate?: number | null
-          location?: string | null
-          model_option_id?: string | null
-          notes?: string | null
-          pack_id?: string | null
-          pack_price?: number
-          project_id?: string | null
-          reservation_amount?: number | null
-          status?: string
-          subtotal?: number
-          total?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Budget_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Budget_electric_system_id_fkey"
-            columns: ["electric_system_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Budget_Electric"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Budget_engine_option_id_fkey"
-            columns: ["engine_option_id"]
-            isOneToOne: false
-            referencedRelation: "engine_options"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Budget_interior_color_id_fkey"
-            columns: ["interior_color_id"]
-            isOneToOne: false
-            referencedRelation: "interior_color_options"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Budget_model_option_id_fkey"
-            columns: ["model_option_id"]
-            isOneToOne: false
-            referencedRelation: "model_options"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Budget_pack_id_fkey"
-            columns: ["pack_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Budget_Packs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Budget_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Budget_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_assignments_status"
-            referencedColumns: ["project_id"]
-          },
-        ]
-      }
-      NEW_Budget_Additional_Items: {
-        Row: {
-          category: string
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean
-          is_general: boolean | null
-          name: string
-          order_index: number
-          price: number
-          price_export: number
-          updated_at: string
-        }
-        Insert: {
-          category?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          is_general?: boolean | null
-          name: string
-          order_index?: number
-          price?: number
-          price_export?: number
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          is_general?: boolean | null
-          name?: string
-          order_index?: number
-          price?: number
-          price_export?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      NEW_Budget_Discounts: {
-        Row: {
-          code: string
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean
-          label: string
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          label: string
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          label?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      NEW_Budget_Electric: {
-        Row: {
-          created_at: string
-          description: string | null
-          discount_price: number | null
-          id: string
-          is_active: boolean
-          is_standalone: boolean
-          name: string
-          order_index: number
-          pack_pricing_rules: Json | null
-          price: number
-          price_export: number
-          required_packs: string[] | null
-          system_type: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          discount_price?: number | null
-          id?: string
-          is_active?: boolean
-          is_standalone?: boolean
-          name: string
-          order_index?: number
-          pack_pricing_rules?: Json | null
-          price?: number
-          price_export?: number
-          required_packs?: string[] | null
-          system_type?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          discount_price?: number | null
-          id?: string
-          is_active?: boolean
-          is_standalone?: boolean
-          name?: string
-          order_index?: number
-          pack_pricing_rules?: Json | null
-          price?: number
-          price_export?: number
-          required_packs?: string[] | null
-          system_type?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      NEW_Budget_Items: {
-        Row: {
-          budget_id: string | null
-          concept_id: string | null
-          created_at: string
-          discount_percentage: number | null
-          discount_reason_id: string | null
-          id: string
-          is_custom: boolean
-          is_discount: boolean
-          line_total: number
-          name: string
-          order_index: number | null
-          pack_id: string | null
-          price: number
-          quantity: number
-          updated_at: string
-        }
-        Insert: {
-          budget_id?: string | null
-          concept_id?: string | null
-          created_at?: string
-          discount_percentage?: number | null
-          discount_reason_id?: string | null
-          id?: string
-          is_custom?: boolean
-          is_discount?: boolean
-          line_total: number
-          name: string
-          order_index?: number | null
-          pack_id?: string | null
-          price: number
-          quantity?: number
-          updated_at?: string
-        }
-        Update: {
-          budget_id?: string | null
-          concept_id?: string | null
-          created_at?: string
-          discount_percentage?: number | null
-          discount_reason_id?: string | null
-          id?: string
-          is_custom?: boolean
-          is_discount?: boolean
-          line_total?: number
-          name?: string
-          order_index?: number | null
-          pack_id?: string | null
-          price?: number
-          quantity?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Budget_Items_budget_id_fkey"
-            columns: ["budget_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Budget"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      NEW_Budget_Pack_Components: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-          order_index: number
-          pack_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-          order_index?: number
-          pack_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-          order_index?: number
-          pack_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Budget_Pack_Components_pack_id_fkey"
-            columns: ["pack_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Budget_Packs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      NEW_Budget_Packs: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean
-          name: string
-          price: number | null
-          price_export: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          price?: number | null
-          price_export?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          price?: number | null
-          price_export?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      NEW_Budget_Packs_Extras: {
-        Row: {
-          created_at: string | null
-          id: string
-          is_active: boolean
-          name: string
-          order_index: number
-          price: number
-          price_export: number
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          order_index?: number
-          price?: number
-          price_export?: number
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          order_index?: number
-          price?: number
-          price_export?: number
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      NEW_Budget_Packs_Extras_Components: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-          order_index: number
-          pack_extra_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-          order_index?: number
-          pack_extra_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-          order_index?: number
-          pack_extra_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Budget_Packs_Extras_Components_pack_extra_id_fkey"
-            columns: ["pack_extra_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Budget_Packs_Extras"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      NEW_Budget_Transport: {
-        Row: {
-          created_at: string | null
-          id: string
-          is_active: boolean
-          name: string
-          order_index: number
-          price: number
-          price_export: number
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          order_index?: number
-          price?: number
-          price_export?: number
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          order_index?: number
-          price?: number
-          price_export?: number
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      NEW_Clients: {
-        Row: {
-          address: string | null
-          birthdate: string | null
-          client_code: string | null
-          client_status: string
-          client_type: string | null
-          created_at: string
-          dni: string | null
-          email: string | null
-          id: string
-          is_active: boolean | null
-          is_hot_lead: boolean | null
-          name: string | null
-          phone: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          address?: string | null
-          birthdate?: string | null
-          client_code?: string | null
-          client_status?: string
-          client_type?: string | null
-          created_at?: string
-          dni?: string | null
-          email?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_hot_lead?: boolean | null
-          name?: string | null
-          phone?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          address?: string | null
-          birthdate?: string | null
-          client_code?: string | null
-          client_status?: string
-          client_type?: string | null
-          created_at?: string
-          dni?: string | null
-          email?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_hot_lead?: boolean | null
-          name?: string | null
-          phone?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      NEW_Comments: {
-        Row: {
-          created_at: string
-          id: string
-          is_important: boolean
-          message: string
-          project_id: string
-          tagged_user_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_important?: boolean
-          message: string
-          project_id: string
-          tagged_user_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_important?: boolean
-          message?: string
-          project_id?: string
-          tagged_user_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Comments_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Comments_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_assignments_status"
-            referencedColumns: ["project_id"]
-          },
-          {
-            foreignKeyName: "NEW_Comments_tagged_user_id_fkey"
-            columns: ["tagged_user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "NEW_Comments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      NEW_Contracts: {
-        Row: {
-          billing_address: string
-          billing_entity_name: string | null
-          billing_entity_nif: string | null
-          client_dni: string | null
-          client_email: string
-          client_full_name: string
-          client_id: string
-          client_phone: string | null
-          contract_status: string
-          contract_type: string
-          created_at: string
-          delivery_months: number | null
-          estado_visual: string
-          iban: string
-          id: string
-          is_active: boolean
-          is_latest: boolean | null
-          is_primary: boolean | null
-          parent_contract_id: string | null
-          payment_conditions: string | null
-          payment_first_amount: number | null
-          payment_first_percentage: number | null
-          payment_reserve: number | null
-          payment_second_amount: number | null
-          payment_second_percentage: number | null
-          payment_third_amount: number | null
-          payment_third_percentage: number | null
-          project_id: string
-          signaturit_id: string | null
-          signed_pdf_url: string | null
-          total_price: number
-          updated_at: string
-          vehicle_engine: string | null
-          vehicle_model: string
-          vehicle_plate: string | null
-          vehicle_vin: string | null
-          version: number
-        }
-        Insert: {
-          billing_address: string
-          billing_entity_name?: string | null
-          billing_entity_nif?: string | null
-          client_dni?: string | null
-          client_email: string
-          client_full_name: string
-          client_id: string
-          client_phone?: string | null
-          contract_status?: string
-          contract_type: string
-          created_at?: string
-          delivery_months?: number | null
-          estado_visual?: string
-          iban: string
-          id?: string
-          is_active?: boolean
-          is_latest?: boolean | null
-          is_primary?: boolean | null
-          parent_contract_id?: string | null
-          payment_conditions?: string | null
-          payment_first_amount?: number | null
-          payment_first_percentage?: number | null
-          payment_reserve?: number | null
-          payment_second_amount?: number | null
-          payment_second_percentage?: number | null
-          payment_third_amount?: number | null
-          payment_third_percentage?: number | null
-          project_id: string
-          signaturit_id?: string | null
-          signed_pdf_url?: string | null
-          total_price: number
-          updated_at?: string
-          vehicle_engine?: string | null
-          vehicle_model: string
-          vehicle_plate?: string | null
-          vehicle_vin?: string | null
-          version?: number
-        }
-        Update: {
-          billing_address?: string
-          billing_entity_name?: string | null
-          billing_entity_nif?: string | null
-          client_dni?: string | null
-          client_email?: string
-          client_full_name?: string
-          client_id?: string
-          client_phone?: string | null
-          contract_status?: string
-          contract_type?: string
-          created_at?: string
-          delivery_months?: number | null
-          estado_visual?: string
-          iban?: string
-          id?: string
-          is_active?: boolean
-          is_latest?: boolean | null
-          is_primary?: boolean | null
-          parent_contract_id?: string | null
-          payment_conditions?: string | null
-          payment_first_amount?: number | null
-          payment_first_percentage?: number | null
-          payment_reserve?: number | null
-          payment_second_amount?: number | null
-          payment_second_percentage?: number | null
-          payment_third_amount?: number | null
-          payment_third_percentage?: number | null
-          project_id?: string
-          signaturit_id?: string | null
-          signed_pdf_url?: string | null
-          total_price?: number
-          updated_at?: string
-          vehicle_engine?: string | null
-          vehicle_model?: string
-          vehicle_plate?: string | null
-          vehicle_vin?: string | null
-          version?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "new_contracts_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Contracts_parent_contract_id_fkey"
-            columns: ["parent_contract_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Contracts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "new_contracts_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "new_contracts_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_assignments_status"
-            referencedColumns: ["project_id"]
-          },
-        ]
-      }
-      NEW_Incident_Items: {
-        Row: {
-          category: string
-          created_at: string
-          description: string
-          id: string
-          incident_id: string
-          priority: string | null
-          updated_at: string
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          description: string
-          id?: string
-          incident_id: string
-          priority?: string | null
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string
-          id?: string
-          incident_id?: string
-          priority?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Incident_Items_incident_id_fkey"
-            columns: ["incident_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Incidents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      NEW_Incident_Status: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean
-          label: string
-          order_index: number
-          status_code: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          label: string
-          order_index: number
-          status_code: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          label?: string
-          order_index?: number
-          status_code?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      NEW_Incidents: {
-        Row: {
-          category: string
-          created_at: string
-          description: string
-          id: string
-          incident_date: string
-          photos: Json | null
-          project_id: string
-          reference_number: string | null
-          repair_entry_date: string | null
-          repair_exit_date: string | null
-          status_id: string | null
-          updated_at: string
-          workshop: string
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          description: string
-          id?: string
-          incident_date: string
-          photos?: Json | null
-          project_id: string
-          reference_number?: string | null
-          repair_entry_date?: string | null
-          repair_exit_date?: string | null
-          status_id?: string | null
-          updated_at?: string
-          workshop: string
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string
-          id?: string
-          incident_date?: string
-          photos?: Json | null
-          project_id?: string
-          reference_number?: string | null
-          repair_entry_date?: string | null
-          repair_exit_date?: string | null
-          status_id?: string | null
-          updated_at?: string
-          workshop?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Incidents_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Incidents_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_assignments_status"
-            referencedColumns: ["project_id"]
-          },
-          {
-            foreignKeyName: "NEW_Incidents_status_id_fkey"
-            columns: ["status_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Incident_Status"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      NEW_Nomade_Info: {
+      nomade_info: {
         Row: {
           address: string
           bank_sabadell: string
@@ -1168,151 +920,7 @@ export type Database = {
         }
         Relationships: []
       }
-      NEW_Production_Schedule: {
-        Row: {
-          created_at: string
-          end_date: string
-          id: string
-          production_code: string
-          project_id: string | null
-          start_date: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          end_date: string
-          id?: string
-          production_code: string
-          project_id?: string | null
-          start_date: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          end_date?: string
-          id?: string
-          production_code?: string
-          project_id?: string | null
-          start_date?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Production_Schedule_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Production_Schedule_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_assignments_status"
-            referencedColumns: ["project_id"]
-          },
-        ]
-      }
-      NEW_Production_Settings: {
-        Row: {
-          applies_from_slot_id: string | null
-          created_at: string
-          days_between_slots: number
-          default_slot_duration: number
-          id: string
-          is_active: boolean
-          last_updated_by: string | null
-          updated_at: string
-        }
-        Insert: {
-          applies_from_slot_id?: string | null
-          created_at?: string
-          days_between_slots: number
-          default_slot_duration: number
-          id?: string
-          is_active?: boolean
-          last_updated_by?: string | null
-          updated_at?: string
-        }
-        Update: {
-          applies_from_slot_id?: string | null
-          created_at?: string
-          days_between_slots?: number
-          default_slot_duration?: number
-          id?: string
-          is_active?: boolean
-          last_updated_by?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Production_Settings_applies_from_slot_id_fkey"
-            columns: ["applies_from_slot_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Production_Schedule"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      NEW_Project_Phase_Progress: {
-        Row: {
-          comments: string | null
-          created_at: string
-          end_date: string | null
-          id: string
-          phase_template_id: string
-          project_id: string
-          start_date: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          comments?: string | null
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          phase_template_id: string
-          project_id: string
-          start_date?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          comments?: string | null
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          phase_template_id?: string
-          project_id?: string
-          start_date?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Project_Phase_Progress_phase_template_id_fkey"
-            columns: ["phase_template_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Project_Phase_Template"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Project_Phase_Progress_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Project_Phase_Progress_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_assignments_status"
-            referencedColumns: ["project_id"]
-          },
-        ]
-      }
-      NEW_Project_Phase_Template: {
+      project_phase_template: {
         Row: {
           created_at: string
           group: string
@@ -1342,193 +950,6 @@ export type Database = {
         }
         Relationships: []
       }
-      NEW_Projects: {
-        Row: {
-          client_id: string | null
-          client_name: string | null
-          comercial: string | null
-          comments: string | null
-          created_at: string
-          delivery_date: string | null
-          id: string
-          project_code: string | null
-          slot_id: string | null
-          start_date: string | null
-          status: string | null
-          updated_at: string | null
-          vehicle_id: string | null
-        }
-        Insert: {
-          client_id?: string | null
-          client_name?: string | null
-          comercial?: string | null
-          comments?: string | null
-          created_at?: string
-          delivery_date?: string | null
-          id?: string
-          project_code?: string | null
-          slot_id?: string | null
-          start_date?: string | null
-          status?: string | null
-          updated_at?: string | null
-          vehicle_id?: string | null
-        }
-        Update: {
-          client_id?: string | null
-          client_name?: string | null
-          comercial?: string | null
-          comments?: string | null
-          created_at?: string
-          delivery_date?: string | null
-          id?: string
-          project_code?: string | null
-          slot_id?: string | null
-          start_date?: string | null
-          status?: string | null
-          updated_at?: string | null
-          vehicle_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Projects_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Projects_slot_id_fkey"
-            columns: ["slot_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Production_Schedule"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Projects_vehicle_id_fkey"
-            columns: ["vehicle_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Vehicles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      NEW_Vehicles: {
-        Row: {
-          created_at: string
-          dimensions: string | null
-          engine: string | null
-          estado_pago: string | null
-          exterior_color: string | null
-          fecha_pago: string | null
-          id: string
-          location: string | null
-          matricula: string | null
-          numero_bastidor: string
-          plazas: string | null
-          project_id: string | null
-          proveedor: string | null
-          transmission_type: string | null
-          updated_at: string | null
-          vehicle_code: string
-          warranty_status: string | null
-        }
-        Insert: {
-          created_at?: string
-          dimensions?: string | null
-          engine?: string | null
-          estado_pago?: string | null
-          exterior_color?: string | null
-          fecha_pago?: string | null
-          id?: string
-          location?: string | null
-          matricula?: string | null
-          numero_bastidor: string
-          plazas?: string | null
-          project_id?: string | null
-          proveedor?: string | null
-          transmission_type?: string | null
-          updated_at?: string | null
-          vehicle_code: string
-          warranty_status?: string | null
-        }
-        Update: {
-          created_at?: string
-          dimensions?: string | null
-          engine?: string | null
-          estado_pago?: string | null
-          exterior_color?: string | null
-          fecha_pago?: string | null
-          id?: string
-          location?: string | null
-          matricula?: string | null
-          numero_bastidor?: string
-          plazas?: string | null
-          project_id?: string | null
-          proveedor?: string | null
-          transmission_type?: string | null
-          updated_at?: string | null
-          vehicle_code?: string
-          warranty_status?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Vehicles_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Vehicles_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_assignments_status"
-            referencedColumns: ["project_id"]
-          },
-        ]
-      }
-      production_schedule: {
-        Row: {
-          client_name: string | null
-          created_at: string
-          delivery_date: string | null
-          id: string
-          model: string | null
-          notes: string | null
-          production_code: string
-          project_id: string | null
-          scheduled_date: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          client_name?: string | null
-          created_at?: string
-          delivery_date?: string | null
-          id?: string
-          model?: string | null
-          notes?: string | null
-          production_code: string
-          project_id?: string | null
-          scheduled_date: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          client_name?: string | null
-          created_at?: string
-          delivery_date?: string | null
-          id?: string
-          model?: string | null
-          notes?: string | null
-          production_code?: string
-          project_id?: string | null
-          scheduled_date?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       regional_config: {
         Row: {
           budget_footer: string | null
@@ -1536,6 +957,8 @@ export type Database = {
           currency: string
           id: string
           iedmt_applies: boolean
+          iedmt_auto_amount: number
+          iedmt_manual_amount: number
           iedmt_rate: number
           iva_label: string
           iva_rate: number
@@ -1550,6 +973,8 @@ export type Database = {
           currency?: string
           id?: string
           iedmt_applies?: boolean
+          iedmt_auto_amount?: number
+          iedmt_manual_amount?: number
           iedmt_rate?: number
           iva_label?: string
           iva_rate?: number
@@ -1564,6 +989,8 @@ export type Database = {
           currency?: string
           id?: string
           iedmt_applies?: boolean
+          iedmt_auto_amount?: number
+          iedmt_manual_amount?: number
           iedmt_rate?: number
           iva_label?: string
           iva_rate?: number
@@ -1629,33 +1056,7 @@ export type Database = {
       }
     }
     Views: {
-      project_assignments_status: {
-        Row: {
-          project_code: string | null
-          project_id: string | null
-          slot_code: string | null
-          slot_id: string | null
-          status: string | null
-          vehicle_code: string | null
-          vehicle_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "NEW_Projects_slot_id_fkey"
-            columns: ["slot_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Production_Schedule"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "NEW_Projects_vehicle_id_fkey"
-            columns: ["vehicle_id"]
-            isOneToOne: false
-            referencedRelation: "NEW_Vehicles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       assign_project_code_to_project: {
@@ -1718,6 +1119,7 @@ export type Database = {
       generate_project_code: { Args: never; Returns: string }
       generate_prospect_code: { Args: never; Returns: string }
       generate_vehicle_code: { Args: never; Returns: string }
+      get_user_department: { Args: never; Returns: string }
       initialize_new_project_phases: {
         Args: { project_id_param: string }
         Returns: undefined
@@ -1726,6 +1128,8 @@ export type Database = {
         Args: { project_id_param: string }
         Returns: undefined
       }
+      is_admin_department: { Args: never; Returns: boolean }
+      is_business_department: { Args: never; Returns: boolean }
       sync_all_project_assignments: {
         Args: never
         Returns: {
@@ -1749,13 +1153,13 @@ export type Database = {
       project_code_status: "available" | "assigned" | "completed" | "cancelled"
       project_priority: "low" | "medium" | "high" | "critical"
       project_status:
-        | "prospect"
-        | "pre_production"
-        | "production"
-        | "reworks"
-        | "pre_delivery"
-        | "delivered"
-        | "repair"
+      | "prospect"
+      | "pre_production"
+      | "production"
+      | "reworks"
+      | "pre_delivery"
+      | "delivered"
+      | "repair"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1769,116 +1173,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-    ? R
-    : never
+  ? R
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
+    DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] &
+    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+  ? R
+  : never
+  : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
+    Insert: infer I
+  }
+  ? I
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Insert: infer I
+  }
+  ? I
+  : never
+  : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
+    Update: infer U
+  }
+  ? U
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Update: infer U
+  }
+  ? U
+  : never
+  : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Enums"]
+  | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["CompositeTypes"]
+  | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+  : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
 
 export const Constants = {
   public: {

@@ -94,12 +94,69 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
         window.print();
     };
 
-    const handleEmail = () => {
-        const subject = encodeURIComponent(`Presupuesto Nomade – ${data.budgetCode}`);
-        const body = encodeURIComponent(
-            `Hola ${data.clientName},\n\nAdjunto encontrarás tu presupuesto personalizado ${data.budgetCode}.\n\nQuedamos a tu disposición para cualquier duda.\n\nUn saludo,\nEquipo Nomade`
+    const handleEmail = async () => {
+        // 1. Generate PDF from the print document
+        const printDoc = document.getElementById('budget-print-document');
+        if (printDoc) {
+            try {
+                const html2canvas = (await import('html2canvas')).default;
+                const { jsPDF } = await import('jspdf');
+
+                const canvas = await html2canvas(printDoc, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#FFFFFF',
+                });
+
+                const imgWidth = 210; // A4 width in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+                pdf.save(`Presupuesto_${data.budgetCode}.pdf`);
+            } catch (err) {
+                console.error('Error generating PDF:', err);
+            }
+        }
+
+        // 2. Build a nice email body
+        const firstName = data.clientName?.split(' ')[0] || data.clientName || '';
+        const totalFormatted = data.total?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const bodyText = [
+            `Hola ${firstName},`,
+            ``,
+            `¡Muchas gracias por tu interés en Nomade Nation! 🏕️`,
+            ``,
+            `Adjunto encontrarás tu presupuesto personalizado con todos los detalles de tu camper:`,
+            ``,
+            `📋  PRESUPUESTO: ${data.budgetCode}`,
+            `🚐  MODELO: ${data.modelName}`,
+            `⚙️  MOTOR: ${data.engineName}`,
+            data.packName ? `📦  PACK: ${data.packName}` : '',
+            `💰  TOTAL: ${totalFormatted} €`,
+            ``,
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+            ``,
+            `Si tienes cualquier duda o quieres hacer algún cambio, no dudes en escribirnos. Estamos aquí para ayudarte a crear la camper de tus sueños.`,
+            ``,
+            `¡Seguimos en contacto! 🤙`,
+            ``,
+            `Un saludo,`,
+            `El equipo de Nomade Nation`,
+            ``,
+            `───────────────────`,
+            `🌐 www.nomade-nation.com`,
+            `📧 info@nomade-nation.com`,
+        ].filter(Boolean).join('\n');
+
+        // 3. Open Gmail compose in a new tab (uses the browser's logged-in Google session)
+        const to = encodeURIComponent(data.clientEmail || '');
+        const subject = encodeURIComponent(`Presupuesto ${data.budgetCode} de Nomade Nation`);
+        const body = encodeURIComponent(bodyText);
+        window.open(
+            `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`,
+            '_blank'
         );
-        window.location.href = `mailto:${data.clientEmail || ''}?subject=${subject}&body=${body}`;
     };
 
     return (

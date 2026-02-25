@@ -76,7 +76,7 @@ const ElectricSystemSelection = ({
         <CardTitle className="text-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
             Sistema Eléctrico
-            {selectedPackData && (selectedPackData.name === 'Adventure' || selectedPackData.name === 'Ultimate') && (
+            {selectedPackData && (selectedPackData.name?.includes('Adventure') || selectedPackData.name?.includes('Ultimate')) && (
               <div className="flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
                 <Zap className="h-3 w-3" />
                 Auto-selección activa
@@ -98,19 +98,16 @@ const ElectricSystemSelection = ({
       </CardHeader>
       <CardContent>
         {selectedSystem && (
-          <div className={`mb-4 p-3 rounded-lg border ${
-            autoSelected ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'
-          }`}>
+          <div className={`mb-4 p-3 rounded-lg border ${autoSelected ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'
+            }`}>
             <div className="flex items-center justify-between">
               <div>
-                <h4 className={`font-medium ${
-                  autoSelected ? 'text-blue-800' : 'text-green-800'
-                }`}>
+                <h4 className={`font-medium ${autoSelected ? 'text-blue-800' : 'text-green-800'
+                  }`}>
                   {autoSelected ? 'Sistema Auto-seleccionado:' : 'Sistema Seleccionado:'}
                 </h4>
-                <p className={`text-sm ${
-                  autoSelected ? 'text-blue-700' : 'text-green-700'
-                }`}>
+                <p className={`text-sm ${autoSelected ? 'text-blue-700' : 'text-green-700'
+                  }`}>
                   {selectedSystem.name}
                 </p>
               </div>
@@ -122,72 +119,70 @@ const ElectricSystemSelection = ({
             </div>
           </div>
         )}
-        
+
         {electricSystems.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {electricSystems.map((system) => {
               const isSelected = selectedElectricSystem === system.id;
               const pricing = getSystemPricing(system);
-              
+
               const showOriginalPrice = pricing.discountAmount > 0 || pricing.isFree;
               const priceLabel = pricing.isFree ? 'Incluido' : '';
-              
+
               return (
                 <div
                   key={system.id}
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${
-                    isSelected
-                      ? autoSelected 
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${isSelected
+                      ? autoSelected
                         ? 'border-blue-500 bg-blue-50 shadow-md'
                         : 'border-green-500 bg-green-50 shadow-md'
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                  }`}
+                    }`}
                   onClick={() => onElectricSystemSelect(system.id)}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-semibold text-gray-900">{system.name}</h4>
                     {isSelected && (
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                        autoSelected ? 'bg-blue-500' : 'bg-green-500'
-                      }`}>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center ${autoSelected ? 'bg-blue-500' : 'bg-green-500'
+                        }`}>
                         <div className="w-2 h-2 bg-white rounded-full"></div>
                       </div>
                     )}
                   </div>
-                  
+
                   {system.description && (
                     <p className="text-gray-600 text-sm mb-3">{system.description}</p>
                   )}
-                  
-                   <div className="flex items-center justify-between">
-                     <div className="flex flex-col">
-                       {showOriginalPrice && (
-                         <span className="text-sm text-gray-500 line-through">
-                           {pricing.originalPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-                         </span>
-                       )}
-                       <div className="flex items-center gap-2">
-                         <span className="text-xl font-bold text-green-600">
-                           {pricing.finalPrice === 0 ? '0€' : pricing.finalPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-                         </span>
-                         {priceLabel && (
-                           <span className="text-sm text-green-600 font-medium">
-                             ({priceLabel})
-                           </span>
-                         )}
-                         {pricing.discountReason && !pricing.isFree && (
-                           <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                             {pricing.discountReason}
-                           </span>
-                         )}
-                       </div>
-                       {pricing.discountAmount > 0 && !pricing.isFree && (
-                         <span className="text-xs text-green-600">
-                           Ahorras {pricing.discountAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
-                         </span>
-                       )}
-                     </div>
-                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      {showOriginalPrice && (
+                        <span className="text-sm text-gray-500 line-through">
+                          {pricing.originalPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-bold text-green-600">
+                          {pricing.finalPrice === 0 ? '0€' : pricing.finalPrice.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                        </span>
+                        {priceLabel && (
+                          <span className="text-sm text-green-600 font-medium">
+                            ({priceLabel})
+                          </span>
+                        )}
+                        {pricing.discountReason && !pricing.isFree && (
+                          <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                            {pricing.discountReason}
+                          </span>
+                        )}
+                      </div>
+                      {pricing.discountAmount > 0 && !pricing.isFree && (
+                        <span className="text-xs text-green-600">
+                          Ahorras {pricing.discountAmount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             })}

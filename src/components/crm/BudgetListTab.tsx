@@ -121,10 +121,11 @@ const buildPrintDataFromBudget = (
     const discountFixed = budget.discount_amount || 0;
 
     const totalAfterDiscounts = Math.max(0, subtotal - discountPercentAmount - discountFixed);
-    // IVA: NET + tax (same approach as BudgetEditorModal)
+    // PVP already includes IVA — reverse-calculate the breakdown
     const { rate: ivaRate } = getRegionalIva(regionalConfigs, location);
-    const ivaAmount = totalAfterDiscounts * (ivaRate / 100);
-    const total = budget.total || (totalAfterDiscounts + ivaAmount);
+    const precioBase = totalAfterDiscounts / (1 + (ivaRate / 100));
+    const ivaAmount = totalAfterDiscounts - precioBase;
+    const total = budget.total || totalAfterDiscounts;
 
     // IEDMT: fixed amounts from regional config
     const { applies: iedmtApplies, autoAmount, manualAmount } = getRegionalIedmt(regionalConfigs, location);

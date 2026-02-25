@@ -8,7 +8,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import {
     X, Save, Eye, ChevronDown, MapPin, Check,
-    Plus, Trash2, Loader2, FileText
+    Plus, Trash2, Loader2, FileText, Search
 } from 'lucide-react';
 import {
     useModelOptions,
@@ -232,12 +232,16 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
     const [discountPercent, setDiscountPercent] = useState<number>(0);
     const [discountFixed, setDiscountFixed] = useState<number>(0);
 
+    // Fuera de Carta search state
+    const [outOfOfferSearch, setOutOfOfferSearch] = useState<string>('');
+    const [outOfOfferOpen, setOutOfOfferOpen] = useState<boolean>(false);
+
     // Load existing budget data
     useEffect(() => {
         if (!budgetId) return;
         const loadBudget = async () => {
             const { data: budget } = await supabase
-                .from('NEW_Budget')
+                .from('budget')
                 .select('*')
                 .eq('id', budgetId)
                 .single();
@@ -307,6 +311,21 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
         });
     }, []);
 
+    // ── Helper: Electric system price considering Pack Ultimate discount ──
+    const getElectricDiscountPrice = useCallback((sys: any, loc: Location): number => {
+        if (!sys) return 0;
+        const selectedPackName = packs.find((p: any) => selectedPacks.has(p.id))?.name || '';
+        const isUltimate = selectedPackName.includes('Ultimate');
+        if (isUltimate) {
+            if (loc === 'peninsula') {
+                return sys.discount_price != null ? Number(sys.discount_price) : (sys.price ?? 0);
+            } else {
+                return sys.discount_price_export != null ? Number(sys.discount_price_export) : (sys.price_export ?? sys.price ?? 0);
+            }
+        }
+        return getPrice(sys, loc);
+    }, [packs, selectedPacks]);
+
     // ── Price Calculations ─────────────────────────────────
     const calculations = useMemo(() => {
         const modelObj = models.find(m => m.id === selectedModel);
@@ -334,7 +353,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
         });
 
         const electricObj = electricSystems.find(e => e.id === selectedElectric);
-        const electricPrice = getPrice(electricObj, location);
+        const electricPrice = getElectricDiscountPrice(electricObj, location);
 
         let additionalsTotal = 0;
         additionalItems.forEach((item: any) => {
@@ -398,7 +417,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
     }, [selectedModel, selectedEngine, selectedInteriorColor, selectedPacks,
         selectedExtraPacks, selectedElectric, selectedAdditionals, customItems, location,
         models, engines, interiorColors, packs, extraPacks, electricSystems, additionalItems,
-        discountPercent, discountFixed, regionalConfigs]);
+        discountPercent, discountFixed, regionalConfigs, getElectricDiscountPrice]);
 
     // ── Save Handler ───────────────────────────────────────
     const handleSave = async () => {
@@ -436,14 +455,14 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             // Si estamos editando un presupuesto existente, marcarlo como inactivo
             if (budgetId) {
                 await supabase
-                    .from('NEW_Budget')
+                    .from('budget')
                     .update({ is_active: false, is_primary: false })
                     .eq('id', budgetId);
             }
 
             // Siempre crear un nuevo presupuesto (histórico)
             const { data: newBudget, error: createError } = await supabase
-                .from('NEW_Budget')
+                .from('budget')
                 .insert({
                     client_id: projectId, // projectId prop now carries the client ID
                     status: 'draft',
@@ -512,7 +531,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
 
             if (itemsToInsert.length > 0) {
                 const { error: itemsError } = await supabase
-                    .from('NEW_Budget_Items')
+                    .from('budget_items')
                     .insert(itemsToInsert);
                 if (itemsError) throw itemsError;
             }
@@ -925,11 +944,12 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                 </>
                             )}
 
-                            {/* Individual Optionals */}
-                            {additionalItems.length > 0 && (
+                            {/* Individual Optionals — only items NOT out_of_offer */}
+                            {additionalItems.filter((item: any) => !item.out_of_offer).length > 0 && (
                                 <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-3 shadow-sm">
                                     <SectionHeader title="Opcionales Individuales" bgColor="#2E7D6F" />
                                     {additionalItems
+                                        .filter((item: any) => !item.out_of_offer)
                                         .filter((item: any) => {
                                             // Hide items already included in the selected pack
                                             const selectedPackNames = packs
@@ -966,7 +986,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                     <OptionRow
                                         key={sys.id}
                                         name={sys.name}
-                                        price={getPrice(sys, location)}
+                                        price={getElectricDiscountPrice(sys, location)}
                                         checked={selectedElectric === sys.id}
                                         onCheck={() => setSelectedElectric(
                                             selectedElectric === sys.id ? null : sys.id
@@ -977,15 +997,73 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                             </div>
                         </div>
 
-                        {/* ── PETICIÓN CLIENTE ─────────── */}
+                        {/* ── FUERA DE CARTA ─────────── */}
                         <div className="space-y-0">
                             <div className="flex items-center gap-2 mb-3">
                                 <div className="w-1 h-5 bg-[#E8734A] rounded-full" />
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-[#9CA3AF]">Petición Cliente</h3>
+                                <h3 className="text-xs font-bold uppercase tracking-widest text-[#9CA3AF]">Fuera de Carta</h3>
                             </div>
 
                             <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden shadow-sm">
-                                <SectionHeader title="Petición Cliente" bgColor="#2E7D6F" />
+                                <SectionHeader title="Fuera de Carta" bgColor="#2E7D6F" />
+
+                                {/* Search input */}
+                                <div className="px-4 py-2.5 border-b border-[#E5E7EB] bg-[#FAFBFC]">
+                                    <div
+                                        className={`flex items-center gap-2 bg-white rounded-lg border px-3 py-2 cursor-text transition-colors ${outOfOfferOpen ? 'border-[#2E7D6F] ring-1 ring-[#2E7D6F]/20' : 'border-[#E5E7EB]'
+                                            }`}
+                                        onClick={() => setOutOfOfferOpen(true)}
+                                    >
+                                        <Search className="w-4 h-4 text-[#9CA3AF] flex-shrink-0" />
+                                        <input
+                                            type="text"
+                                            value={outOfOfferSearch}
+                                            onChange={(e) => { setOutOfOfferSearch(e.target.value); setOutOfOfferOpen(true); }}
+                                            onFocus={() => setOutOfOfferOpen(true)}
+                                            placeholder="Buscar ítems fuera de carta..."
+                                            className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-[#CBD5E1]"
+                                        />
+                                        {(outOfOfferSearch || outOfOfferOpen) && (
+                                            <button onClick={(e) => { e.stopPropagation(); setOutOfOfferSearch(''); setOutOfOfferOpen(false); }} className="text-[#9CA3AF] hover:text-[#4B5563]">
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Out-of-offer items from DB — visible when search is open or item is selected */}
+                                {additionalItems
+                                    .filter((item: any) => item.out_of_offer)
+                                    .filter((item: any) => {
+                                        // Always show already-selected items
+                                        if (selectedAdditionals.has(item.id)) return true;
+                                        // Only show unselected items when search is open
+                                        if (!outOfOfferOpen) return false;
+                                        if (!outOfOfferSearch.trim()) return true;
+                                        return item.name?.toLowerCase().includes(outOfOfferSearch.toLowerCase());
+                                    })
+                                    .map((item: any) => (
+                                        <OptionRow
+                                            key={item.id}
+                                            name={item.name}
+                                            price={getPrice(item, location)}
+                                            checked={selectedAdditionals.has(item.id)}
+                                            onCheck={() => {
+                                                setSelectedAdditionals(prev => {
+                                                    const next = new Set(prev);
+                                                    next.has(item.id) ? next.delete(item.id) : next.add(item.id);
+                                                    return next;
+                                                });
+                                            }}
+                                        />
+                                    ))}
+
+                                {/* Separator between DB items and custom items */}
+                                <div className="px-4 py-1.5 bg-[#F8F9FA] border-t border-b border-[#E5E7EB]">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF]">Conceptos personalizados</p>
+                                </div>
+
+                                {/* Custom items (free-text) */}
                                 {customItems.map((item, idx) => (
                                     <div
                                         key={item.id}

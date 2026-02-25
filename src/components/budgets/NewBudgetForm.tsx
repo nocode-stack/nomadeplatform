@@ -302,8 +302,22 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
     // Precio del sistema eléctrico - USAR PRECIO DINÁMICO
     const selectedElectric = electricOptions.find(e => e.id === selectedElectricId);
     if (selectedElectric) {
-      // Usar precio dinámico si está disponible, sino el precio original
-      electricSystemPrice = electricPricing?.finalPrice ?? selectedElectric.price;
+      // Determinar si es exportación (Canarias/Internacional) según IVA
+      const isExport = Number(watch('iva_rate') || 21) !== 21;
+
+      // Seleccionar columnas de precio según localización
+      const electricBasePrice = isExport ? (Number(selectedElectric.price_export) || selectedElectric.price) : selectedElectric.price;
+      const electricDiscountPrice: number | null = isExport
+        ? (selectedElectric.discount_price_export != null ? Number(selectedElectric.discount_price_export) : null)
+        : (selectedElectric.discount_price != null ? Number(selectedElectric.discount_price) : null);
+
+      // Si el pack Ultimate está seleccionado y el sistema tiene discount_price, usarlo
+      if (selectedPackData?.name?.includes('Ultimate') && electricDiscountPrice != null) {
+        electricSystemPrice = electricDiscountPrice;
+      } else {
+        // Usar precio dinámico si está disponible, sino el precio base según localización
+        electricSystemPrice = electricPricing?.finalPrice ?? electricBasePrice;
+      }
     }
 
     // Precio de items adicionales
@@ -418,7 +432,7 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
       } else {
         budgetResult = await createBudget.mutateAsync(budgetData);
       }
-      // Guardar items adicionales, conceptos personalizados y descuentos en NEW_Budget_Items
+      // Guardar items adicionales, conceptos personalizados y descuentos en budget_items
       const validCustomItems = customItems.filter(item => item.name.trim() && item.price > 0);
       const validDiscountItems = discountItems.filter(item => item.concept.trim() && item.amount > 0);
       const selectedAdditionalItemsData = selectedAdditionalItems.map(itemId =>
@@ -428,7 +442,7 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
       // Primero eliminar items existentes si es edición
       if (isEditing && budget) {
         await supabase
-          .from('NEW_Budget_Items')
+          .from('budget_items')
           .delete()
           .eq('budget_id', budget.id);
       }
@@ -493,7 +507,7 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
       // Insertar todos los items de una vez
       if (allItemsToInsert.length > 0) {
         const { error: itemsError } = await supabase
-          .from('NEW_Budget_Items')
+          .from('budget_items')
           .insert(allItemsToInsert);
 
         if (itemsError) {
@@ -701,16 +715,31 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
                     // Calcular precio dinámico para este sistema específico usando el hook
                     const selectedPackData = packOptions.find(p => p.id === selectedPackId);
 
+                    // Determinar si es exportación (Canarias/Internacional) según IVA
+                    const isExport = Number(watch('iva_rate') || 21) !== 21;
+
+                    // Seleccionar columnas de precio según localización
+                    const basePrice = isExport ? (Number(electric.price_export) || electric.price) : electric.price;
+                    const discountPriceValue: number | null = isExport
+                      ? (electric.discount_price_export != null ? Number(electric.discount_price_export) : null)
+                      : (electric.discount_price != null ? Number(electric.discount_price) : null);
+
                     // Calcular precio dinámico para ESTE sistema específico (no solo el seleccionado)
-                    let dynamicPrice = electric.price;
+                    let dynamicPrice = basePrice;
                     let hasDiscount = false;
                     let isFree = false;
-                    let discountReason = null;
+                    let discountReason: string | null = null;
 
-                    // Si hay un pack seleccionado, calcular precio dinámico para este sistema
-                    if (selectedPackData && electric.pack_pricing_rules) {
+                    // Si el pack Ultimate está seleccionado y el sistema tiene discount_price, usarlo directamente
+                    if (selectedPackData?.name?.includes('Ultimate') && discountPriceValue != null) {
+                      dynamicPrice = discountPriceValue;
+                      hasDiscount = discountPriceValue < basePrice;
+                      isFree = discountPriceValue === 0;
+                      discountReason = 'Precio especial con Pack Ultimate';
+                    } else if (selectedPackData && electric.pack_pricing_rules) {
+                      // Fallback: usar pack_pricing_rules para otros packs o si no hay discount_price
                       const pricing = calculateElectricSystemPrice(
-                        electric.price,
+                        basePrice,
                         electric.pack_pricing_rules,
                         selectedPackId,
                         selectedPackData.name
@@ -721,7 +750,7 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
                       discountReason = pricing.discountReason;
                     }
 
-                    const originalPrice = electric.price;
+                    const originalPrice = basePrice;
 
                     return (
                       <label key={electric.id} className="relative">

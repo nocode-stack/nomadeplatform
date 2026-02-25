@@ -74,11 +74,17 @@ export const calculateElectricSystemPrice = (
   if (packPricingRules) {
     // Buscar regla por pack_id primero, luego por pack_name
     let packRule = null;
-    
+
     if (packId && packPricingRules[packId]) {
       packRule = packPricingRules[packId];
     } else if (packName && packPricingRules[packName]) {
       packRule = packPricingRules[packName];
+    } else if (packName) {
+      // Fallback: strip "Pack " prefix since DB names are "Pack Ultimate" but keys use "Ultimate"
+      const normalizedName = packName.replace(/^Pack\s+/i, '');
+      if (normalizedName && packPricingRules[normalizedName]) {
+        packRule = packPricingRules[normalizedName];
+      }
     }
 
     if (packRule) {
