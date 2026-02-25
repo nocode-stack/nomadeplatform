@@ -131,13 +131,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // 1. Detect invite/recovery hash before Supabase clears it
+    // 1. Detect invite/recovery from URL hash OR query params before Supabase clears it
     const initialHash = window.location.hash;
-    if (initialHash.includes('type=invite') || initialHash.includes('type=recovery')) {
+    const initialSearch = window.location.search;
+    const isInviteUrl = initialHash.includes('type=invite') || initialSearch.includes('type=invite');
+    const isRecoveryUrl = initialHash.includes('type=recovery') || initialSearch.includes('type=recovery');
+
+    if (isInviteUrl || isRecoveryUrl) {
       setMustSetPassword(true);
 
-      if (initialHash.includes('type=invite') && !window.location.pathname.includes('/intro')) {
-        window.location.href = `${window.location.origin}/intro`;
+      if (isInviteUrl && !window.location.pathname.includes('/intro')) {
+        window.location.href = `${window.location.origin}/intro${window.location.hash}`;
         return;
       }
     }
@@ -178,8 +182,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           // Detect invite or recovery flow
           const hash = window.location.hash;
-          const isInvite = hash.includes('type=invite') || hash.includes('access_token=') && event === 'SIGNED_IN';
-          const isRecovery = hash.includes('type=recovery');
+          const search = window.location.search;
+          const isInvite = hash.includes('type=invite') || search.includes('type=invite') || (event === 'SIGNED_IN' && !sessionStorage.getItem('nomade_has_logged_in'));
+          const isRecovery = hash.includes('type=recovery') || search.includes('type=recovery') || event === 'PASSWORD_RECOVERY';
 
           if (isInvite || isRecovery) {
             setMustSetPassword(true);
@@ -190,6 +195,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               }, 100);
             }
           }
+
+          // Mark that this user has logged in before
+          sessionStorage.setItem('nomade_has_logged_in', 'true');
         } else {
           setAuthState({
             user: null,

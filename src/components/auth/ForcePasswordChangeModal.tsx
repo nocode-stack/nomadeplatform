@@ -35,10 +35,10 @@ const ForcePasswordChangeModal = () => {
             return;
         }
 
-        if (formData.password.length < 6) {
+        if (formData.password.length < 8) {
             toast({
                 title: "Error",
-                description: "La contraseña debe tener al menos 6 caracteres",
+                description: "La contraseña debe tener al menos 8 caracteres",
                 variant: "destructive",
             });
             return;
@@ -95,7 +95,7 @@ const ForcePasswordChangeModal = () => {
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 className="bg-gray-50/50 border-gray-100 rounded-xl px-4 py-6 focus:ring-primary/20 focus:border-primary transition-all pr-12"
-                                placeholder="••••••••"
+                                placeholder="Mínimo 8 caracteres"
                             />
                             <button
                                 type="button"
@@ -118,7 +118,7 @@ const ForcePasswordChangeModal = () => {
                             value={formData.confirmPassword}
                             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                             className="bg-gray-50/50 border-gray-100 rounded-xl px-4 py-6 focus:ring-primary/20 focus:border-primary transition-all"
-                            placeholder="••••••••"
+                            placeholder="Repite la contraseña"
                         />
                     </div>
 

@@ -226,29 +226,29 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
 
                             {/* Sub-tabs para Información Cliente */}
                             {activeTab === 'cliente' && (
-                                <div className="px-6 bg-card border-b border-border shrink-0">
-                                    <div className="flex w-full">
+                                <div className="px-6 py-3 bg-card border-b border-border shrink-0">
+                                    <div className="flex justify-center gap-2">
                                         <button
                                             type="button"
                                             onClick={() => setClientSubTab('contacto')}
-                                            className={`flex-1 py-3 text-sm font-bold transition-all border-b-2 flex items-center justify-center gap-2 ${clientSubTab === 'contacto'
-                                                ? 'border-primary text-primary bg-primary/5'
-                                                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                                            className={`px-5 py-2 text-sm font-bold rounded-full transition-all duration-200 flex items-center gap-2 ${clientSubTab === 'contacto'
+                                                ? 'bg-primary text-white shadow-md shadow-primary/25'
+                                                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
                                                 }`}
                                         >
-                                            <User className="h-4 w-4" />
-                                            Información de Contacto
+                                            <User className="h-3.5 w-3.5" />
+                                            Contacto
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setClientSubTab('facturacion')}
-                                            className={`flex-1 py-3 text-sm font-bold transition-all border-b-2 flex items-center justify-center gap-2 ${clientSubTab === 'facturacion'
-                                                ? 'border-primary text-primary bg-primary/5'
-                                                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                                            className={`px-5 py-2 text-sm font-bold rounded-full transition-all duration-200 flex items-center gap-2 ${clientSubTab === 'facturacion'
+                                                ? 'bg-primary text-white shadow-md shadow-primary/25'
+                                                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
                                                 }`}
                                         >
-                                            <FileText className="h-4 w-4" />
-                                            Información de Facturación
+                                            <FileText className="h-3.5 w-3.5" />
+                                            Facturación
                                         </button>
                                     </div>
                                 </div>
