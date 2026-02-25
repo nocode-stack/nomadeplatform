@@ -147,7 +147,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
     queryKey: ['primaryBudget', project.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .select(`
           total,
           model_option_id,
@@ -170,33 +170,15 @@ const ContractForm: React.FC<ContractFormProps> = ({
     enabled: !!project.id
   });
 
-  // Cargar datos del vehículo asociado al proyecto
-  const { data: vehicleData } = useQuery({
-    queryKey: ['projectVehicle', project.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('NEW_Vehicles')
-        .select('*')
-        .eq('project_id', project.id)
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching vehicle data:', error);
-        return null;
-      }
-
-      return data;
-    },
-    enabled: !!project.id
-  });
+  // Datos del vehículo desde las props del proyecto
+  const vehicleData = project.new_vehicles || project.vehicles || null;
 
   // Cargar contrato de reserva si es purchase_agreement
   const { data: reservationContract } = useQuery({
     queryKey: ['reservationContract', project.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Contracts')
+        .from('contracts')
         .select('payment_reserve')
         .eq('project_id', project.id)
         .eq('contract_type', 'reservation')
@@ -219,7 +201,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
     queryKey: ['contract', project.id, contractType],
     queryFn: async () => {
       const { data: contractData, error: contractError } = await supabase
-        .from('NEW_Contracts')
+        .from('contracts')
         .select('*')
         .eq('project_id', project.id)
         .eq('contract_type', contractType)
@@ -246,12 +228,12 @@ const ContractForm: React.FC<ContractFormProps> = ({
 
       const [clientResult, billingResult] = await Promise.all([
         supabase
-          .from('NEW_Clients')
+          .from('clients')
           .select('*')
           .eq('id', project.new_clients.id)
           .single(),
         supabase
-          .from('NEW_Billing')
+          .from('billing')
           .select('*')
           .eq('client_id', project.new_clients.id)
           .order('created_at', { ascending: false })
@@ -278,10 +260,10 @@ const ContractForm: React.FC<ContractFormProps> = ({
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Contracts',
+          table: 'contracts',
           filter: `project_id=eq.${project.id}`
         },
-        (payload) => {
+        (_payload: unknown) => {
           // Log removed for CI
           // Invalidar query para refrescar datos
           queryClient.invalidateQueries({
@@ -294,7 +276,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Clients'
+          table: 'clients'
         },
         () => {
           // Log removed for CI
@@ -308,10 +290,10 @@ const ContractForm: React.FC<ContractFormProps> = ({
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Billing'
+          table: 'billing'
         },
         () => {
-          if (import.meta.env.DEV) console.log('Billing data updated, refreshing contract form');
+          // Billing data updated, refreshing contract form
           queryClient.invalidateQueries({
             queryKey: ['clientBilling', project.new_clients?.id]
           });
@@ -378,10 +360,13 @@ const ContractForm: React.FC<ContractFormProps> = ({
     }
   }, [clientBillingData, existingContract, formData.id]);
 
-  // Usar hook para comparar especificaciones
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const vehicleSpecsComparison = useVehicleSpecsComparison((vehicleData as any) ?? null, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     engine_option: primaryBudget?.engine_option as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     exterior_color: null as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     model_option: primaryBudget?.model_options as any
   });
 
@@ -412,13 +397,14 @@ const ContractForm: React.FC<ContractFormProps> = ({
 
   // Actualizar model y motorización desde presupuesto primario
   useEffect(() => {
-    if (import.meta.env.DEV) console.log('Primary budget effect triggered:', primaryBudget);
+    // Primary budget effect triggered
     if (primaryBudget) {
       // Obtener el nombre del modelo desde la relación model_options
       const modelName = primaryBudget.model_options?.name || 'Modelo pendiente de especificar';
-      if (import.meta.env.DEV) console.log('Model name from budget:', modelName);
+      // Model name resolved from budget
 
       // Construir la descripción del motor desde engine_option
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const engineOption = primaryBudget.engine_option as any;
       const engineDesc = engineOption?.name || '';
 
@@ -438,7 +424,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
     if (existingContract?.id && formData && status === 'editing') {
       const timer = setTimeout(() => {
         if (!autoSave.isPending) {
-          if (import.meta.env.DEV) console.log('🔄 Auto-guardando contrato:', formData);
+          // Auto-saving contract
           autoSave.mutate({
             contractData: formData,
             existingContractId: existingContract.id

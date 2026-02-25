@@ -137,8 +137,11 @@ describe('BudgetEditorModal – Discount Fields', () => {
         vi.clearAllMocks();
         // Default: return budget data for loading
         mockSupabaseFrom.mockImplementation((table: string) => {
-            if (table === 'NEW_Budget') {
+            if (table === 'budget') {
                 return createChain(mockBudgetData);
+            }
+            if (table === 'regional_config') {
+                return createChain([{ location: 'peninsula', iva_rate: 21, iedmt_rate: 0 }]);
             }
             return createChain([]);
         });
@@ -288,18 +291,21 @@ describe('BudgetEditorModal – Discount Fields', () => {
         const mockInsertChain = createChain(null);
 
         mockSupabaseFrom.mockImplementation((table: string) => {
-            if (table === 'NEW_Budget') {
+            if (table === 'budget') {
                 // First call is load, subsequent are update
                 const chain = createChain(mockBudgetData);
                 chain.update = vi.fn(() => mockUpdateChain);
                 return chain;
             }
-            if (table === 'NEW_Budget_Items') {
+            if (table === 'budget_items') {
                 return {
                     ...createChain([]),
                     delete: vi.fn(() => mockDeleteChain),
                     insert: vi.fn(() => mockInsertChain),
                 };
+            }
+            if (table === 'regional_config') {
+                return createChain([{ location: 'peninsula', iva_rate: 21, iedmt_rate: 0 }]);
             }
             return createChain([]);
         });
@@ -323,19 +329,22 @@ describe('BudgetEditorModal – Discount Fields', () => {
         fireEvent.click(saveBtn);
 
         await waitFor(() => {
-            // Verify update was called on NEW_Budget
-            expect(mockSupabaseFrom).toHaveBeenCalledWith('NEW_Budget');
+            // Verify update was called on budget
+            expect(mockSupabaseFrom).toHaveBeenCalledWith('budget');
         });
     });
 
     it('should cap percentage discount at 100%', async () => {
         mockSupabaseFrom.mockImplementation((table: string) => {
-            if (table === 'NEW_Budget') {
+            if (table === 'budget') {
                 return createChain({
                     ...mockBudgetData,
                     discount_percentage: 0,
                     discount_amount: 0,
                 });
+            }
+            if (table === 'regional_config') {
+                return createChain([{ location: 'peninsula', iva_rate: 21, iedmt_rate: 0 }]);
             }
             return createChain([]);
         });
@@ -372,7 +381,7 @@ describe('BudgetEditorModal – Discount Fields', () => {
 
     it('should not allow negative discount values', async () => {
         mockSupabaseFrom.mockImplementation((table: string) => {
-            if (table === 'NEW_Budget') {
+            if (table === 'budget') {
                 return createChain({
                     ...mockBudgetData,
                     discount_percentage: 0,
