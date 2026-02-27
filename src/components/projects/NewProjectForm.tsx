@@ -35,39 +35,39 @@ import { supabase } from '../../integrations/supabase/client';
 const newProjectSchema = z.object({
   // Tipo de cliente
   clientType: z.enum(['prospect', 'client']).default('prospect'),
-  
+
   // Información del cliente (obligatorios)
   clientName: z.string().min(1, 'El nombre del cliente es obligatorio'),
   clientEmail: z.string().email('Email válido requerido'),
   clientPhone: z.string().min(1, 'El teléfono es obligatorio'),
-  
+
   // Información del cliente (opcionales)
   clientDni: z.string().optional(),
   clientAddress: z.string().optional(),
   clientBirthDate: z.string().optional(),
-  
+
   // Código de producción (opcional)
   productionCodeId: z.string().optional(),
-  
+
   // Comercial asignado
   comercial: z.string().optional(),
-  
+
   // Información de facturación - TODOS OPCIONALES POR DEFECTO
   billingType: z.enum(['personal', 'other_person', 'company']).default('personal'),
-  
+
   // Facturación personal (datos del cliente)
   clientBillingName: z.string().optional(),
   clientBillingEmail: z.string().optional(),
   clientBillingPhone: z.string().optional(),
   clientBillingAddress: z.string().optional(),
-  
+
   // Facturación otra persona física
   otherPersonName: z.string().optional(),
   otherPersonEmail: z.string().optional(),
   otherPersonPhone: z.string().optional(),
   otherPersonAddress: z.string().optional(),
   otherPersonDni: z.string().optional(),
-  
+
   // Facturación empresarial
   clientBillingCompanyName: z.string().optional(),
   clientBillingCompanyCif: z.string().optional(),
@@ -86,7 +86,7 @@ const NewProjectForm = ({ onProjectCreated }: NewProjectFormProps) => {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { createProject } = useProjects();
-  
+
   const form = useForm<NewProjectFormData>({
     resolver: zodResolver(newProjectSchema),
     defaultValues: {
@@ -136,9 +136,10 @@ const NewProjectForm = ({ onProjectCreated }: NewProjectFormProps) => {
 
   const onSubmit = async (data: NewProjectFormData) => {
     setIsLoading(true);
-    
+
     try {
-      // Adaptar datos para el hook existente
+      // Adaptar datos para el hook existente — pasar campos de facturación
+      // con sus nombres originales para que createProject los use correctamente
       const adaptedData = {
         clientType: data.clientType,
         clientName: data.clientName,
@@ -148,22 +149,24 @@ const NewProjectForm = ({ onProjectCreated }: NewProjectFormProps) => {
         clientAddress: data.clientAddress || '',
         clientBirthDate: data.clientBirthDate || '',
         comercial: data.comercial || '',
-        billingType: data.billingType === 'personal' ? 'personal' : 
-                     data.billingType === 'other_person' ? 'personal' : 'company',
-        billingName: data.billingType === 'personal' ? data.clientName : 
-                     data.billingType === 'other_person' ? data.otherPersonName :
-                     data.clientBillingCompanyName,
-        billingEmail: data.billingType === 'personal' ? data.clientEmail : 
-                      data.billingType === 'other_person' ? data.otherPersonEmail :
-                      data.clientBillingCompanyEmail,
-        billingPhone: data.billingType === 'personal' ? data.clientPhone : 
-                      data.billingType === 'other_person' ? data.otherPersonPhone :
-                      data.clientBillingCompanyPhone,
-        billingAddress: data.billingType === 'personal' ? data.clientAddress : 
-                        data.billingType === 'other_person' ? data.otherPersonAddress :
-                        data.clientBillingCompanyAddress,
-        billingDni: data.billingType === 'other_person' ? data.otherPersonDni : '',
-        billingCompanyCif: data.billingType === 'company' ? data.clientBillingCompanyCif : '',
+        billingType: data.billingType,
+        // Facturación personal
+        clientBillingName: data.clientBillingName,
+        clientBillingEmail: data.clientBillingEmail,
+        clientBillingPhone: data.clientBillingPhone,
+        clientBillingAddress: data.clientBillingAddress,
+        // Facturación otra persona
+        otherPersonName: data.otherPersonName,
+        otherPersonEmail: data.otherPersonEmail,
+        otherPersonPhone: data.otherPersonPhone,
+        otherPersonAddress: data.otherPersonAddress,
+        otherPersonDni: data.otherPersonDni,
+        // Facturación empresa
+        clientBillingCompanyName: data.clientBillingCompanyName,
+        clientBillingCompanyCif: data.clientBillingCompanyCif,
+        clientBillingCompanyPhone: data.clientBillingCompanyPhone,
+        clientBillingCompanyEmail: data.clientBillingCompanyEmail,
+        clientBillingCompanyAddress: data.clientBillingCompanyAddress,
       };
 
       await createProject(adaptedData);
@@ -199,7 +202,7 @@ const NewProjectForm = ({ onProjectCreated }: NewProjectFormProps) => {
             Crea un nuevo proyecto especificando el tipo de cliente y su información.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Tabs defaultValue="tipo-cliente" className="w-full">
@@ -222,7 +225,7 @@ const NewProjectForm = ({ onProjectCreated }: NewProjectFormProps) => {
               <TabsContent value="tipo-cliente" className="space-y-4">
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900">Tipo de Cliente</h3>
-                  
+
                   {/* Código del Proyecto */}
                   <Card>
                     <CardHeader>
@@ -240,10 +243,10 @@ const NewProjectForm = ({ onProjectCreated }: NewProjectFormProps) => {
                     <CardContent>
                       <div className="flex items-center space-x-4">
                         <div className="flex-1">
-                          <Input 
+                          <Input
                             value={
-                              watchedClientType === 'client' 
-                                ? nextProjectCode || 'Generando...' 
+                              watchedClientType === 'client'
+                                ? nextProjectCode || 'Generando...'
                                 : 'Código pendiente'
                             }
                             disabled
@@ -273,12 +276,11 @@ const NewProjectForm = ({ onProjectCreated }: NewProjectFormProps) => {
                           <FormItem>
                             <FormControl>
                               <div className="grid grid-cols-2 gap-4">
-                                <div 
-                                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                                    field.value === 'prospect' 
-                                      ? 'border-orange-500 bg-orange-50' 
+                                <div
+                                  className={`p-4 border rounded-lg cursor-pointer transition-all ${field.value === 'prospect'
+                                      ? 'border-orange-500 bg-orange-50'
                                       : 'border-gray-200 hover:border-gray-300'
-                                  }`}
+                                    }`}
                                   onClick={() => field.onChange('prospect')}
                                 >
                                   <div className="flex items-center space-x-2 mb-2">
@@ -289,13 +291,12 @@ const NewProjectForm = ({ onProjectCreated }: NewProjectFormProps) => {
                                     Cliente potencial que aún no ha confirmado la compra
                                   </p>
                                 </div>
-                                
-                                <div 
-                                  className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                                    field.value === 'client' 
-                                      ? 'border-blue-500 bg-blue-50' 
+
+                                <div
+                                  className={`p-4 border rounded-lg cursor-pointer transition-all ${field.value === 'client'
+                                      ? 'border-blue-500 bg-blue-50'
                                       : 'border-gray-200 hover:border-gray-300'
-                                  }`}
+                                    }`}
                                   onClick={() => field.onChange('client')}
                                 >
                                   <div className="flex items-center space-x-2 mb-2">
@@ -324,7 +325,7 @@ const NewProjectForm = ({ onProjectCreated }: NewProjectFormProps) => {
                           <div>
                             <h4 className="font-medium text-orange-800">Información sobre Prospects</h4>
                             <p className="text-sm text-orange-700 mt-1">
-                              Los prospects no reciben código de proyecto hasta convertirse en clientes confirmados. 
+                              Los prospects no reciben código de proyecto hasta convertirse en clientes confirmados.
                               Podrás cambiar el estado posteriormente desde la gestión de proyectos.
                             </p>
                           </div>
@@ -347,7 +348,7 @@ const NewProjectForm = ({ onProjectCreated }: NewProjectFormProps) => {
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 disabled={isLoading}
-                                allowEmpty={true} 
+                                allowEmpty={true}
                               />
                             </FormControl>
                             <FormMessage />

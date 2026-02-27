@@ -559,7 +559,7 @@ const CRM = () => {
                                                     title="Enviar Email"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        window.open(`https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(lead.email)}`, '_blank');
+                                                        window.location.href = `mailto:${lead.email}`;
                                                     }}
                                                 >
                                                     <Mail className="w-4 h-4" />

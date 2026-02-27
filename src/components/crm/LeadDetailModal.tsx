@@ -224,16 +224,38 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
             }
 
             // 3. Actualizar datos de facturación en billing
-            const billingName = data.clientBillingName;
-            if (billingName || data.billingType) {
+            if (data.billingType) {
+                let billingName: string, billingEmail: string, billingPhone: string,
+                    billingAddress: string, billingNif: string;
+
+                if (data.billingType === 'company') {
+                    billingName = data.clientBillingCompanyName || data.clientName;
+                    billingEmail = data.clientBillingCompanyEmail || data.clientEmail;
+                    billingPhone = data.clientBillingCompanyPhone || data.clientPhone;
+                    billingAddress = data.clientBillingCompanyAddress || data.clientAddress || '';
+                    billingNif = data.clientBillingCompanyCif || '';
+                } else if (data.billingType === 'other_person') {
+                    billingName = data.otherPersonName || data.clientName;
+                    billingEmail = data.otherPersonEmail || data.clientEmail;
+                    billingPhone = data.otherPersonPhone || data.clientPhone;
+                    billingAddress = data.otherPersonAddress || data.clientAddress || '';
+                    billingNif = data.otherPersonDni || '';
+                } else {
+                    billingName = data.clientBillingName || data.clientName;
+                    billingEmail = data.clientBillingEmail || data.clientEmail;
+                    billingPhone = data.clientBillingPhone || data.clientPhone;
+                    billingAddress = data.clientBillingAddress || data.clientAddress || '';
+                    billingNif = data.clientDni || '';
+                }
+
                 const billingData = {
                     client_id: clientId,
-                    name: billingName || data.clientName,
-                    email: data.clientBillingEmail || data.clientEmail,
-                    phone: data.clientBillingPhone || data.clientPhone,
-                    billing_address: data.clientBillingAddress || data.clientAddress,
-                    nif: data.otherPersonDni || data.clientBillingCompanyCif || data.clientDni || '',
-                    type: data.billingType || 'personal',
+                    name: billingName,
+                    email: billingEmail,
+                    phone: billingPhone,
+                    billing_address: billingAddress,
+                    nif: billingNif,
+                    type: data.billingType,
                 };
 
                 const { data: existingBilling } = await supabase
@@ -249,8 +271,20 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                 }
             }
 
-            // Notificar al padre y cerrar
-            if (onLeadUpdated) onLeadUpdated({ ...lead, ...data });
+            // Notificar al padre con los campos mapeados correctamente
+            if (onLeadUpdated) {
+                onLeadUpdated({
+                    ...lead,
+                    name: data.clientName,
+                    email: data.clientEmail,
+                    phone: data.clientPhone,
+                    dni: data.clientDni || '',
+                    birthDate: data.clientBirthDate || '',
+                    birthdate: data.clientBirthDate || '',
+                    address: data.clientAddress || '',
+                    comercial: data.comercial || lead?.comercial || '',
+                });
+            }
 
             toast({
                 title: "Cliente actualizado",
@@ -289,14 +323,34 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                         })
                         .eq('id', clientId);
 
-                    // Also save billing data
+                    // Also save billing data — use correct fields based on billingType
+                    let bName: string, bEmail: string, bPhone: string, bAddress: string, bNif: string;
+                    if (data.billingType === 'company') {
+                        bName = data.clientBillingCompanyName || data.clientName;
+                        bEmail = data.clientBillingCompanyEmail || data.clientEmail;
+                        bPhone = data.clientBillingCompanyPhone || data.clientPhone;
+                        bAddress = data.clientBillingCompanyAddress || data.clientAddress || '';
+                        bNif = data.clientBillingCompanyCif || '';
+                    } else if (data.billingType === 'other_person') {
+                        bName = data.otherPersonName || data.clientName;
+                        bEmail = data.otherPersonEmail || data.clientEmail;
+                        bPhone = data.otherPersonPhone || data.clientPhone;
+                        bAddress = data.otherPersonAddress || data.clientAddress || '';
+                        bNif = data.otherPersonDni || '';
+                    } else {
+                        bName = data.clientBillingName || data.clientName;
+                        bEmail = data.clientBillingEmail || data.clientEmail;
+                        bPhone = data.clientBillingPhone || data.clientPhone;
+                        bAddress = data.clientBillingAddress || data.clientAddress || '';
+                        bNif = data.clientDni || '';
+                    }
                     const billingData = {
                         client_id: clientId,
-                        name: data.clientBillingName || data.clientName,
-                        email: data.clientBillingEmail || data.clientEmail,
-                        phone: data.clientBillingPhone || data.clientPhone,
-                        billing_address: data.clientBillingAddress || data.clientAddress,
-                        nif: data.otherPersonDni || data.clientBillingCompanyCif || data.clientDni || '',
+                        name: bName,
+                        email: bEmail,
+                        phone: bPhone,
+                        billing_address: bAddress,
+                        nif: bNif,
                         type: data.billingType || 'personal',
                     };
 

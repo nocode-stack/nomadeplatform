@@ -8,6 +8,18 @@ import type { BudgetPrintData } from '../../components/crm/BudgetPrintView';
 vi.mock('../../components/ui/dialog', () => ({
     Dialog: ({ children, open }: any) => open ? <div data-testid="print-dialog">{children}</div> : null,
     DialogContent: ({ children, className }: any) => <div className={className}>{children}</div>,
+    DialogHeader: ({ children }: any) => <div>{children}</div>,
+    DialogTitle: ({ children, className }: any) => <div className={className}>{children}</div>,
+    DialogDescription: ({ children }: any) => <div>{children}</div>,
+    DialogFooter: ({ children }: any) => <div>{children}</div>,
+}));
+
+vi.mock('../../hooks/useAuth', () => ({
+    useAuth: () => ({
+        user: { id: 'test-id', email: 'test@nomade.com', name: 'Test User' },
+        isAuthenticated: true,
+        isLoading: false,
+    }),
 }));
 
 // ── Helper: base mock data ─────────────────────────────────

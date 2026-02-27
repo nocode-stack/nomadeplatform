@@ -282,16 +282,39 @@ export const useProjects = () => {
             }
 
             // 3. Billing
-            const billingName = projectData.billingName || projectData.clientBillingName;
-            if (billingName || projectData.billingType) {
+            const billingType = projectData.billingType || 'personal';
+            if (projectData.billingType) {
+                let billingName: string | undefined, billingEmail: string | undefined,
+                    billingPhone: string | undefined, billingAddress: string, billingDni: string;
+
+                if (billingType === 'company') {
+                    billingName = projectData.clientBillingCompanyName || projectData.clientName;
+                    billingEmail = projectData.clientBillingCompanyEmail || projectData.clientEmail;
+                    billingPhone = projectData.clientBillingCompanyPhone || projectData.clientPhone;
+                    billingAddress = projectData.clientBillingCompanyAddress || projectData.clientAddress || '';
+                    billingDni = projectData.clientBillingCompanyCif || '';
+                } else if (billingType === 'other_person') {
+                    billingName = projectData.otherPersonName || projectData.clientName;
+                    billingEmail = projectData.otherPersonEmail || projectData.clientEmail;
+                    billingPhone = projectData.otherPersonPhone || projectData.clientPhone;
+                    billingAddress = projectData.otherPersonAddress || projectData.clientAddress || '';
+                    billingDni = projectData.otherPersonDni || '';
+                } else {
+                    billingName = projectData.clientBillingName || projectData.billingName || projectData.clientName;
+                    billingEmail = projectData.clientBillingEmail || projectData.billingEmail || projectData.clientEmail;
+                    billingPhone = projectData.clientBillingPhone || projectData.billingPhone || projectData.clientPhone;
+                    billingAddress = projectData.clientBillingAddress || projectData.billingAddress || projectData.clientAddress || '';
+                    billingDni = projectData.clientDni || '';
+                }
+
                 const billingData = {
                     client_id: activeClientId,
                     name: billingName,
-                    email: projectData.billingEmail || projectData.clientBillingEmail,
-                    phone: projectData.billingPhone || projectData.clientBillingPhone,
-                    billing_address: projectData.billingAddress || projectData.clientBillingAddress,
-                    nif: projectData.billingDni || projectData.otherPersonDni || projectData.clientBillingCompanyCif || projectData.clientDni,
-                    type: projectData.billingType || 'personal'
+                    email: billingEmail,
+                    phone: billingPhone,
+                    billing_address: billingAddress,
+                    nif: billingDni,
+                    type: billingType
                 };
 
                 const { data: existingBilling } = await supabase.from('billing').select('id').eq('client_id', activeClientId).maybeSingle();

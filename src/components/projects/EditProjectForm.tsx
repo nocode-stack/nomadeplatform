@@ -121,20 +121,28 @@ const EditProjectForm = ({
 
     // Si hay datos de billing, configurarlos
     if (billingData && !billingLoading) {
-      const billingType = billingData.type === 'individual' ? 'personal' : 'company';
+      // Handle both legacy ('individual') and modern ('personal'/'other_person'/'company') type values
+      const rawType = billingData.type || 'personal';
+      const billingType = rawType === 'individual' ? 'personal' : rawType as 'personal' | 'other_person' | 'company';
       defaults.billingType = billingType;
 
-      if (billingType === 'personal') {
-        defaults.clientBillingName = billingData.name || '';
-        defaults.clientBillingEmail = billingData.email || '';
-        defaults.clientBillingPhone = billingData.phone || '';
-        defaults.clientBillingAddress = billingData.billing_address || '';
-      } else {
+      if (billingType === 'company') {
         defaults.clientBillingCompanyName = billingData.name || '';
         defaults.clientBillingCompanyEmail = billingData.email || '';
         defaults.clientBillingCompanyPhone = billingData.phone || '';
         defaults.clientBillingCompanyAddress = billingData.billing_address || '';
         defaults.clientBillingCompanyCif = billingData.nif || '';
+      } else if (billingType === 'other_person') {
+        defaults.otherPersonName = billingData.name || '';
+        defaults.otherPersonEmail = billingData.email || '';
+        defaults.otherPersonPhone = billingData.phone || '';
+        defaults.otherPersonAddress = billingData.billing_address || '';
+        defaults.otherPersonDni = billingData.nif || '';
+      } else {
+        defaults.clientBillingName = billingData.name || '';
+        defaults.clientBillingEmail = billingData.email || '';
+        defaults.clientBillingPhone = billingData.phone || '';
+        defaults.clientBillingAddress = billingData.billing_address || '';
       }
     }
 
@@ -149,23 +157,32 @@ const EditProjectForm = ({
   // Actualizar el formulario cuando cambien los datos de billing
   React.useEffect(() => {
     if (billingData && !billingLoading) {
-      const billingType = billingData.type === 'individual' ? 'personal' : 'company';
+      const rawType = billingData.type || 'personal';
+      const billingType = rawType === 'individual' ? 'personal' : rawType as 'personal' | 'other_person' | 'company';
+
+      const billingFields: Record<string, string> = billingType === 'company' ? {
+        clientBillingCompanyName: billingData.name || '',
+        clientBillingCompanyEmail: billingData.email || '',
+        clientBillingCompanyPhone: billingData.phone || '',
+        clientBillingCompanyAddress: billingData.billing_address || '',
+        clientBillingCompanyCif: billingData.nif || '',
+      } : billingType === 'other_person' ? {
+        otherPersonName: billingData.name || '',
+        otherPersonEmail: billingData.email || '',
+        otherPersonPhone: billingData.phone || '',
+        otherPersonAddress: billingData.billing_address || '',
+        otherPersonDni: billingData.nif || '',
+      } : {
+        clientBillingName: billingData.name || '',
+        clientBillingEmail: billingData.email || '',
+        clientBillingPhone: billingData.phone || '',
+        clientBillingAddress: billingData.billing_address || '',
+      };
 
       form.reset({
         ...form.getValues(),
         billingType,
-        ...(billingType === 'personal' ? {
-          clientBillingName: billingData.name || '',
-          clientBillingEmail: billingData.email || '',
-          clientBillingPhone: billingData.phone || '',
-          clientBillingAddress: billingData.billing_address || '',
-        } : {
-          clientBillingCompanyName: billingData.name || '',
-          clientBillingCompanyEmail: billingData.email || '',
-          clientBillingCompanyPhone: billingData.phone || '',
-          clientBillingCompanyAddress: billingData.billing_address || '',
-          clientBillingCompanyCif: billingData.nif || '',
-        })
+        ...billingFields,
       });
     }
   }, [billingData, billingLoading, form]);
@@ -192,8 +209,7 @@ const EditProjectForm = ({
 
         // Update billing data
         const billingUpdateData = {
-          type: data.billingType === 'personal' ? 'individual' :
-            data.billingType === 'other_person' ? 'individual' : 'company',
+          type: data.billingType,
           name: data.billingType === 'personal' ? (data.clientBillingName || data.clientName) :
             data.billingType === 'other_person' ? data.otherPersonName :
               data.clientBillingCompanyName,

@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -12,6 +12,7 @@ import { useRegionalConfig, getRegionalLegalText } from '@/hooks/useRegionalPric
 import type { Location } from '@/hooks/useRegionalPricing';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import SendBudgetEmailDialog from './SendBudgetEmailDialog';
 
 interface BudgetDetailModalProps {
     open: boolean;
@@ -24,6 +25,7 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
     const { data: budgetItems = [] } = useNewBudgetItems(budget?.id);
     const { data: regionalConfigs } = useRegionalConfig();
     const docRef = useRef<HTMLDivElement>(null);
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
     if (!budget) return null;
 
@@ -64,11 +66,60 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
     };
 
     const handleSendEmail = () => {
-        const client = budget.project?.clients;
-        const subject = encodeURIComponent(`Presupuesto Nomade - ${budget.budget_code}`);
-        const body = encodeURIComponent(`Hola,\n\nAdjunto te enviamos el presupuesto ${budget.budget_code} para tu proyecto ${budget.project?.project_code || ''}.\n\nQuedamos a tu disposición para cualquier duda.\n\nUn saludo,\nEquipo Nomade`);
-        window.location.href = `mailto:${client?.email || ''}?subject=${subject}&body=${body}`;
+        setEmailDialogOpen(true);
     };
+
+    const generatePdfBase64 = useCallback(async (): Promise<string | null> => {
+        const el = docRef.current;
+        if (!el) return null;
+
+        try {
+            const html2canvas = (await import('html2canvas')).default;
+            const { jsPDF } = await import('jspdf');
+
+            const canvas = await html2canvas(el, {
+                scale: 1.5,
+                useCORS: true,
+                backgroundColor: '#FFFFFF',
+            });
+
+            const a4W = 210;
+            const a4H = 297;
+            const marginX = 5; // lateral only
+            const marginY = 0;
+            const contentW = a4W - marginX * 2;
+            const pageContentH = a4H - marginY * 2;
+
+            const scale = contentW / canvas.width;
+            const totalContentH = canvas.height * scale;
+            const totalPages = Math.ceil(totalContentH / pageContentH);
+
+            const pdf = new jsPDF('p', 'mm', 'a4');
+
+            for (let page = 0; page < totalPages; page++) {
+                if (page > 0) pdf.addPage();
+
+                const srcY = Math.round((page * pageContentH) / scale);
+                const srcH = Math.min(Math.round(pageContentH / scale), canvas.height - srcY);
+
+                const pageCanvas = document.createElement('canvas');
+                pageCanvas.width = canvas.width;
+                pageCanvas.height = srcH;
+                const ctx = pageCanvas.getContext('2d')!;
+                ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+
+                const sliceH = srcH * scale;
+                pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.85), 'JPEG', marginX, marginY, contentW, sliceH);
+            }
+
+            const pdfOutput = pdf.output('datauristring');
+            const base64 = pdfOutput.split(',')[1];
+            return base64;
+        } catch (err) {
+            console.error('Error generating PDF:', err);
+            return null;
+        }
+    }, []);
 
 
 
@@ -389,6 +440,20 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
                 </div>
 
             </DialogContent>
+
+            {/* Email dialog */}
+            <SendBudgetEmailDialog
+                open={emailDialogOpen}
+                onOpenChange={setEmailDialogOpen}
+                clientEmail={budget.project?.clients?.email || ''}
+                clientName={budget.project?.clients?.name || 'Cliente'}
+                budgetCode={budget.budget_code || ''}
+                totalFormatted={budget.total?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0'}
+                modelName={budget.model_option?.name || ''}
+                engineName={budget.engine_option?.name || ''}
+                packName={budget.pack?.name || ''}
+                generatePdf={generatePdfBase64}
+            />
         </Dialog>
     );
 };

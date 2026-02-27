@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -6,6 +7,7 @@ import {
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { Printer, Mail, X } from 'lucide-react';
+import SendBudgetEmailDialog from '../budgets/SendBudgetEmailDialog';
 
 // ── Types ──────────────────────────────────────────────────
 type Location = 'peninsula' | 'canarias' | 'internacional';
@@ -87,11 +89,142 @@ const locationLegalTexts: Record<Location, string[]> = {
 
 // ── Print View Component ────────────────────────────────────
 const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintViewProps) => {
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false);
     const docRef = useRef<HTMLDivElement>(null);
+
+    // ── Auto-scale to fit A4 on print ──────────────────────
+    useEffect(() => {
+        if (!open) return;
+
+        const handleBeforePrint = () => {
+            const el = docRef.current;
+            if (!el) return;
+
+            // Reset zoom & width so we measure true content height
+            (el.style as any).zoom = '1';
+            el.style.setProperty('width', '210mm', 'important');
+            void el.offsetHeight; // force layout recalc
+
+            const contentHeight = el.scrollHeight;
+            // A4 height at 96 CSS-px/inch ≈ 297mm × 96/25.4 ≈ 1122px
+            const a4HeightPx = 1122;
+
+            if (contentHeight > a4HeightPx) {
+                const scale = Math.max(a4HeightPx / contentHeight, 0.5);
+                (el.style as any).zoom = String(scale);
+                // Expand width so that after zoom it visually fills the full A4 page
+                el.style.setProperty('width', `${210 / scale}mm`, 'important');
+            }
+        };
+
+        const handleAfterPrint = () => {
+            const el = docRef.current;
+            if (el) {
+                (el.style as any).zoom = '';
+                el.style.removeProperty('width');
+            }
+        };
+
+        window.addEventListener('beforeprint', handleBeforePrint);
+        window.addEventListener('afterprint', handleAfterPrint);
+
+        return () => {
+            window.removeEventListener('beforeprint', handleBeforePrint);
+            window.removeEventListener('afterprint', handleAfterPrint);
+        };
+    }, [open]);
+
+    const generatePdfBase64 = useCallback(async (): Promise<string | null> => {
+        const printDoc = document.getElementById('budget-print-document');
+        if (!printDoc) return null;
+
+        try {
+            const html2canvas = (await import('html2canvas')).default;
+            const { jsPDF } = await import('jspdf');
+
+            const canvas = await html2canvas(printDoc, {
+                scale: 1.5,
+                useCORS: true,
+                backgroundColor: '#FFFFFF',
+            });
+
+            const a4W = 210;
+            const a4H = 297;
+            const marginX = 5; // lateral only
+            const marginY = 0;
+            const contentW = a4W - marginX * 2;
+            const pageContentH = a4H - marginY * 2;
+
+            // Scale: how many mm per canvas pixel
+            const scale = contentW / canvas.width;
+            const totalContentH = canvas.height * scale;
+
+            // Detect protected zones (sections that must not be split)
+            const protectedZones: { startMm: number; endMm: number }[] = [];
+            const summaryEl = document.getElementById('budget-summary-block');
+            if (summaryEl && printDoc) {
+                const docRect = printDoc.getBoundingClientRect();
+                const sumRect = summaryEl.getBoundingClientRect();
+                const relTop = sumRect.top - docRect.top;
+                const relBottom = relTop + sumRect.height;
+                // Convert from screen px to canvas px, then to mm
+                const canvasScale = canvas.height / printDoc.scrollHeight;
+                protectedZones.push({
+                    startMm: relTop * canvasScale * scale,
+                    endMm: relBottom * canvasScale * scale,
+                });
+            }
+
+            // Calculate smart page breaks
+            const pageBreaks: number[] = [0]; // start of each page in mm
+            let cursor = 0;
+            while (cursor + pageContentH < totalContentH) {
+                let breakAt = cursor + pageContentH;
+                // Check if this break would split a protected zone
+                for (const zone of protectedZones) {
+                    if (breakAt > zone.startMm && breakAt < zone.endMm) {
+                        // Would split! Move break to just before the zone
+                        breakAt = zone.startMm;
+                        break;
+                    }
+                }
+                pageBreaks.push(breakAt);
+                cursor = breakAt;
+            }
+
+            const pdf = new jsPDF('p', 'mm', 'a4');
+
+            for (let i = 0; i < pageBreaks.length; i++) {
+                if (i > 0) pdf.addPage();
+
+                const startMm = pageBreaks[i];
+                const endMm = i + 1 < pageBreaks.length ? pageBreaks[i + 1] : totalContentH;
+                const sliceH = endMm - startMm;
+
+                const srcY = Math.round(startMm / scale);
+                const srcH = Math.round(sliceH / scale);
+
+                const pageCanvas = document.createElement('canvas');
+                pageCanvas.width = canvas.width;
+                pageCanvas.height = srcH;
+                const ctx = pageCanvas.getContext('2d')!;
+                ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+
+                pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.85), 'JPEG', marginX, marginY, contentW, sliceH);
+            }
+
+            const pdfOutput = pdf.output('datauristring');
+            const base64 = pdfOutput.split(',')[1];
+            return base64;
+        } catch (err) {
+            console.error('Error generating PDF:', err);
+            return null;
+        }
+    }, []);
 
     if (!data) return null;
 
-    // ── Shared: capture document as image and render into a single-page A4 PDF ──
+    // ── Shared: capture document as image and render into multi-page A4 PDF ──
     const generatePDF = async () => {
         const el = docRef.current;
         if (!el) return null;
@@ -105,25 +238,71 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
             backgroundColor: '#FFFFFF',
         });
 
-        const a4W = 210; // mm
-        const a4H = 297; // mm
-        // Full-width: image always spans the A4 width
-        let imgW = a4W;
-        let imgH = (canvas.height * a4W) / canvas.width;
-        let offsetX = 0;
+        const a4W = 210;
+        const a4H = 297;
+        const marginX = 5; // lateral only
+        const marginY = 0;
+        const contentW = a4W - marginX * 2;
+        const pageContentH = a4H - marginY * 2;
 
-        // If taller than A4, scale uniformly so height = A4H
-        if (imgH > a4H) {
-            const s = a4H / imgH;
-            imgW = a4W * s;
-            imgH = a4H;
-            offsetX = (a4W - imgW) / 2; // center horizontally
+        const scale = contentW / canvas.width;
+        const totalContentH = canvas.height * scale;
+
+        // Detect protected zones
+        const protectedZones: { startMm: number; endMm: number }[] = [];
+        const summaryEl = document.getElementById('budget-summary-block');
+        if (summaryEl && el) {
+            const docRect = el.getBoundingClientRect();
+            const sumRect = summaryEl.getBoundingClientRect();
+            const relTop = sumRect.top - docRect.top;
+            const relBottom = relTop + sumRect.height;
+            const canvasScale = canvas.height / el.scrollHeight;
+            protectedZones.push({
+                startMm: relTop * canvasScale * scale,
+                endMm: relBottom * canvasScale * scale,
+            });
+        }
+
+        // Calculate smart page breaks
+        const pageBreaks: number[] = [0];
+        let cursor = 0;
+        while (cursor + pageContentH < totalContentH) {
+            let breakAt = cursor + pageContentH;
+            for (const zone of protectedZones) {
+                if (breakAt > zone.startMm && breakAt < zone.endMm) {
+                    breakAt = zone.startMm;
+                    break;
+                }
+            }
+            pageBreaks.push(breakAt);
+            cursor = breakAt;
         }
 
         const pdf = new jsPDF('p', 'mm', 'a4');
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, 0, imgW, imgH);
+
+        for (let i = 0; i < pageBreaks.length; i++) {
+            if (i > 0) pdf.addPage();
+
+            const startMm = pageBreaks[i];
+            const endMm = i + 1 < pageBreaks.length ? pageBreaks[i + 1] : totalContentH;
+            const sliceH = endMm - startMm;
+
+            const srcY = Math.round(startMm / scale);
+            const srcH = Math.round(sliceH / scale);
+
+            const pageCanvas = document.createElement('canvas');
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = srcH;
+            const ctx = pageCanvas.getContext('2d')!;
+            ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+
+            pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.85), 'JPEG', marginX, marginY, contentW, sliceH);
+        }
+
         return pdf;
     };
+
+
 
     const handlePrint = async () => {
         try {
@@ -135,47 +314,6 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
         }
     };
 
-    const handleEmail = async () => {
-        // 1. Generate & download PDF
-        try {
-            const pdf = await generatePDF();
-            if (pdf) pdf.save(`Presupuesto_${data.budgetCode}.pdf`);
-        } catch (err) {
-            console.error('Error generating PDF:', err);
-        }
-
-        // 2. Build a nice email body
-        const firstName = data.clientName?.split(' ')[0] || data.clientName || '';
-        const totalFormatted = data.total?.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-        const bodyText = [
-            `Hola ${firstName},`,
-            ``,
-            `¡Muchas gracias por tu interés en Nomade Nation!`,
-            ``,
-            `Adjunto encontrarás tu presupuesto personalizado con todos los detalles de tu camper:`,
-            `PRESUPUESTO: ${data.budgetCode}`,
-            `🚐  MODELO: ${data.modelName}`,
-            `⚙️  MOTOR: ${data.engineName}`,
-            data.packName ? `📦  PACK: ${data.packName}` : '',
-            `TOTAL: ${totalFormatted} €`,
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-            `Si tienes cualquier duda o quieres hacer algún cambio, no dudes en escribirnos. Estamos aquí para ayudarte a crear la camper de tus sueños.`,
-            ``,
-            `¡Seguimos en contacto!`,
-            `Un saludo,`,
-            `El equipo de Nomade Nation`,
-        ].filter(Boolean).join('\n');
-
-        // 3. Open Gmail compose in a new tab (uses the browser's logged-in Google session)
-        const to = encodeURIComponent(data.clientEmail || '');
-        const subject = encodeURIComponent(`Presupuesto ${data.budgetCode} de Nomade Nation`);
-        const body = encodeURIComponent(bodyText);
-        window.open(
-            `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`,
-            '_blank'
-        );
-    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -195,7 +333,7 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={handleEmail}
+                            onClick={() => setEmailDialogOpen(true)}
                             className="gap-2 rounded-xl border-[#E5E7EB] text-[#374151] hover:bg-white text-xs font-bold uppercase tracking-wider h-9 px-4"
                         >
                             <Mail className="w-4 h-4" /> Enviar por Email
@@ -441,11 +579,11 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                 }} />
 
                 {/* ── Document ───────────────────────── */}
-                <div className="print-scroll-container flex-1 overflow-y-auto bg-white">
+                <div className="print-scroll-container flex-1 overflow-y-auto bg-white p-0">
                     <div
                         id="budget-print-document"
                         ref={docRef}
-                        className="w-full text-[#1A1A1A] font-sans bg-white flex flex-col"
+                        className="w-full text-[#1A1A1A] font-sans bg-white flex flex-col p-0 m-0"
                     >
 
                         {/* ━━ HERO BANNER ━━━━━━━━━━━━━━━━ */}
@@ -459,7 +597,7 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                         </div>
 
                         {/* ━━ HEADER: Logo + Budget Code ━━ */}
-                        <div className="print-header px-10 pt-0 pb-2 -mt-5 relative z-10 flex-shrink-0">
+                        <div className="print-header px-4 pt-0 pb-2 -mt-5 relative z-10 flex-shrink-0">
                             <div className="flex justify-between items-end">
                                 <div className="bg-white px-4 py-2 rounded-xl shadow-md border border-[#E5E7EB]/50">
                                     <img
@@ -479,7 +617,7 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                         </div>
 
                         {/* ━━ CONTENT ━━━━━━━━━━━━━━━━━━━━ */}
-                        <div className="print-content px-10 pb-10 space-y-6 flex-1 flex flex-col">
+                        <div className="print-content px-4 pb-4 space-y-6 flex-1 flex flex-col">
 
                             {/* ── Client + Project Info Box ── */}
                             <div className="print-info-box grid grid-cols-2 gap-0 rounded-xl overflow-hidden border border-[#E5E7EB] flex-shrink-0">
@@ -573,7 +711,7 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                             </div>
 
                             {/* ── Signature + Totals (side by side) ── */}
-                            <div className="print-signature-totals flex gap-8 items-end flex-shrink-0">
+                            <div id="budget-summary-block" className="print-signature-totals flex gap-8 items-end flex-shrink-0">
                                 {/* Client Signature — left side */}
                                 <div className="print-signature flex-1 space-y-2">
                                     <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#9CA3AF]">
@@ -703,6 +841,20 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                     </div>
                 </div>
             </DialogContent>
+
+            {/* Email dialog */}
+            <SendBudgetEmailDialog
+                open={emailDialogOpen}
+                onOpenChange={setEmailDialogOpen}
+                clientEmail={data.clientEmail}
+                clientName={data.clientName}
+                budgetCode={data.budgetCode}
+                totalFormatted={fmt(data.total)}
+                modelName={data.modelName}
+                engineName={data.engineName}
+                packName={data.packName}
+                generatePdf={generatePdfBase64}
+            />
         </Dialog>
     );
 };
