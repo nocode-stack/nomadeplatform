@@ -46,13 +46,13 @@ export const ModifyTimesDialog: React.FC<ModifyTimesDialogProps> = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch existing slots from NEW_Production_Schedule table
+  // Fetch existing slots from production_schedule table
   const { data: existingSlots } = useQuery({
     queryKey: ['production-slots-for-modification'],
     queryFn: async () => {
       if (import.meta.env.DEV) console.log('🔍 Fetching production schedule for modification...');
       const { data, error } = await supabase
-        .from('NEW_Production_Schedule')
+        .from('production_schedule')
         .select('production_code, id, start_date, end_date')
         .order('production_code', { ascending: true });
       
@@ -100,7 +100,7 @@ export const ModifyTimesDialog: React.FC<ModifyTimesDialogProps> = ({
 
     const avgInterval = intervalCount > 0 ? totalInterval / intervalCount : 2.5;
     
-    // Use default duration since NEW_Production_Schedule doesn't have estimated_duration_days
+    // Use default duration since production_schedule doesn't have estimated_duration_days
     const avgDuration = 50;
 
     if (import.meta.env.DEV) console.log('📊 Current settings calculated (business days):', { avgInterval, avgDuration });
@@ -183,7 +183,7 @@ export const ModifyTimesDialog: React.FC<ModifyTimesDialogProps> = ({
       // Insert new production settings record (only when applying changes)
       if (import.meta.env.DEV) console.log('🔧 Creating production settings:', settingsData);
       const { error: settingsError } = await supabase
-        .from('NEW_Production_Settings')
+        .from('production_settings')
         .insert(settingsData);
 
       if (settingsError) {
@@ -236,7 +236,7 @@ export const ModifyTimesDialog: React.FC<ModifyTimesDialogProps> = ({
         
         try {
           const { data: updateResult, error } = await supabase
-            .from('NEW_Production_Schedule')
+            .from('production_schedule')
             .update({
               start_date: dates.start_date,
               end_date: dates.end_date,

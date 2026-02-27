@@ -16,7 +16,7 @@ interface Project {
   id: string;
   code?: string;
   name?: string;
-  new_clients?: {
+  clients?: {
     id?: string;
     name?: string;
     email?: string;
@@ -24,7 +24,7 @@ interface Project {
     phone?: string;
     address?: string;
   };
-  new_vehicles?: {
+  vehicles?: {
     id?: string;
     vehicle_code?: string;
     numero_bastidor?: string;
@@ -190,9 +190,9 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
       if (import.meta.env.DEV) console.log('No contractData found, checking project data');
       // En estado inicial, validar con datos del proyecto - más permisivo
       const projectData = {
-        client_full_name: project.new_clients?.name || '',
-        client_email: project.new_clients?.email || '',
-        billing_address: project.new_clients?.address || '',
+        client_full_name: project.clients?.name || '',
+        client_email: project.clients?.email || '',
+        billing_address: project.clients?.address || '',
         vehicle_model: 'Modelo pendiente de especificar', // Valor por defecto
         payment_reserve: contractType === 'reservation' ? 1000 : 0, // Valor por defecto
         total_price: contractType !== 'reservation' ? 10000 : 0 // Valor por defecto
@@ -241,7 +241,7 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
 
     if (!data) {
       // Intentar obtener el ID del cliente de varias fuentes
-      const resolvedClientId = project.new_clients?.id || project.client_id || '';
+      const resolvedClientId = project.clients?.id || project.client_id || '';
 
       // Si no hay datos en el estado, crear datos básicos desde el proyecto con valores por defecto
       data = {
@@ -249,16 +249,16 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
         client_id: resolvedClientId,
         contract_type: contractType,
         contract_status: 'generado',
-        client_full_name: project.new_clients?.name || project.client_name || '',
-        client_dni: project.new_clients?.dni || '',
-        client_email: project.new_clients?.email || '',
-        client_phone: project.new_clients?.phone || '',
+        client_full_name: project.clients?.name || project.client_name || '',
+        client_dni: project.clients?.dni || '',
+        client_email: project.clients?.email || '',
+        client_phone: project.clients?.phone || '',
         billing_entity_name: '',
         billing_entity_nif: '',
-        billing_address: project.new_clients?.address || '',
+        billing_address: project.clients?.address || '',
         vehicle_model: 'Modelo pendiente de especificar',
-        vehicle_vin: project.new_vehicles?.numero_bastidor || '',
-        vehicle_plate: project.new_vehicles?.matricula || '',
+        vehicle_vin: project.vehicles?.numero_bastidor || '',
+        vehicle_plate: project.vehicles?.matricula || '',
         total_price: contractType === 'reservation' ? 0 : 25000,
         payment_reserve: contractType === 'reservation' ? 2000 : 0,
         payment_conditions: 'Condiciones estándar de pago',
@@ -399,19 +399,19 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
         // Si no hay datos en el estado, crear datos básicos desde el proyecto
         data = {
           project_id: project.id,
-          client_id: project.new_clients?.id || '',
+          client_id: project.clients?.id || '',
           contract_type: contractType,
           contract_status: 'generated',
-          client_full_name: project.new_clients?.name || '',
-          client_dni: project.new_clients?.dni || '',
-          client_email: project.new_clients?.email || '',
-          client_phone: project.new_clients?.phone || '',
+          client_full_name: project.clients?.name || '',
+          client_dni: project.clients?.dni || '',
+          client_email: project.clients?.email || '',
+          client_phone: project.clients?.phone || '',
           billing_entity_name: '',
           billing_entity_nif: '',
-          billing_address: project.new_clients?.address || '',
+          billing_address: project.clients?.address || '',
           vehicle_model: '',
-          vehicle_vin: project.new_vehicles?.numero_bastidor || '',
-          vehicle_plate: project.new_vehicles?.matricula || '',
+          vehicle_vin: project.vehicles?.numero_bastidor || '',
+          vehicle_plate: project.vehicles?.matricula || '',
           total_price: 0,
           payment_reserve: 0,
           payment_conditions: '',

@@ -500,7 +500,7 @@ export const generateContractData = async (project: UnifiedProject): Promise<Con
     if(import.meta.env.DEV) console.log('📡 Consultando cliente en base de datos:', project.client_id);
 
     const { data, error } = await supabase
-      .from('NEW_Clients')
+      .from('clients')
       .select('*')
       .eq('id', project.client_id)
       .single();
@@ -518,7 +518,7 @@ export const generateContractData = async (project: UnifiedProject): Promise<Con
   if(import.meta.env.DEV) console.log('💰 Consultando presupuesto primario para proyecto:', project.id);
 
   const { data: budgetData, error: budgetError } = await supabase
-    .from('NEW_Budget')
+    .from('budget')
     .select('*')
     .eq('project_id', project.id)
     .eq('is_primary', true)

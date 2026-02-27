@@ -8,7 +8,7 @@ interface PhaseProgress {
   status: string;
   start_date?: string | null;
   end_date?: string | null;
-  NEW_Project_Phase_Template?: {
+  project_phase_template?: {
     phase_name: string;
     group: string;
     phase_order: number;
@@ -41,38 +41,38 @@ export const useUnifiedProjectsList = () => {
     queryFn: async (): Promise<UnifiedProject[]> => {
       if (import.meta.env.DEV) console.log('🔍 Fetching unified projects list with budget data...');
 
-      // UPDATED: Use NEW_Projects as primary source
+      // UPDATED: Use projects as primary source
       const { data, error } = await supabase
-        .from('NEW_Projects')
+        .from('projects')
         .select(`
           *,
-          NEW_Clients(*)
+          clients(*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching NEW_Projects:', error);
+        console.error('❌ Error fetching projects:', error);
         throw error;
       }
 
-      if (import.meta.env.DEV) console.log('✅ NEW_Projects fetched:', data?.length || 0);
-      if (import.meta.env.DEV) console.log('🔍 Sample NEW_Project:', data?.[0]);
+      if (import.meta.env.DEV) console.log('✅ projects fetched:', data?.length || 0);
+      if (import.meta.env.DEV) console.log('🔍 Sample project:', data?.[0]);
 
       const projectIds = (data || []).map(p => p.id);
 
       // Batch query 1: All phases for all projects at once
       const { data: allPhases } = projectIds.length > 0
         ? await supabase
-          .from('NEW_Project_Phase_Progress')
-          .select(`*, NEW_Project_Phase_Template(phase_name, group, phase_order)`)
+          .from('project_phase_progress')
+          .select(`*, project_phase_template(phase_name, group, phase_order)`)
           .in('project_id', projectIds)
-          .order('NEW_Project_Phase_Template(phase_order)')
+          .order('project_phase_template(phase_order)')
         : { data: [] };
 
       // Batch query 2: All vehicles for all projects at once
       const { data: allVehicles } = projectIds.length > 0
         ? await supabase
-          .from('NEW_Vehicles')
+          .from('vehicles')
           .select('*')
           .in('project_id', projectIds)
         : { data: [] };
@@ -80,7 +80,7 @@ export const useUnifiedProjectsList = () => {
       // Batch query 3: All primary budgets for all projects at once
       const { data: allBudgets } = projectIds.length > 0
         ? await supabase
-          .from('NEW_Budget')
+          .from('budget')
           .select(`*, model_option:model_options(*)`)
           .in('project_id', projectIds)
           .eq('is_primary', true)
@@ -106,7 +106,7 @@ export const useUnifiedProjectsList = () => {
 
       // Transform data using the pre-fetched maps (no more individual queries)
       const projectsWithDetails = (data || []).map((newProject) => {
-        const clientData = newProject.NEW_Clients;
+        const clientData = newProject.clients;
         const phasesData = phasesByProject.get(newProject.id) || [];
         const vehicleData = vehiclesByProject.get(newProject.id) || null;
         const budgetData = budgetsByProject.get(newProject.id) || null;
@@ -118,10 +118,10 @@ export const useUnifiedProjectsList = () => {
           const completedPhases = phasesData.filter(p => p.status === 'completed');
 
           if (inProgressPhase) {
-            currentPhase = inProgressPhase.NEW_Project_Phase_Template?.group ?? null;
+            currentPhase = inProgressPhase.project_phase_template?.group ?? null;
           } else if (completedPhases.length > 0) {
             const lastCompletedPhase = completedPhases[completedPhases.length - 1];
-            currentPhase = lastCompletedPhase.NEW_Project_Phase_Template?.group ?? null;
+            currentPhase = lastCompletedPhase.project_phase_template?.group ?? null;
           }
         }
 
@@ -156,9 +156,9 @@ export const useUnifiedProjectsList = () => {
           vehicle_id: newProject.vehicle_id || null,
           production_code_id: null,
           vehicles: vehicleData,
-          new_clients: clientData,
           clients: clientData,
-          new_projects: newProject,
+          clients: clientData,
+          projects: newProject,
           projects: null
         };
       });
@@ -170,25 +170,25 @@ export const useUnifiedProjectsList = () => {
   });
 };
 
-// Hook para obtener un proyecto específico - UPDATED TO USE NEW_Projects
+// Hook para obtener un proyecto específico - UPDATED TO USE projects
 export const useUnifiedProject = (projectId: string) => {
   return useQuery({
     queryKey: PROJECT_QUERY_KEYS.detail(projectId),
     queryFn: async (): Promise<UnifiedProject> => {
-      if (import.meta.env.DEV) console.log('🔍 Fetching project from NEW_Projects:', projectId);
+      if (import.meta.env.DEV) console.log('🔍 Fetching project from projects:', projectId);
 
-      // UPDATED: Use NEW_Projects as primary source
+      // UPDATED: Use projects as primary source
       const { data: newProjectData, error } = await supabase
-        .from('NEW_Projects')
+        .from('projects')
         .select(`
           *,
-          NEW_Clients(*)
+          clients(*)
         `)
         .eq('id', projectId)
         .maybeSingle();
 
       if (error) {
-        console.error('❌ Error fetching NEW_Project:', error);
+        console.error('❌ Error fetching project:', error);
         throw error;
       }
 
@@ -196,21 +196,21 @@ export const useUnifiedProject = (projectId: string) => {
         throw new Error('Project not found');
       }
 
-      const clientData = newProjectData.NEW_Clients;
+      const clientData = newProjectData.clients;
 
       // Get current project phases to determine current phase only (not status)
       const { data: phasesData } = await supabase
-        .from('NEW_Project_Phase_Progress')
+        .from('project_phase_progress')
         .select(`
           *,
-          NEW_Project_Phase_Template (
+          project_phase_template (
             phase_name,
             group,
             phase_order
           )
         `)
         .eq('project_id', projectId)
-        .order('NEW_Project_Phase_Template(phase_order)');
+        .order('project_phase_template(phase_order)');
 
       // Determine current phase (not status) from phases
       let currentPhase = null;
@@ -220,17 +220,17 @@ export const useUnifiedProject = (projectId: string) => {
         const completedPhases = phasesData.filter(p => p.status === 'completed');
 
         if (inProgressPhase) {
-          currentPhase = inProgressPhase.NEW_Project_Phase_Template?.group;
+          currentPhase = inProgressPhase.project_phase_template?.group;
         } else if (completedPhases.length > 0) {
           // Get the last completed phase
           const lastCompletedPhase = completedPhases[completedPhases.length - 1];
-          currentPhase = lastCompletedPhase.NEW_Project_Phase_Template?.group;
+          currentPhase = lastCompletedPhase.project_phase_template?.group;
         }
       }
 
       // Temporarily disable legacy project data queries
       let projectData = null;
-      if (import.meta.env.DEV) console.log('🔍 Using NEW_Projects as primary source for detail view');
+      if (import.meta.env.DEV) console.log('🔍 Using projects as primary source for detail view');
       if (import.meta.env.DEV) console.log('📊 Current phase from NEW system:', currentPhase);
       if (import.meta.env.DEV) console.log('📊 Project status from DB:', newProjectData.status);
 
@@ -238,30 +238,30 @@ export const useUnifiedProject = (projectId: string) => {
       if (import.meta.env.DEV) console.log('👤 Client data:', clientData);
       if (import.meta.env.DEV) console.log('📊 Project data:', projectData);
 
-      // Get vehicle data from NEW_Vehicles based on project assignment
+      // Get vehicle data from vehicles based on project assignment
       let vehicleData = null;
-      if (import.meta.env.DEV) console.log('🔍 Checking for NEW_Vehicles assigned to project:', projectId);
+      if (import.meta.env.DEV) console.log('🔍 Checking for vehicles assigned to project:', projectId);
 
       const { data: newVehicleData, error: vError } = await supabase
-        .from('NEW_Vehicles')
+        .from('vehicles')
         .select('*')
         .eq('project_id', projectId)
         .maybeSingle();
 
       if (vError) {
-        console.error('❌ Error fetching NEW_Vehicle:', vError);
+        console.error('❌ Error fetching vehicle:', vError);
       } else if (newVehicleData) {
         vehicleData = newVehicleData;
-        if (import.meta.env.DEV) console.log('✅ NEW_Vehicle data found:', vehicleData);
+        if (import.meta.env.DEV) console.log('✅ Vehicle data found:', vehicleData);
       } else {
-        if (import.meta.env.DEV) console.log('⚠️ No NEW_Vehicle assigned to this project');
+        if (import.meta.env.DEV) console.log('⚠️ No Vehicle assigned to this project');
       }
 
-      // Get production slot data if slot_id exists in NEW_Projects
+      // Get production slot data if slot_id exists in projects
       let productionSlot = null;
       if (newProjectData?.slot_id) {
         const { data: slotData } = await supabase
-          .from('NEW_Production_Schedule')
+          .from('production_schedule')
           .select('*')
           .eq('id', newProjectData.slot_id)
           .maybeSingle();
@@ -272,14 +272,14 @@ export const useUnifiedProject = (projectId: string) => {
       // Get PRIMARY budget data from the new budget system
       let budgetData = null;
       const { data: budgetList } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .select(`
           *,
           engine_option:engine_options(*),
           model_option:model_options(*),
           exterior_color_option:exterior_color_options(*),
-          pack:NEW_Budget_Packs(*),
-          electric_system:NEW_Budget_Electric(*)
+          pack:budget_packs(*),
+          electric_system:electric_system(*)
         `)
         .eq('project_id', projectId)
         .eq('is_primary', true)
@@ -291,14 +291,14 @@ export const useUnifiedProject = (projectId: string) => {
       } else {
         // Fallback to latest budget if no primary budget
         const { data: fallbackBudget } = await supabase
-          .from('NEW_Budget')
+          .from('budget')
           .select(`
             *,
             engine_option:engine_options(*),
             model_option:model_options(*),
             exterior_color_option:exterior_color_options(*),
-            pack:NEW_Budget_Packs(*),
-            electric_system:NEW_Budget_Electric(*)
+            pack:budget_packs(*),
+            electric_system:electric_system(*)
           `)
           .eq('project_id', projectId)
           .order('created_at', { ascending: false })
@@ -333,9 +333,9 @@ export const useUnifiedProject = (projectId: string) => {
         };
       };
 
-      // Transform data with NEW_Projects as primary source
+      // Transform data with projects as primary source
       const transformedData = {
-        // Use NEW_Projects as primary data source
+        // Use projects as primary data source
         id: newProjectData.id,
         code: clientData?.client_status === 'prospect'
           ? (clientData?.client_code || null)
@@ -350,10 +350,10 @@ export const useUnifiedProject = (projectId: string) => {
           : vehicleData?.exterior_color || 'Por definir',
         pack: getBudgetSpec(budgetData).pack,
         electric_system: getBudgetSpec(budgetData).electricSystem,
-        extras: 'Por definir', // Los extras están en NEW_Budget_Items
+        extras: 'Por definir', // Los extras están en budget_items
         client_id: newProjectData.client_id,
         comercial: newProjectData.comercial,
-        // Client information from NEW_Clients
+        // Client information from clients
         client_name: clientData?.name || 'Sin cliente',
         client_email: clientData?.email || null,
         client_phone: clientData?.phone || null,
@@ -373,17 +373,17 @@ export const useUnifiedProject = (projectId: string) => {
         production_slot: productionSlot,
         vehicles: vehicleData,
         // Keep client data with both mappings for compatibility
-        new_clients: clientData,
+        clients: clientData,
         clients: clientData,
         // Add project phases if they exist
         project_phase_progress: projectData?.project_phase_progress || [],
-        // Add NEW_Projects, project data, and primary budget for reference
-        new_projects: newProjectData,
+        // Add projects, project data, and primary budget for reference
+        projects: newProjectData,
         projects: projectData,
         primary_budget: budgetData
       };
 
-      if (import.meta.env.DEV) console.log('✅ Final transformed project data from NEW_Projects:', transformedData);
+      if (import.meta.env.DEV) console.log('✅ Final transformed project data from projects:', transformedData);
       if (import.meta.env.DEV) console.log('👤 Final client data:', clientData);
       return transformedData as unknown as UnifiedProject;
     },
@@ -407,15 +407,15 @@ export const useProjectPhases = (projectId: string) => {
       if (import.meta.env.DEV) console.log('🔍 Fetching NEW project phases for:', projectId);
 
       const { data, error } = await supabase
-        .from('NEW_Project_Phase_Progress')
+        .from('project_phase_progress')
         .select(`
           *,
-          NEW_Project_Phase_Template (
+          project_phase_template (
             *
           )
         `)
         .eq('project_id', projectId)
-        .order('NEW_Project_Phase_Template(phase_order)');
+        .order('project_phase_template(phase_order)');
 
       if (error) {
         console.error('❌ Error fetching phases:', error);
@@ -440,7 +440,7 @@ export const useProjectPhases = (projectId: string) => {
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Project_Phase_Progress',
+          table: 'project_phase_progress',
           filter: `project_id=eq.${projectId}`
         },
         () => {
@@ -455,7 +455,7 @@ export const useProjectPhases = (projectId: string) => {
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Projects',
+          table: 'projects',
           filter: `id=eq.${projectId}`
         },
         () => {
@@ -469,7 +469,7 @@ export const useProjectPhases = (projectId: string) => {
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Budget',
+          table: 'budget',
           filter: `project_id=eq.${projectId}`
         },
         () => {
@@ -488,7 +488,7 @@ export const useProjectPhases = (projectId: string) => {
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Vehicles',
+          table: 'vehicles',
           filter: `project_id=eq.${projectId}`
         },
         () => {
@@ -517,7 +517,7 @@ export const useProjectPhases = (projectId: string) => {
       }
 
       const { error } = await supabase
-        .from('NEW_Project_Phase_Progress')
+        .from('project_phase_progress')
         .update(updateData)
         .eq('id', phaseId);
 

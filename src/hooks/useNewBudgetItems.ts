@@ -9,7 +9,7 @@ export const useBudgetItems = (budgetId: string) => {
     queryKey: ['budget-items', budgetId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Budget_Items')
+        .from('budget_items')
         .select('*')
         .eq('budget_id', budgetId)
         .order('order_index', { ascending: true });
@@ -27,7 +27,7 @@ export const useCatalogItems = () => {
     queryKey: ['catalog-items'],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from('NEW_Budget_Additional_Items')
+        .from('additional_items')
         .select('*')
         .eq('is_active', true)
         .eq('is_general' as any, true)
@@ -39,7 +39,7 @@ export const useCatalogItems = () => {
   });
 };
 
-// Create a new item in NEW_Budget_Additional_Items
+// Create a new item in additional_items
 export const useCreateAdditionalItem = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -47,7 +47,7 @@ export const useCreateAdditionalItem = () => {
   return useMutation({
     mutationFn: async (itemData: { name: string, price: number, is_general: boolean, category?: string }) => {
       const { data, error } = await supabase
-        .from('NEW_Budget_Additional_Items')
+        .from('additional_items')
         .insert({
           name: itemData.name,
           price: itemData.price,
@@ -81,7 +81,7 @@ export const useCreateBudgetItem = () => {
   return useMutation({
     mutationFn: async (itemData: Omit<NewBudgetItem, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
-        .from('NEW_Budget_Items')
+        .from('budget_items')
         .insert(itemData)
         .select()
         .single();
@@ -117,7 +117,7 @@ export const useUpdateBudgetItem = () => {
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<NewBudgetItem> & { id: string }) => {
       const { data, error } = await supabase
-        .from('NEW_Budget_Items')
+        .from('budget_items')
         .update(updates)
         .eq('id', id)
         .select()
@@ -154,7 +154,7 @@ export const useDeleteBudgetItem = () => {
   return useMutation({
     mutationFn: async (itemId: string) => {
       const { error } = await supabase
-        .from('NEW_Budget_Items')
+        .from('budget_items')
         .delete()
         .eq('id', itemId);
 
@@ -216,7 +216,7 @@ export const useAddCatalogItemToBudget = () => {
       };
 
       const { data, error } = await supabase
-        .from('NEW_Budget_Items')
+        .from('budget_items')
         .insert(itemData)
         .select()
         .single();

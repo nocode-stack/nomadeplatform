@@ -81,8 +81,8 @@ describe('hook useProjects - createProject', () => {
         const newProject = await result.current.createProject(leadData);
 
         // Verificar creación de cliente y proyecto
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Clients');
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Projects');
+        expect(supabase.from).toHaveBeenCalledWith('clients');
+        expect(supabase.from).toHaveBeenCalledWith('projects');
 
         expect(newProject).toBeDefined();
         // Los nuevos proyectos (Leads) deben tener estado 'prospect'
@@ -109,7 +109,7 @@ describe('hook useProjects - createProject', () => {
 
         await result.current.createProject(leadData);
 
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Billing');
+        expect(supabase.from).toHaveBeenCalledWith('billing');
     });
 
     it('debería guardar las especificaciones del proyecto durante el registro del lead', async () => {
@@ -129,8 +129,8 @@ describe('hook useProjects - createProject', () => {
 
         const newProject = await result.current.createProject(leadData);
 
-        // Esperamos una llamada a NEW_Budget para guardar estas especificaciones
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget');
+        // Esperamos una llamada a budget para guardar estas especificaciones
+        expect(supabase.from).toHaveBeenCalledWith('budget');
         expect(newProject).toBeDefined();
     });
 
@@ -164,7 +164,7 @@ describe('hook useProjects - createProject', () => {
 
         await result.current.createProject(leadData);
 
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget');
+        expect(supabase.from).toHaveBeenCalledWith('budget');
         // discount_percentage should be rounded to 2 decimals: 5.5555% / 100 = 0.055555 → rounded to 0.06
         expect(mockQueryBuilder.insert).toHaveBeenCalledWith(expect.objectContaining({
             discount_percentage: 0.06
@@ -191,8 +191,8 @@ describe('hook useProjects - updateProject', () => {
 
         await result.current.updateProject('test-project-id', updateData);
 
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Clients');
-        expect(supabase.from('NEW_Clients').update).toHaveBeenCalledWith(expect.objectContaining({
+        expect(supabase.from).toHaveBeenCalledWith('clients');
+        expect(supabase.from('clients').update).toHaveBeenCalledWith(expect.objectContaining({
             name: 'Juan Pérez Actualizado',
             email: 'juan_nuevo@example.com'
         }));
@@ -214,8 +214,8 @@ describe('hook useProjects - updateProject', () => {
 
         await result.current.updateProject('test-project-id', updateData);
 
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Billing');
-        expect(supabase.from('NEW_Billing').update).toHaveBeenCalledWith(expect.objectContaining({
+        expect(supabase.from).toHaveBeenCalledWith('billing');
+        expect(supabase.from('billing').update).toHaveBeenCalledWith(expect.objectContaining({
             name: 'Nueva Razón Social'
         }));
     });
@@ -234,7 +234,7 @@ describe('hook useProjects - updateProject', () => {
 
         await result.current.updateProject('test-project-id', updateData);
 
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget');
+        expect(supabase.from).toHaveBeenCalledWith('budget');
     });
 
     it('debería forzar la creación de un nuevo presupuesto si forceNewBudget es true', async () => {
@@ -264,8 +264,8 @@ describe('hook useProjects - updateProject', () => {
 
         await result.current.updateProject('test-project-id', updateData);
 
-        // Debería haber un insert en NEW_Budget
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget');
+        // Debería haber un insert en budget
+        expect(supabase.from).toHaveBeenCalledWith('budget');
         expect(mockQueryBuilder.insert).toHaveBeenCalled();
     });
 });

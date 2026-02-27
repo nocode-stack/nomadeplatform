@@ -3,16 +3,16 @@ import { replaceAllClientReferences, createMigrationScript } from '../../utils/m
 
 describe('migrationHelpers', () => {
     describe('replaceAllClientReferences', () => {
-        it('should replace .clients? with .new_clients?', () => {
+        it('should replace .clients? with .clients?', () => {
             const input = 'project.clients?.name';
             const result = replaceAllClientReferences(input);
-            expect(result).toBe('project.new_clients?.name');
+            expect(result).toBe('project.clients?.name');
         });
 
         it('should replace multiple occurrences', () => {
             const input = 'a.clients?.name + b.clients?.email';
             const result = replaceAllClientReferences(input);
-            expect(result).toBe('a.new_clients?.name + b.new_clients?.email');
+            expect(result).toBe('a.clients?.name + b.clients?.email');
         });
 
         it('should not replace non-matching patterns', () => {

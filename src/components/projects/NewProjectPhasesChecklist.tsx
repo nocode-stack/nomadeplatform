@@ -47,7 +47,7 @@ const NewProjectPhasesChecklist = ({ projectId }: NewProjectPhasesChecklistProps
 
   // Agrupar fases por grupo
   const phasesByGroup = phases.reduce((acc, phase) => {
-    const group = phase.NEW_Project_Phase_Template?.group || 'unknown';
+    const group = phase.project_phase_template?.group || 'unknown';
     if (!acc[group]) acc[group] = [];
     acc[group].push(phase);
     return acc;
@@ -113,23 +113,23 @@ const NewProjectPhasesChecklist = ({ projectId }: NewProjectPhasesChecklistProps
                         />
                         <div>
                           <div className="font-medium text-sm">
-                            {phase.NEW_Project_Phase_Template?.phase_name || 'Fase sin nombre'}
+                            {phase.project_phase_template?.phase_name || 'Fase sin nombre'}
                           </div>
                           <div className="text-xs text-gray-500">
-                            Grupo: {phase.NEW_Project_Phase_Template?.group || 'Sin grupo'}
+                            Grupo: {phase.project_phase_template?.group || 'Sin grupo'}
                           </div>
                           <div className="text-xs text-gray-400">
-                            Orden: {phase.NEW_Project_Phase_Template?.phase_order || 0}
+                            Orden: {phase.project_phase_template?.phase_order || 0}
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 text-xs text-gray-500">
-                        {phase.NEW_Project_Phase_Template?.group && (
+                        {phase.project_phase_template?.group && (
                           <div className="flex items-center gap-1">
                             <User className="h-3 w-3" />
                             <span className="capitalize">
-                              {phase.NEW_Project_Phase_Template.group}
+                              {phase.project_phase_template.group}
                             </span>
                           </div>
                         )}

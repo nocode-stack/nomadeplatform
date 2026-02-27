@@ -51,7 +51,7 @@ describe('useUpdateClient hook', () => {
 
         await result.current.mutateAsync({ clientId, data: updateData });
 
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Clients');
+        expect(supabase.from).toHaveBeenCalledWith('clients');
     });
 
     it('should handle errors correctly', async () => {

@@ -50,11 +50,11 @@ const BillingEditButton: React.FC<BillingEditButtonProps> = ({ project, onBillin
   const updateBilling = useUpdateBilling();
 
   // Usar el hook personalizado para cargar datos de facturación automáticamente
-  const { data: billingData, isLoading: isBillingLoading, error: billingError, refetch } = useBillingData(project?.new_clients?.id);
+  const { data: billingData, isLoading: isBillingLoading, error: billingError, refetch } = useBillingData(project?.clients?.id);
 
   if (import.meta.env.DEV) console.log('🔧 BillingEditButton state:', {
     projectId: project?.id,
-    clientId: project?.new_clients?.id,
+    clientId: project?.clients?.id,
     isBillingLoading,
     billingData,
     billingError,
@@ -95,15 +95,15 @@ const BillingEditButton: React.FC<BillingEditButtonProps> = ({ project, onBillin
           billing_address: freshBillingData.billing_address || '',
         };
         if (import.meta.env.DEV) console.log('✅ TRIGGER: Usando datos de facturación guardados:', formData);
-      } else if (project?.new_clients) {
+      } else if (project?.clients) {
         // Auto-llenar con datos del cliente si no hay facturación
         formData = {
           type: 'individual' as const,
-          name: project.new_clients.name || '',
-          nif: project.new_clients.dni || '',
-          email: project.new_clients.email || '',
-          phone: project.new_clients.phone || '',
-          billing_address: project.new_clients.address || '',
+          name: project.clients.name || '',
+          nif: project.clients.dni || '',
+          email: project.clients.email || '',
+          phone: project.clients.phone || '',
+          billing_address: project.clients.address || '',
         };
         if (import.meta.env.DEV) console.log('📝 TRIGGER: No hay datos de facturación, usando datos del cliente:', formData);
       } else {
@@ -148,7 +148,7 @@ const BillingEditButton: React.FC<BillingEditButtonProps> = ({ project, onBillin
   }, [billingData, open, form]);
 
   const onSubmit = async (data: BillingData) => {
-    if (!project?.new_clients?.id) {
+    if (!project?.clients?.id) {
       toast({
         title: "Error",
         description: "No se encontró el cliente del proyecto",
@@ -161,7 +161,7 @@ const BillingEditButton: React.FC<BillingEditButtonProps> = ({ project, onBillin
 
     try {
       await updateBilling.mutateAsync({
-        clientId: project.new_clients.id,
+        clientId: project.clients.id,
         data: {
           type: data.type,
           name: data.name || null,

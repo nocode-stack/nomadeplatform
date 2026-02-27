@@ -13,7 +13,7 @@ export const useBudgetMutations = () => {
 
       // First, unmark all other budgets as primary for this project
       const { error: unmarkError } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .update({ is_primary: false })
         .eq('project_id', projectId);
 
@@ -24,7 +24,7 @@ export const useBudgetMutations = () => {
 
       // Then mark this budget as primary
       const { error: markError } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .update({ is_primary: true })
         .eq('id', budgetId);
 

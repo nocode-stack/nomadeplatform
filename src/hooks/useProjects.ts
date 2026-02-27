@@ -9,7 +9,7 @@ export const useProjectStatusUpdater = (projectId?: string) => {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ projectId, status }: { projectId: string; status: string }) => {
       const { error } = await supabase
-        .from('NEW_Projects')
+        .from('projects')
         .update({ status })
         .eq('id', projectId);
 

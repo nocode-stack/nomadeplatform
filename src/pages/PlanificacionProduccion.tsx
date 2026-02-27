@@ -68,7 +68,7 @@ const PlanificacionProduccion = () => {
 
       // First, get all production schedule entries
       const { data: scheduleData, error: scheduleError } = await supabase
-        .from('NEW_Production_Schedule')
+        .from('production_schedule')
         .select('*')
         .order('production_code', { ascending: true });
 
@@ -81,16 +81,16 @@ const PlanificacionProduccion = () => {
       const dataWithProjects = await Promise.all(
         (scheduleData || []).map(async (slot) => {
           if (slot.project_id) {
-            // Try NEW_Projects first (nueva estructura)
+            // Try projects first (nueva estructura)
             let projectData = null;
             const { data: newProjectData } = await supabase
-              .from('NEW_Projects')
+              .from('projects')
               .select(`
                 id,
                 project_code,
                 status,
                 vehicle_id,
-                NEW_Clients (
+                clients (
                   name
                 )
               `)
@@ -100,7 +100,7 @@ const PlanificacionProduccion = () => {
             if (newProjectData) {
               // Calcular progreso real desde las fases del proyecto
               const { data: phaseProgress } = await supabase
-                .from('NEW_Project_Phase_Progress')
+                .from('project_phase_progress')
                 .select('status')
                 .eq('project_id', newProjectData.id);
 
@@ -110,7 +110,7 @@ const PlanificacionProduccion = () => {
 
               // Obtener información del vehículo para determinar el modelo
               const { data: vehicleData } = await supabase
-                .from('NEW_Vehicles')
+                .from('vehicles')
                 .select('engine, transmission_type, plazas')
                 .eq('project_id', newProjectData.id)
                 .maybeSingle();
@@ -124,7 +124,7 @@ const PlanificacionProduccion = () => {
                 model: vehicleModel,
                 power: vehicleData?.engine || 'Por definir',
                 progress: calculatedProgress,
-                clients: newProjectData.NEW_Clients
+                clients: newProjectData.clients
               };
             }
             // Note: Removed fallback to old projects table since it no longer exists
@@ -140,10 +140,10 @@ const PlanificacionProduccion = () => {
         dataWithProjects.map(async (slot) => {
           let vehicleInfo = null;
 
-          // Buscar vehículo asignado en NEW_Vehicles por project_id
+          // Buscar vehículo asignado en vehicles por project_id
           if (slot.project_id) {
             const { data: newVehicleData } = await supabase
-              .from('NEW_Vehicles')
+              .from('vehicles')
               .select(`
                 id, 
                 vehicle_code, 
@@ -189,7 +189,7 @@ const PlanificacionProduccion = () => {
             status: slot.project_id ? 'assigned' : 'available',
             project_name: slot.projects?.name || slot.projects?.project_code,
             project_model: slot.projects?.model,
-            client_name: slot.projects?.clients?.name || slot.projects?.NEW_Clients?.name || 'Cliente por determinar',
+            client_name: slot.projects?.clients?.name || slot.projects?.clients?.name || 'Cliente por determinar',
             vehicle_specs: slot.projects?.power,
             project_status: slot.projects?.status,
             project_progress: slot.projects?.progress || 0,
@@ -231,10 +231,10 @@ const PlanificacionProduccion = () => {
       created_at: vehicleInfo.created_at || new Date().toISOString(),
       updated_at: vehicleInfo.updated_at || new Date().toISOString(),
       // Add project information if available
-      NEW_Projects: projectInfo ? {
+      projects: projectInfo ? {
         id: projectInfo.project_id,
         project_code: projectInfo.project_code,
-        NEW_Clients: projectInfo.client_name ? { name: projectInfo.client_name } : null
+        clients: projectInfo.client_name ? { name: projectInfo.client_name } : null
       } : null
     });
     setShowVehicleDialog(true);

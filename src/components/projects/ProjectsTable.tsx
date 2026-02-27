@@ -62,10 +62,10 @@ const ProjectsTable = ({ projects, title = "Proyectos" }: ProjectsTableProps) =>
                     <TableCell>
                       <div>
                         <div className="font-medium">
-                          {project.new_clients?.name || 'Sin cliente'}
+                          {project.clients?.name || 'Sin cliente'}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {project.new_clients?.email || ''}
+                          {project.clients?.email || ''}
                         </div>
                       </div>
                     </TableCell>

@@ -78,7 +78,7 @@ describe('useContractVersioning hook', () => {
 
         await result.current.sendContract.mutateAsync('standard');
 
-        expect(mockFrom).toHaveBeenCalledWith('NEW_Contracts');
+        expect(mockFrom).toHaveBeenCalledWith('contracts');
         expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
             estado_visual: 'sent'
         }));

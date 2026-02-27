@@ -1,8 +1,8 @@
-// Utilities to help with data migration from old clients to NEW_Clients
+// Utilities to help with data migration from old clients to clients
 
 export function replaceAllClientReferences(text: string): string {
-  // Replace all instances of .clients with .new_clients
-  return text.replace(/\.clients\?/g, '.new_clients?');
+  // Replace all instances of .clients with .clients
+  return text.replace(/\.clients\?/g, '.clients?');
 }
 
 // Helper to create a simple search and replace script
@@ -20,6 +20,6 @@ export function createMigrationScript() {
 
   return filesToUpdate.map(file => ({
     file,
-    action: 'Replace all instances of "project.clients?" with "project.new_clients?"'
+    action: 'Replace all instances of "project.clients?" with "project.clients?"'
   }));
 }

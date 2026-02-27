@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 
-// New incident interfaces based on NEW_Incidents table structure
+// New incident interfaces based on incidents table structure
 export interface IncidentStatus {
   id: string;
   status_code: string;
@@ -106,7 +106,7 @@ export const useIncidentStatuses = () => {
       logger.debug('Fetching incident statuses', { component: 'Incident', action: 'fetchStatuses' });
 
       const { data, error } = await supabase
-        .from('NEW_Incident_Status')
+        .from('incident_status')
         .select('*')
         .eq('is_active', true)
         .order('order_index', { ascending: true });
@@ -130,26 +130,26 @@ export const useNewIncidentsList = (projectId?: string) => {
       logger.debug('Fetching new incidents', { component: 'Incident', data: { projectId: projectId || 'all' } });
 
       let query = supabase
-        .from('NEW_Incidents')
+        .from('incidents')
         .select(`
           *,
-          status:NEW_Incident_Status(*),
-          items:NEW_Incident_Items(*),
-            project:NEW_Projects (
+          status:incident_status(*),
+          items:incident_items(*),
+            project:projects (
               id,
               project_code,
               client_name,
               client_id,
               vehicle_id,
               delivery_date,
-              client:NEW_Clients (
+              client:clients (
                 id,
                 name,
                 client_code,
                 email,
                 phone
               ),
-              vehicle:NEW_Vehicles!NEW_Projects_vehicle_id_fkey (
+              vehicle:vehicles!projects_vehicle_id_fkey (
                 id,
                 engine,
                 transmission_type,
@@ -157,7 +157,7 @@ export const useNewIncidentsList = (projectId?: string) => {
                 vehicle_code,
                 plazas
               ),
-              budget:NEW_Budget!NEW_Budget_project_id_fkey (
+              budget:budget!budget_project_id_fkey (
                 id,
                 is_primary,
                 model_option:model_options (
@@ -270,7 +270,7 @@ export const useCreateNewIncident = () => {
 
       // Get the default status (reportada)
       const { data: defaultStatus } = await supabase
-        .from('NEW_Incident_Status')
+        .from('incident_status')
         .select('id')
         .eq('status_code', 'reportada')
         .single();
@@ -279,7 +279,7 @@ export const useCreateNewIncident = () => {
       const mainCategory = data.items[0].category;
 
       const { data: incident, error } = await supabase
-        .from('NEW_Incidents')
+        .from('incidents')
         .insert({
           project_id: data.project_id,
           category: mainCategory,
@@ -291,13 +291,13 @@ export const useCreateNewIncident = () => {
         })
         .select(`
           *,
-          status:NEW_Incident_Status(*),
-          project:NEW_Projects (
+          status:incident_status(*),
+          project:projects (
             id,
             project_code,
             client_name,
             client_id,
-            client:NEW_Clients (
+            client:clients (
               id,
               name,
               client_code,
@@ -327,7 +327,7 @@ export const useCreateNewIncident = () => {
         }));
 
         const { error: itemsError } = await supabase
-          .from('NEW_Incident_Items')
+          .from('incident_items')
           .insert(itemsToInsert);
 
         if (itemsError) {
@@ -417,12 +417,12 @@ export const useUpdateNewIncidentStatus = () => {
 
       try {
         const { data, error } = await supabase
-          .from('NEW_Incidents')
+          .from('incidents')
           .update(updateData)
           .eq('id', incidentId)
           .select(`
             *,
-            status:NEW_Incident_Status(*)
+            status:incident_status(*)
           `)
           .single();
 
@@ -474,7 +474,7 @@ export const useDeleteNewIncident = () => {
 
       // First delete incident items
       const { error: itemsError } = await supabase
-        .from('NEW_Incident_Items')
+        .from('incident_items')
         .delete()
         .eq('incident_id', incidentId);
 
@@ -485,7 +485,7 @@ export const useDeleteNewIncident = () => {
 
       // Then delete the incident
       const { error } = await supabase
-        .from('NEW_Incidents')
+        .from('incidents')
         .delete()
         .eq('id', incidentId);
 

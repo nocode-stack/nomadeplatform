@@ -21,7 +21,7 @@ export const useIncidentItems = (incidentId: string) => {
       }
 
       const { data, error } = await supabase
-        .from('NEW_Incident_Items')
+        .from('incident_items')
         .select('*')
         .eq('incident_id', incidentId)
         .order('created_at', { ascending: true });
@@ -44,7 +44,7 @@ export const useCreateIncidentItem = () => {
   return useMutation({
     mutationFn: async (data: { incident_id: string; description: string; category: string; priority?: string }) => {
       const { data: item, error } = await supabase
-        .from('NEW_Incident_Items')
+        .from('incident_items')
         .insert({
           incident_id: data.incident_id,
           description: data.description,
@@ -85,7 +85,7 @@ export const useDeleteIncidentItem = () => {
   return useMutation({
     mutationFn: async (itemId: string) => {
       const { error } = await supabase
-        .from('NEW_Incident_Items')
+        .from('incident_items')
         .delete()
         .eq('id', itemId);
 

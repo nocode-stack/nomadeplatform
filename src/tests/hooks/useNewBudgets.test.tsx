@@ -63,7 +63,7 @@ describe('useNewBudgets hooks', () => {
             await result.current.mutateAsync(budgetData as any);
 
             // Check both the from call and the insert call
-            expect(mockFrom).toHaveBeenCalledWith('NEW_Budget');
+            expect(mockFrom).toHaveBeenCalledWith('budget');
         });
     });
 
@@ -85,7 +85,7 @@ describe('useNewBudgets hooks', () => {
             await result.current.mutateAsync({ budgetId: 'bud-123', clientId: 'client-123', confirmed: true });
 
             // Should check for project_id first
-            expect(mockFrom).toHaveBeenCalledWith('NEW_Budget');
+            expect(mockFrom).toHaveBeenCalledWith('budget');
 
             // Should update others to is_primary: false
             expect(mockUpdate).toHaveBeenCalledWith({ is_primary: false });

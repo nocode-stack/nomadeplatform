@@ -9,13 +9,13 @@ export const useNewVehicles = () => {
     queryKey: ['new-vehicles'],
     queryFn: async (): Promise<NewVehicle[]> => {
       const { data, error } = await supabase
-        .from('NEW_Vehicles')
+        .from('vehicles')
         .select(`
           *,
-          NEW_Projects!NEW_Vehicles_project_id_fkey (
+          projects!vehicles_project_id_fkey (
             id,
             project_code,
-            NEW_Clients!NEW_Projects_client_id_fkey (
+            clients!projects_client_id_fkey (
               name
             )
           )
@@ -27,18 +27,18 @@ export const useNewVehicles = () => {
         throw error;
       }
 
-      logger.debug('NEW_Vehicles raw data fetched', { component: 'Vehicle', data: { count: data?.length } });
+      logger.debug('vehicles raw data fetched', { component: 'Vehicle', data: { count: data?.length } });
 
       // Transform the data to match our interface
       return (data || []).map(vehicle => ({
         ...vehicle,
         estado_pago: vehicle.estado_pago as 'pagada' | 'no_pagada' | 'pendiente',
-        projects: vehicle.NEW_Projects ? {
-          id: vehicle.NEW_Projects.id,
-          name: vehicle.NEW_Projects.project_code || '',
-          code: vehicle.NEW_Projects.project_code || '',
-          clients: vehicle.NEW_Projects.NEW_Clients ? {
-            name: vehicle.NEW_Projects.NEW_Clients.name || ''
+        projects: vehicle.projects ? {
+          id: vehicle.projects.id,
+          name: vehicle.projects.project_code || '',
+          code: vehicle.projects.project_code || '',
+          clients: vehicle.projects.clients ? {
+            name: vehicle.projects.clients.name || ''
           } : null
         } : null
       }));
@@ -58,14 +58,14 @@ export const useCreateNewVehicle = () => {
       };
 
       const { data, error } = await supabase
-        .from('NEW_Vehicles')
+        .from('vehicles')
         .insert(insertData)
         .select(`
           *,
-          NEW_Projects!NEW_Vehicles_project_id_fkey (
+          projects!vehicles_project_id_fkey (
             id,
             project_code,
-            NEW_Clients!NEW_Projects_client_id_fkey (
+            clients!projects_client_id_fkey (
               name
             )
           )
@@ -81,12 +81,12 @@ export const useCreateNewVehicle = () => {
       return {
         ...data,
         estado_pago: data.estado_pago as 'pagada' | 'no_pagada' | 'pendiente',
-        projects: data.NEW_Projects ? {
-          id: data.NEW_Projects.id,
-          name: data.NEW_Projects.project_code || '',
-          code: data.NEW_Projects.project_code || '',
-          clients: data.NEW_Projects.NEW_Clients ? {
-            name: data.NEW_Projects.NEW_Clients.name || ''
+        projects: data.projects ? {
+          id: data.projects.id,
+          name: data.projects.project_code || '',
+          code: data.projects.project_code || '',
+          clients: data.projects.clients ? {
+            name: data.projects.clients.name || ''
           } : null
         } : null
       };
@@ -114,15 +114,15 @@ export const useUpdateNewVehicle = () => {
       };
 
       const { data: updatedData, error } = await supabase
-        .from('NEW_Vehicles')
+        .from('vehicles')
         .update(cleanedData)
         .eq('id', id)
         .select(`
           *,
-          NEW_Projects!NEW_Vehicles_project_id_fkey (
+          projects!vehicles_project_id_fkey (
             id,
             project_code,
-            NEW_Clients!NEW_Projects_client_id_fkey (
+            clients!projects_client_id_fkey (
               name
             )
           )
@@ -138,12 +138,12 @@ export const useUpdateNewVehicle = () => {
       return {
         ...updatedData,
         estado_pago: updatedData.estado_pago as 'pagada' | 'no_pagada' | 'pendiente',
-        projects: updatedData.NEW_Projects ? {
-          id: updatedData.NEW_Projects.id,
-          name: updatedData.NEW_Projects.project_code || '',
-          code: updatedData.NEW_Projects.project_code || '',
-          clients: updatedData.NEW_Projects.NEW_Clients ? {
-            name: updatedData.NEW_Projects.NEW_Clients.name || ''
+        projects: updatedData.projects ? {
+          id: updatedData.projects.id,
+          name: updatedData.projects.project_code || '',
+          code: updatedData.projects.project_code || '',
+          clients: updatedData.projects.clients ? {
+            name: updatedData.projects.clients.name || ''
           } : null
         } : null
       };
@@ -169,7 +169,7 @@ export const useDeleteNewVehicle = () => {
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
       const { error } = await supabase
-        .from('NEW_Vehicles')
+        .from('vehicles')
         .delete()
         .eq('id', id);
 
@@ -250,7 +250,7 @@ async function manualVehicleAssignment(vehicleId: string, projectId?: string) {
   if (projectId) {
     // Operación 1: Verificar disponibilidad del proyecto
     const { data: projectCheck, error: checkError } = await supabase
-      .from('NEW_Projects')
+      .from('projects')
       .select('vehicle_id')
       .eq('id', projectId)
       .single();
@@ -260,7 +260,7 @@ async function manualVehicleAssignment(vehicleId: string, projectId?: string) {
     // Operación 2: Liberar vehículo anterior del proyecto si existe
     if (projectCheck.vehicle_id && projectCheck.vehicle_id !== vehicleId) {
       const { error: clearError } = await supabase
-        .from('NEW_Vehicles')
+        .from('vehicles')
         .update({ project_id: null })
         .eq('id', projectCheck.vehicle_id);
 
@@ -269,7 +269,7 @@ async function manualVehicleAssignment(vehicleId: string, projectId?: string) {
 
     // Operación 3: Asignar nuevo vehículo
     const { error: assignError } = await supabase
-      .from('NEW_Vehicles')
+      .from('vehicles')
       .update({ project_id: projectId })
       .eq('id', vehicleId);
 
@@ -277,7 +277,7 @@ async function manualVehicleAssignment(vehicleId: string, projectId?: string) {
   } else {
     // Solo desasignar
     const { error } = await supabase
-      .from('NEW_Vehicles')
+      .from('vehicles')
       .update({ project_id: null })
       .eq('id', vehicleId);
 

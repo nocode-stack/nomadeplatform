@@ -89,11 +89,11 @@ const ProjectSummary = ({ project, incidents }: ProjectSummaryProps) => {
     queryKey: ['budget', project.id, 'primary'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .select(`
           *,
-          engine_options!NEW_Budget_engine_option_id_fkey(name, power, transmission),
-          exterior_color_options!NEW_Budget_exterior_color_id_fkey(name)
+          engine_options!budget_engine_option_id_fkey(name, power, transmission),
+          exterior_color_options!budget_exterior_color_id_fkey(name)
         `)
         .eq('project_id', project.id)
         .eq('is_primary', true)
@@ -112,7 +112,7 @@ const ProjectSummary = ({ project, incidents }: ProjectSummaryProps) => {
     status: project.status,
     progress: project.progress,
     currentPhase: project.currentPhase,
-    client_status: project.new_clients?.client_status
+    client_status: project.clients?.client_status
   });
   if (import.meta.env.DEV) console.log('🔍 ProjectSummary - Phases data:', phases);
 
@@ -176,24 +176,24 @@ const ProjectSummary = ({ project, incidents }: ProjectSummaryProps) => {
       // Si hay una fase en progreso, mostrar su grupo
       if (inProgressPhases.length > 0) {
         const currentPhase = inProgressPhases[0];
-        return currentPhase.NEW_Project_Phase_Template?.group || 'Fase en progreso';
+        return currentPhase.project_phase_template?.group || 'Fase en progreso';
       }
 
       // Si no hay fases en progreso, buscar la siguiente pendiente
       const pendingPhases = phases.filter(p => p.status === 'pending');
       if (pendingPhases.length > 0) {
         const nextPhase = pendingPhases.sort((a, b) =>
-          (a.NEW_Project_Phase_Template?.phase_order || 0) - (b.NEW_Project_Phase_Template?.phase_order || 0)
+          (a.project_phase_template?.phase_order || 0) - (b.project_phase_template?.phase_order || 0)
         )[0];
-        return nextPhase.NEW_Project_Phase_Template?.group || 'Siguiente fase';
+        return nextPhase.project_phase_template?.group || 'Siguiente fase';
       }
 
       // Si no hay fases pendientes, mostrar el grupo de la última completada
       if (completedPhases.length > 0) {
         const lastCompleted = completedPhases.sort((a, b) =>
-          (b.NEW_Project_Phase_Template?.phase_order || 0) - (a.NEW_Project_Phase_Template?.phase_order || 0)
+          (b.project_phase_template?.phase_order || 0) - (a.project_phase_template?.phase_order || 0)
         )[0];
-        return lastCompleted.NEW_Project_Phase_Template?.group || 'Fase completada';
+        return lastCompleted.project_phase_template?.group || 'Fase completada';
       }
     }
 
@@ -225,11 +225,11 @@ const ProjectSummary = ({ project, incidents }: ProjectSummaryProps) => {
   // Función para obtener el texto del estado correctamente
   const getProjectStatusText = () => {
     // Log para debug
-    if (import.meta.env.DEV) console.log('🔍 getProjectStatusText - client_status:', project.new_clients?.client_status);
+    if (import.meta.env.DEV) console.log('🔍 getProjectStatusText - client_status:', project.clients?.client_status);
     if (import.meta.env.DEV) console.log('🔍 getProjectStatusText - project.status:', project.status);
 
     // Si es un prospecto, mostrar "Prospecto"
-    if (project.new_clients?.client_status === 'prospect') {
+    if (project.clients?.client_status === 'prospect') {
       return 'Prospecto';
     }
 
@@ -455,7 +455,7 @@ const ProjectSummary = ({ project, incidents }: ProjectSummaryProps) => {
                     <div className="space-y-2">
                       {(() => {
                         const sortedPhases = phases
-                          .sort((a, b) => (a.NEW_Project_Phase_Template?.phase_order || 0) - (b.NEW_Project_Phase_Template?.phase_order || 0));
+                          .sort((a, b) => (a.project_phase_template?.phase_order || 0) - (b.project_phase_template?.phase_order || 0));
 
                         // Obtener fases pendientes (las que vienen)
                         const pendingPhases = sortedPhases.filter(p => p.status === 'pending');
@@ -470,13 +470,13 @@ const ProjectSummary = ({ project, incidents }: ProjectSummaryProps) => {
                             <div className="text-sm">
                               <span className="font-medium text-orange-700">Fase actual: </span>
                               <span className="text-orange-800">
-                                {currentPhase?.NEW_Project_Phase_Template?.phase_name || 'En curso'}
+                                {currentPhase?.project_phase_template?.phase_name || 'En curso'}
                               </span>
                             </div>
                             <div className="text-sm">
                               <span className="font-medium text-orange-700">Siguiente fase: </span>
                               <span className="text-orange-800">
-                                {nextPhase?.NEW_Project_Phase_Template?.phase_name || 'Siguiente'}
+                                {nextPhase?.project_phase_template?.phase_name || 'Siguiente'}
                               </span>
                             </div>
                           </>
@@ -509,10 +509,10 @@ const ProjectSummary = ({ project, incidents }: ProjectSummaryProps) => {
             created_at: project.vehicles.created_at || new Date().toISOString(),
             updated_at: project.vehicles.updated_at || new Date().toISOString(),
             // Incluir información del proyecto para que aparezca como asignado
-            NEW_Projects: {
+            projects: {
               id: project.id,
               project_code: project.project_code || '',
-              NEW_Clients: project.clients ? {
+              clients: project.clients ? {
                 name: project.clients.name || ''
               } : null
             }

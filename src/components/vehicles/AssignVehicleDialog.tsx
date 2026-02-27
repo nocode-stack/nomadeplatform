@@ -114,7 +114,7 @@ const AssignVehicleDialog = ({
     queryKey: ['vehicle', vehicleId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Vehicles')
+        .from('vehicles')
         .select('*')
         .eq('id', vehicleId)
         .single();
@@ -138,7 +138,7 @@ const AssignVehicleDialog = ({
         allProjects.map(async (project) => {
           // Get primary budget for this project
           const { data: budget } = await supabase
-            .from('NEW_Budget')
+            .from('budget')
             .select(`
               *,
               engine_option:engine_options(*),

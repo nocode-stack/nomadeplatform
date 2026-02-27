@@ -29,12 +29,12 @@ interface VehiclePreviewDialogProps {
       name: string; 
       code: string; 
       clients: { name: string } | null;
-      NEW_Clients?: { name: string } | null;
+      clients?: { name: string } | null;
     } | null;
-    NEW_Projects?: {
+    projects?: {
       id: string;
       project_code: string;
-      NEW_Clients: { name: string } | null;
+      clients: { name: string } | null;
     } | null;
   }) | null;
   open: boolean;
@@ -47,7 +47,7 @@ const VehiclePreviewDialog = ({ vehicle, open, onOpenChange }: VehiclePreviewDia
   if (!vehicle) return null;
 
   const handleProjectClick = () => {
-    const projectId = vehicle.projects?.id || vehicle.NEW_Projects?.id;
+    const projectId = vehicle.projects?.id || vehicle.projects?.id;
     if (projectId) {
       navigate(`/proyectos/${projectId}`);
       onOpenChange(false);
@@ -206,7 +206,7 @@ const VehiclePreviewDialog = ({ vehicle, open, onOpenChange }: VehiclePreviewDia
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {(vehicle.projects || vehicle.NEW_Projects) ? (
+              {(vehicle.projects || vehicle.projects) ? (
                 <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-lg border border-emerald-200">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -215,17 +215,17 @@ const VehiclePreviewDialog = ({ vehicle, open, onOpenChange }: VehiclePreviewDia
                     </div>
                     <div className="space-y-1">
                       <p className="font-bold text-emerald-900">
-                        {vehicle.projects?.code || vehicle.NEW_Projects?.project_code}
+                        {vehicle.projects?.code || vehicle.projects?.project_code}
                       </p>
                       <p className="text-emerald-700">
-                        {vehicle.projects?.name || vehicle.NEW_Projects?.project_code}
-                        {(vehicle.projects?.clients?.name || vehicle.NEW_Projects?.NEW_Clients?.name) && 
-                          ` (${vehicle.projects?.clients?.name || vehicle.NEW_Projects?.NEW_Clients?.name})`
+                        {vehicle.projects?.name || vehicle.projects?.project_code}
+                        {(vehicle.projects?.clients?.name || vehicle.projects?.clients?.name) && 
+                          ` (${vehicle.projects?.clients?.name || vehicle.projects?.clients?.name})`
                         }
                       </p>
-                      {(vehicle.projects?.clients || vehicle.NEW_Projects?.NEW_Clients) && (
+                      {(vehicle.projects?.clients || vehicle.projects?.clients) && (
                         <p className="text-emerald-600 text-sm">
-                          Cliente: {vehicle.projects?.clients?.name || vehicle.NEW_Projects?.NEW_Clients?.name}
+                          Cliente: {vehicle.projects?.clients?.name || vehicle.projects?.clients?.name}
                         </p>
                       )}
                     </div>

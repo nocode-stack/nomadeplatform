@@ -155,11 +155,11 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                 items: lead.items || [],
             });
 
-            // Fetch billing data from NEW_Billing table
+            // Fetch billing data from billing table
             const clientId = lead.client_id || lead._raw?.id;
             if (clientId) {
                 supabase
-                    .from('NEW_Billing')
+                    .from('billing')
                     .select('*')
                     .eq('client_id', clientId)
                     .maybeSingle()
@@ -199,9 +199,9 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
             const clientId = lead?.client_id || lead?._raw?.id;
             if (!clientId) throw new Error('No se encontró el ID del cliente.');
 
-            // 1. Actualizar datos del cliente en NEW_Clients
+            // 1. Actualizar datos del cliente en clients
             const { error: clientError } = await supabase
-                .from('NEW_Clients')
+                .from('clients')
                 .update({
                     name: data.clientName,
                     email: data.clientEmail,
@@ -214,15 +214,15 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
 
             if (clientError) throw clientError;
 
-            // 2. Actualizar comercial en NEW_Projects (si existe)
+            // 2. Actualizar comercial en projects (si existe)
             if (data.comercial && lead?.id) {
                 await supabase
-                    .from('NEW_Projects')
+                    .from('projects')
                     .update({ comercial: data.comercial })
                     .eq('id', lead.id);
             }
 
-            // 3. Actualizar datos de facturación en NEW_Billing
+            // 3. Actualizar datos de facturación en billing
             const billingName = data.clientBillingName;
             if (billingName || data.billingType) {
                 const billingData = {
@@ -236,15 +236,15 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                 };
 
                 const { data: existingBilling } = await supabase
-                    .from('NEW_Billing')
+                    .from('billing')
                     .select('id')
                     .eq('client_id', clientId)
                     .maybeSingle();
 
                 if (existingBilling) {
-                    await supabase.from('NEW_Billing').update(billingData).eq('id', existingBilling.id);
+                    await supabase.from('billing').update(billingData).eq('id', existingBilling.id);
                 } else {
-                    await supabase.from('NEW_Billing').insert(billingData);
+                    await supabase.from('billing').insert(billingData);
                 }
             }
 

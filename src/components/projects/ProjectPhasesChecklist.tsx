@@ -64,14 +64,14 @@ const ProjectPhasesChecklist: React.FC<ProjectPhasesChecklistProps> = ({ project
   // Función para obtener las fases ordenadas correctamente
   const getSortedPhases = () => {
     return [...phases].sort((a, b) => {
-      const groupOrderA = PROJECT_PHASE_GROUPS.findIndex(g => g.id === a.NEW_Project_Phase_Template?.group);
-      const groupOrderB = PROJECT_PHASE_GROUPS.findIndex(g => g.id === b.NEW_Project_Phase_Template?.group);
+      const groupOrderA = PROJECT_PHASE_GROUPS.findIndex(g => g.id === a.project_phase_template?.group);
+      const groupOrderB = PROJECT_PHASE_GROUPS.findIndex(g => g.id === b.project_phase_template?.group);
       
       if (groupOrderA !== groupOrderB) {
         return groupOrderA - groupOrderB;
       }
       
-      return (a.NEW_Project_Phase_Template?.phase_order || 0) - (b.NEW_Project_Phase_Template?.phase_order || 0);
+      return (a.project_phase_template?.phase_order || 0) - (b.project_phase_template?.phase_order || 0);
     });
   };
 
@@ -158,13 +158,13 @@ const ProjectPhasesChecklist: React.FC<ProjectPhasesChecklistProps> = ({ project
   };
 
   const nextPhase = getNextIncompletePhase();
-  const currentGroupId = nextPhase?.NEW_Project_Phase_Template?.group || 'creacion_cliente';
+  const currentGroupId = nextPhase?.project_phase_template?.group || 'creacion_cliente';
 
   // Función para determinar si un grupo es el siguiente activo
   const getNextActiveGroup = () => {
     // Organize phases by group
     const phasesByGroup = phases.reduce((acc, phase) => {
-      const group = phase.NEW_Project_Phase_Template?.group;
+      const group = phase.project_phase_template?.group;
       if (!acc[group]) {
         acc[group] = [];
       }
@@ -214,7 +214,7 @@ const ProjectPhasesChecklist: React.FC<ProjectPhasesChecklistProps> = ({ project
 
   // Organize phases by group using the new structure
   const phasesByGroup = phases.reduce((acc, phase) => {
-    const group = phase.NEW_Project_Phase_Template?.group;
+    const group = phase.project_phase_template?.group;
     if (!acc[group]) {
       acc[group] = [];
     }
@@ -403,7 +403,7 @@ const ProjectPhasesChecklist: React.FC<ProjectPhasesChecklistProps> = ({ project
                                     ? 'bg-gray-300 hover:bg-gray-400 text-gray-600'
                                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                 }`}
-                                onClick={() => handleTogglePhase(phase.id, phase.status, phase.NEW_Project_Phase_Template?.phase_name || '')}
+                                onClick={() => handleTogglePhase(phase.id, phase.status, phase.project_phase_template?.phase_name || '')}
                                 disabled={isUpdating || !canToggle}
                               >
                                 {isUpdating ? (
@@ -416,7 +416,7 @@ const ProjectPhasesChecklist: React.FC<ProjectPhasesChecklistProps> = ({ project
                               </Button>
                               
                               <span className={`flex-1 ${isCompleted ? 'line-through' : ''} ${!canToggle && !isCompleted ? 'opacity-50' : ''}`}>
-                                {phase.NEW_Project_Phase_Template?.phase_name}
+                                {phase.project_phase_template?.phase_name}
                               </span>
 
                               {!canToggle && !isCompleted && (

@@ -19,7 +19,7 @@ export const useUpdateIncident = () => {
       if (import.meta.env.DEV) console.log('🔄 Updating incident:', { incidentId, data });
 
       const { data: incident, error } = await supabase
-        .from('NEW_Incidents')
+        .from('incidents')
         .update({
           incident_date: data.incident_date,
           workshop: data.workshop,
@@ -29,7 +29,7 @@ export const useUpdateIncident = () => {
         .eq('id', incidentId)
         .select(`
           *,
-          project:NEW_Projects (
+          project:projects (
             id,
             name,
             project_code,

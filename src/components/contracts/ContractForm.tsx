@@ -18,7 +18,7 @@ interface Project {
   id: string;
   code?: string;
   name?: string;
-  new_clients?: {
+  clients?: {
     id?: string;
     name?: string;
     email?: string;
@@ -26,7 +26,7 @@ interface Project {
     phone?: string;
     address?: string;
   };
-  new_vehicles?: {
+  vehicles?: {
     id?: string;
     vehicle_code?: string;
     numero_bastidor?: string;
@@ -113,7 +113,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
 
   const [formData, setFormData] = useState<ContractData>({
     project_id: project.id,
-    client_id: project.new_clients?.id || '',
+    client_id: project.clients?.id || '',
     contract_type: contractType,
     contract_status: 'draft',
     client_full_name: '',
@@ -171,7 +171,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
   });
 
   // Datos del vehículo desde las props del proyecto
-  const vehicleData = project.new_vehicles || project.vehicles || null;
+  const vehicleData = project.vehicles || project.vehicles || null;
 
   // Cargar contrato de reserva si es purchase_agreement
   const { data: reservationContract } = useQuery({
@@ -222,20 +222,20 @@ const ContractForm: React.FC<ContractFormProps> = ({
 
   // Query separada para obtener datos del cliente y facturación
   const { data: clientBillingData } = useQuery({
-    queryKey: ['clientBilling', project.new_clients?.id],
+    queryKey: ['clientBilling', project.clients?.id],
     queryFn: async () => {
-      if (!project.new_clients?.id) return null;
+      if (!project.clients?.id) return null;
 
       const [clientResult, billingResult] = await Promise.all([
         supabase
           .from('clients')
           .select('*')
-          .eq('id', project.new_clients.id)
+          .eq('id', project.clients.id)
           .single(),
         supabase
           .from('billing')
           .select('*')
-          .eq('client_id', project.new_clients.id)
+          .eq('client_id', project.clients.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle()
@@ -246,7 +246,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
         billing: billingResult.data
       };
     },
-    enabled: !!project.new_clients?.id
+    enabled: !!project.clients?.id
   });
 
   // Real-time subscription para mantener el formulario actualizado
@@ -281,7 +281,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
         () => {
           // Log removed for CI
           queryClient.invalidateQueries({
-            queryKey: ['clientBilling', project.new_clients?.id]
+            queryKey: ['clientBilling', project.clients?.id]
           });
         }
       )
@@ -295,7 +295,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
         () => {
           // Billing data updated, refreshing contract form
           queryClient.invalidateQueries({
-            queryKey: ['clientBilling', project.new_clients?.id]
+            queryKey: ['clientBilling', project.clients?.id]
           });
         }
       )
@@ -304,7 +304,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [project.id, contractType, queryClient, project.new_clients?.id]);
+  }, [project.id, contractType, queryClient, project.clients?.id]);
 
   // Inicializar formulario con datos del contrato existente o datos base
   useEffect(() => {

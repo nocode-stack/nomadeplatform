@@ -54,11 +54,11 @@ export const useContractVersioning = (projectId: string) => {
       // removed debug log
       // Obtener datos actuales del cliente y los vehículos
       const { data: projectData, error: projectError } = await supabase
-        .from('NEW_Clients')
+        .from('clients')
         .select(`
           *,
-          new_vehicles:NEW_Vehicles(*),
-          budgets:NEW_Budget(
+          vehicles:vehicles(*),
+          budgets:budget(
             *,
             engine_option:engine_options(*),
             model_option:model_options(*),
@@ -78,7 +78,7 @@ export const useContractVersioning = (projectId: string) => {
       if (contractData.client_id || activeProjectId) {
         try {
           const { data: bData } = await supabase
-            .from('NEW_Billing')
+            .from('billing')
             .select('*')
             .eq('client_id', contractData.client_id || activeProjectId)
             .order('created_at', { ascending: false })
@@ -95,7 +95,7 @@ export const useContractVersioning = (projectId: string) => {
 
       const vehicleModel = contractData.vehicle_model ||
         primaryBudget?.model_option?.name ||
-        (projectData?.new_vehicles?.[0] as any)?.model ||
+        (projectData?.vehicles?.[0] as any)?.model ||
         'Modelo pendiente';
 
       // Construir el objeto de datos que se enviará al RPC
@@ -111,9 +111,9 @@ export const useContractVersioning = (projectId: string) => {
         billing_address: contractData.billing_address || billingData?.billing_address || projectData?.address || 'Dirección pendiente',
         budget_id: contractData.budget_id || primaryBudget?.id || null,
         vehicle_model: vehicleModel,
-        vehicle_vin: contractData.vehicle_vin || projectData?.new_vehicles?.[0]?.numero_bastidor || '',
-        vehicle_plate: contractData.vehicle_plate || projectData?.new_vehicles?.[0]?.matricula || '',
-        vehicle_engine: contractData.vehicle_engine || primaryBudget?.engine_option?.name || projectData?.new_vehicles?.[0]?.engine || '',
+        vehicle_vin: contractData.vehicle_vin || projectData?.vehicles?.[0]?.numero_bastidor || '',
+        vehicle_plate: contractData.vehicle_plate || projectData?.vehicles?.[0]?.matricula || '',
+        vehicle_engine: contractData.vehicle_engine || primaryBudget?.engine_option?.name || projectData?.vehicles?.[0]?.engine || '',
         total_price: contractData.total_price || primaryBudget?.total || 0,
         payment_reserve: contractData.payment_reserve || 0,
         payment_conditions: contractData.payment_conditions || '',
@@ -189,7 +189,7 @@ export const useContractVersioning = (projectId: string) => {
   const setEditMode = useMutation({
     mutationFn: async (contractType: string) => {
       const { error } = await supabase
-        .from('NEW_Contracts')
+        .from('contracts')
         .update({ estado_visual: 'editing' })
         .eq('project_id', projectId)
         .eq('contract_type', contractType)
@@ -218,7 +218,7 @@ export const useContractVersioning = (projectId: string) => {
 
       // Verificar qué contrato se va a actualizar
       const { data: contractToUpdate } = await supabase
-        .from('NEW_Contracts')
+        .from('contracts')
         .select('id, version, estado_visual')
         .eq('project_id', projectId)
         .eq('contract_type', contractType)
@@ -234,7 +234,7 @@ export const useContractVersioning = (projectId: string) => {
 
       // Solo hacer UPDATE del estado, nunca INSERT
       const { error } = await supabase
-        .from('NEW_Contracts')
+        .from('contracts')
         .update({
           estado_visual: 'sent',
           contract_status: 'sent' // Explicit para evitar confusión con trigger
@@ -309,7 +309,7 @@ export const useContractVersioning = (projectId: string) => {
       }
 
       const { data: updatedContract, error } = await supabase
-        .from('NEW_Contracts')
+        .from('contracts')
         .update(updateData)
         .eq('id', existingContractId)
         .select()

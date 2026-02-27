@@ -7,15 +7,15 @@ export const useProjectsList = () => {
         queryKey: ['new-projects-list'],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from('NEW_Projects')
+                .from('projects')
                 .select(`
           *,
-          NEW_Clients(*)
+          clients(*)
         `)
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('❌ Error fetching NEW_Projects:', error);
+                console.error('❌ Error fetching projects:', error);
                 throw error;
             }
 
@@ -23,8 +23,8 @@ export const useProjectsList = () => {
                 id: project.id,
                 code: project.project_code,
                 name: project.project_code || 'Código pendiente',
-                client_name: project.NEW_Clients?.name || 'Sin cliente',
-                new_clients: project.NEW_Clients,
+                client_name: project.clients?.name || 'Sin cliente',
+                clients: project.clients,
                 status: project.status || 'prospect',
                 created_at: project.created_at,
                 updated_at: project.updated_at
@@ -40,20 +40,20 @@ export const useProject = (projectId: string) => {
         queryKey: ['new-project', projectId],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from('NEW_Projects')
+                .from('projects')
                 .select(`
           *,
-          NEW_Clients(*),
-          NEW_Project_Phase_Progress(
+          clients(*),
+          project_phase_progress(
             *,
-            NEW_Project_Phase_Template(*)
+            project_phase_template(*)
           )
         `)
                 .eq('id', projectId)
                 .single();
 
             if (error) {
-                console.error('❌ Error fetching NEW_Project:', error);
+                console.error('❌ Error fetching project:', error);
                 throw error;
             }
 
@@ -63,10 +63,10 @@ export const useProject = (projectId: string) => {
                 name: data.project_code || 'Código pendiente',
                 model: 'Por definir',
                 power: 'Por definir',
-                client_name: data.NEW_Clients?.name || 'Sin cliente',
-                new_clients: data.NEW_Clients,
-                NEW_Clients: data.NEW_Clients,
-                project_phase_progress: data.NEW_Project_Phase_Progress || []
+                client_name: data.clients?.name || 'Sin cliente',
+                clients: data.clients,
+                clients: data.clients,
+                project_phase_progress: data.project_phase_progress || []
             };
         },
         enabled: !!projectId,

@@ -18,7 +18,7 @@ export const useToggleContractPrimary = () => {
             if (isPrimary) {
                 // First, unmark all contracts of same project+type as not primary
                 const { error: resetError } = await supabase
-                    .from('NEW_Contracts')
+                    .from('contracts')
                     .update({ is_primary: false })
                     .eq('project_id', projectId)
                     .eq('contract_type', contractType)
@@ -28,7 +28,7 @@ export const useToggleContractPrimary = () => {
 
                 // Then mark the target contract as primary
                 const { error: setError } = await supabase
-                    .from('NEW_Contracts')
+                    .from('contracts')
                     .update({ is_primary: true })
                     .eq('id', contractId);
 
@@ -36,7 +36,7 @@ export const useToggleContractPrimary = () => {
             } else {
                 // Just unmark this contract
                 const { error } = await supabase
-                    .from('NEW_Contracts')
+                    .from('contracts')
                     .update({ is_primary: false })
                     .eq('id', contractId);
 

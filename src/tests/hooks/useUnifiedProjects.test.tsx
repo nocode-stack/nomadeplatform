@@ -8,11 +8,11 @@ import React from 'react';
 // Mock Supabase
 const mockSupabaseData = {
     projects: [
-        { id: 'proj-1', project_code: 'PR-001', client_id: 'cl-1', status: 'prospect', created_at: '2024-01-01', NEW_Clients: { id: 'cl-1', name: 'Juan', client_status: 'prospect', client_code: 'PC-001' } }
+        { id: 'proj-1', project_code: 'PR-001', client_id: 'cl-1', status: 'prospect', created_at: '2024-01-01', clients: { id: 'cl-1', name: 'Juan', client_status: 'prospect', client_code: 'PC-001' } }
     ],
     phases: [
-        { project_id: 'proj-1', id: 'ph-1', status: 'completed', NEW_Project_Phase_Template: { group: 'Diseño', phase_order: 1 } },
-        { project_id: 'proj-1', id: 'ph-2', status: 'in_progress', NEW_Project_Phase_Template: { group: 'Producción', phase_order: 2 } }
+        { project_id: 'proj-1', id: 'ph-1', status: 'completed', project_phase_template: { group: 'Diseño', phase_order: 1 } },
+        { project_id: 'proj-1', id: 'ph-2', status: 'in_progress', project_phase_template: { group: 'Producción', phase_order: 2 } }
     ],
     vehicle: { id: 'veh-1', vehicle_code: 'V-001', exterior_color: 'Blanco', project_id: 'proj-1' },
     budget: {
@@ -45,13 +45,13 @@ vi.mock('@/integrations/supabase/client', () => ({
                 return builder;
             };
 
-            if (table === 'NEW_Projects') {
+            if (table === 'projects') {
                 return createBuilder(mockSupabaseData.projects);
-            } else if (table === 'NEW_Project_Phase_Progress') {
+            } else if (table === 'project_phase_progress') {
                 return createBuilder(mockSupabaseData.phases);
-            } else if (table === 'NEW_Vehicles') {
+            } else if (table === 'vehicles') {
                 return createBuilder(mockSupabaseData.vehicle);
-            } else if (table === 'NEW_Budget') {
+            } else if (table === 'budget') {
                 return createBuilder(mockSupabaseData.budget);
             }
 

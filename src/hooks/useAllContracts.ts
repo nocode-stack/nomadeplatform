@@ -14,10 +14,10 @@ export const useAllContracts = () => {
                 {
                     event: '*',
                     schema: 'public',
-                    table: 'NEW_Contracts',
+                    table: 'contracts',
                 },
                 () => {
-                    logger.debug('Real-time update in NEW_Contracts detected, invalidating all-contracts query', { component: 'useAllContracts', action: 'realtime' });
+                    logger.debug('Real-time update in contracts detected, invalidating all-contracts query', { component: 'useAllContracts', action: 'realtime' });
                     queryClient.invalidateQueries({ queryKey: ['all-contracts'] });
                 }
             )
@@ -32,11 +32,11 @@ export const useAllContracts = () => {
         queryKey: ['all-contracts'],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from('NEW_Contracts')
+                .from('contracts')
                 .select(`
                     *,
-                    client:NEW_Clients(name),
-                    budget:NEW_Budget(budget_code, is_primary)
+                    client:clients(name),
+                    budget:budget(budget_code, is_primary)
                 `)
                 .order('created_at', { ascending: false });
 

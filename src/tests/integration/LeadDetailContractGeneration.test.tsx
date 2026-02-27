@@ -35,10 +35,10 @@ vi.mock('@/integrations/supabase/client', () => ({
     supabase: {
         from: vi.fn((table: string) => {
             switch (table) {
-                case 'NEW_Clients': return clientsChain;
-                case 'NEW_Billing': return billingChain;
-                case 'NEW_Projects': return projectsChain;
-                case 'NEW_Budget': return budgetsChain;
+                case 'clients': return clientsChain;
+                case 'billing': return billingChain;
+                case 'projects': return projectsChain;
+                case 'budget': return budgetsChain;
                 default: return createChain();
             }
         }),
@@ -142,7 +142,7 @@ describe('LeadDetailModal – Simplified Save Flow', () => {
         expect(screen.queryByTestId('confirm-generate')).not.toBeInTheDocument();
     });
 
-    it('should call Supabase to update NEW_Clients on save', async () => {
+    it('should call Supabase to update clients on save', async () => {
         render(
             <LeadDetailModal open={true} onOpenChange={vi.fn()} lead={mockLead} />,
             { wrapper: createWrapper() }
@@ -152,11 +152,11 @@ describe('LeadDetailModal – Simplified Save Flow', () => {
         fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/i }));
 
         await waitFor(() => {
-            expect(supabase.from).toHaveBeenCalledWith('NEW_Clients');
+            expect(supabase.from).toHaveBeenCalledWith('clients');
         });
     });
 
-    it('should call Supabase to update NEW_Billing when billing data exists', async () => {
+    it('should call Supabase to update billing when billing data exists', async () => {
         const leadWithBilling = {
             ...mockLead,
             billingType: 'personal',
@@ -171,9 +171,9 @@ describe('LeadDetailModal – Simplified Save Flow', () => {
         fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/i }));
 
         await waitFor(() => {
-            // Should have called both NEW_Clients and NEW_Billing
+            // Should have called both clients and billing
             const calls = (supabase.from as any).mock.calls.map((c: any) => c[0]);
-            expect(calls).toContain('NEW_Clients');
+            expect(calls).toContain('clients');
         });
     });
 
@@ -186,9 +186,9 @@ describe('LeadDetailModal – Simplified Save Flow', () => {
         fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/i }));
 
         await waitFor(() => {
-            // Should NEVER call NEW_Budget from this save flow
+            // Should NEVER call budget from this save flow
             const calls = (supabase.from as any).mock.calls.map((c: any) => c[0]);
-            const budgetCalls = calls.filter((c: string) => c === 'NEW_Budget');
+            const budgetCalls = calls.filter((c: string) => c === 'budget');
             // Budget calls come only from BudgetListTab (which is mocked), not from save
             expect(budgetCalls.length).toBe(0);
         });

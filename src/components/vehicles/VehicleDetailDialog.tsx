@@ -38,7 +38,7 @@ interface VehicleDetailDialogProps {
 
 const VehicleDetailDialog = ({ vehicle, open, onOpenChange }: VehicleDetailDialogProps) => {
   const navigate = useNavigate();
-  // Temporarily disabled - need to implement these hooks for NEW_Vehicles
+  // Temporarily disabled - need to implement these hooks for vehicles
   // const updateVehicle = useUpdateVehicle();
   // const assignVehicle = useAssignVehicleToProject();
   const { data: projects } = useUnifiedProjectsList();
@@ -89,8 +89,8 @@ const VehicleDetailDialog = ({ vehicle, open, onOpenChange }: VehicleDetailDialo
   };
 
   const handleSaveAll = async () => {
-    // Temporarily disabled - need to implement vehicle update hooks for NEW_Vehicles
-    toast.error('Función temporalmente deshabilitada - necesita implementación para NEW_Vehicles');
+    // Temporarily disabled - need to implement vehicle update hooks for vehicles
+    toast.error('Función temporalmente deshabilitada - necesita implementación para vehicles');
     setIsSaving(false);
   };
 

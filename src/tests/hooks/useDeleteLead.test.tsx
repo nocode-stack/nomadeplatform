@@ -14,7 +14,7 @@ vi.mock('@/integrations/supabase/client', () => ({
                 in: vi.fn(() => Promise.resolve({ error: null }))
             })),
             select: vi.fn(() => ({
-                eq: vi.fn(() => Promise.resolve({ data: [{ id: 'proj-1', NEW_Budget: [{ id: 'bud-1' }] }], error: null }))
+                eq: vi.fn(() => Promise.resolve({ data: [{ id: 'proj-1', budget: [{ id: 'bud-1' }] }], error: null }))
             })),
             delete: vi.fn(() => ({
                 in: vi.fn(() => Promise.resolve({ error: null }))
@@ -58,12 +58,12 @@ describe('useDeleteLead hook', () => {
         await result.current.mutateAsync(clientId);
 
         // Check calls
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Contracts');
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget');
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Clients');
+        expect(supabase.from).toHaveBeenCalledWith('contracts');
+        expect(supabase.from).toHaveBeenCalledWith('budget');
+        expect(supabase.from).toHaveBeenCalledWith('clients');
 
         // Verify final call updates the client
-        expect(supabase.from).toHaveBeenLastCalledWith('NEW_Clients');
+        expect(supabase.from).toHaveBeenLastCalledWith('clients');
     });
 
     it('should handle errors correctly', async () => {

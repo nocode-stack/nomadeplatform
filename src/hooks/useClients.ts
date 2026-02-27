@@ -20,22 +20,22 @@ export const useClients = () => {
       // @ts-ignore - Compilación profunda de tipos de Supabase
       // @ts-ignore - Deep Supabase type compilation
       const { data, error } = await supabase
-        .from('NEW_Clients')
+        .from('clients')
         .select(`
           *,
-          NEW_Budget!NEW_Budget_client_id_fkey (
+          budget!budget_client_id_fkey (
             *,
             model_option:model_options(name),
             engine_option:engine_options(name),
             interior_color_option:interior_color_options(name),
-            pack:NEW_Budget_Packs(name),
-            electric_system:NEW_Budget_Electric(name),
-            NEW_Budget_Items (*)
+            pack:budget_packs(name),
+            electric_system:electric_system(name),
+            budget_items (*)
           ),
-          NEW_Billing (
+          billing (
             *
           ),
-          NEW_Contracts (
+          contracts (
             id
           )
         `)
@@ -62,7 +62,7 @@ export const useUpdateClient = () => {
       if (import.meta.env.DEV) console.log('🔄 Actualizando cliente:', { clientId, data });
 
       const { error } = await supabase
-        .from('NEW_Clients')
+        .from('clients')
         .update({
           ...data,
           updated_at: new Date().toISOString()
@@ -120,7 +120,7 @@ export const useDeleteLead = () => {
 
       // 1. Desactivar contratos vinculados al cliente
       const { error: contractError } = await supabase
-        .from('NEW_Contracts')
+        .from('contracts')
         .update({ is_active: false })
         .eq('client_id', clientId);
 
@@ -135,7 +135,7 @@ export const useDeleteLead = () => {
       // Marcamos is_primary = false para evitar conflictos entre disparadores de la BD.
       if (import.meta.env.DEV) console.log('🔄 Desactivando presupuestos del cliente...');
       const { error: budgetError } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .update({ is_active: false, is_primary: false })
         .eq('client_id', clientId);
 
@@ -147,7 +147,7 @@ export const useDeleteLead = () => {
 
       // 5. Desactivar el cliente
       const { error: clientError } = await supabase
-        .from('NEW_Clients')
+        .from('clients')
         .update({ is_active: false })
         .eq('id', clientId);
 
@@ -190,7 +190,7 @@ export const useToggleHotLead = () => {
   return useMutation({
     mutationFn: async ({ clientId, isHotLead }: { clientId: string; isHotLead: boolean }) => {
       const { error } = await supabase
-        .from('NEW_Clients')
+        .from('clients')
         .update({ is_hot_lead: isHotLead, updated_at: new Date().toISOString() })
         .eq('id', clientId);
 

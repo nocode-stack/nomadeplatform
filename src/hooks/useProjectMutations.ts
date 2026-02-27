@@ -36,7 +36,7 @@ export const useProjects = () => {
             let newClient;
 
             const { data: existingClient } = await supabase
-                .from('NEW_Clients')
+                .from('clients')
                 .select('*')
                 .eq('email', projectData.clientEmail)
                 .maybeSingle();
@@ -44,7 +44,7 @@ export const useProjects = () => {
             if (existingClient) {
                 newClient = existingClient;
                 await supabase
-                    .from('NEW_Clients')
+                    .from('clients')
                     .update({
                         name: projectData.clientName,
                         phone: projectData.clientPhone,
@@ -56,7 +56,7 @@ export const useProjects = () => {
                     .eq('id', existingClient.id);
             } else {
                 const { data: createdClient, error: clientError } = await supabase
-                    .from('NEW_Clients')
+                    .from('clients')
                     .insert({
                         name: projectData.clientName,
                         email: projectData.clientEmail,
@@ -103,7 +103,7 @@ export const useProjects = () => {
             }
 
             const { error: billingError } = await supabase
-                .from('NEW_Billing')
+                .from('billing')
                 .insert({
                     client_id: newClient.id,
                     name: billingName,
@@ -120,7 +120,7 @@ export const useProjects = () => {
 
             // 3. Create the project
             const { error: projectError, data: newProject } = await supabase
-                .from('NEW_Projects')
+                .from('projects')
                 .insert({
                     client_id: newClient.id,
                     client_name: projectData.clientName,
@@ -181,7 +181,7 @@ export const useProjects = () => {
             };
 
             const { data: createdBudget, error: budgetError } = await supabase
-                .from('NEW_Budget')
+                .from('budget')
                 .insert(initialBudgetData)
                 .select()
                 .single();
@@ -195,7 +195,7 @@ export const useProjects = () => {
             // 5. Create budget items
             if (projectData.items && projectData.items.length > 0) {
                 const items = buildBudgetItems(createdBudget.id, projectData.items);
-                const { error: itemsError } = await supabase.from('NEW_Budget_Items').insert(items);
+                const { error: itemsError } = await supabase.from('budget_items').insert(items);
                 if (itemsError) console.error('❌ Error creating budget items:', itemsError);
             }
 
@@ -223,7 +223,7 @@ export const useProjects = () => {
             let activeClientId: string = projectId;
 
             const { data: project } = await supabase
-                .from('NEW_Projects')
+                .from('projects')
                 .select('id, client_id')
                 .eq('id', projectId)
                 .maybeSingle();
@@ -233,7 +233,7 @@ export const useProjects = () => {
                 activeClientId = project.client_id;
             } else {
                 const { data: projectByClient } = await supabase
-                    .from('NEW_Projects')
+                    .from('projects')
                     .select('id, client_id')
                     .eq('client_id', projectId)
                     .maybeSingle();
@@ -243,7 +243,7 @@ export const useProjects = () => {
                     activeClientId = projectByClient.client_id;
                 } else {
                     const { data: clientCheck } = await supabase
-                        .from('NEW_Clients')
+                        .from('clients')
                         .select('id, name')
                         .eq('id', projectId)
                         .maybeSingle();
@@ -253,7 +253,7 @@ export const useProjects = () => {
 
                     if (projectData.forceNewBudget || projectData.status) {
                         const { data: newProject, error: createProjectError } = await supabase
-                            .from('NEW_Projects')
+                            .from('projects')
                             .insert({
                                 client_id: activeClientId,
                                 client_name: projectData.clientName || clientCheck.name,
@@ -277,7 +277,7 @@ export const useProjects = () => {
             if (projectData.clientAddress) clientUpdateData.address = projectData.clientAddress;
 
             if (Object.keys(clientUpdateData).length > 0) {
-                const { error: clientError } = await supabase.from('NEW_Clients').update(clientUpdateData).eq('id', activeClientId);
+                const { error: clientError } = await supabase.from('clients').update(clientUpdateData).eq('id', activeClientId);
                 if (clientError) throw clientError;
             }
 
@@ -294,12 +294,12 @@ export const useProjects = () => {
                     type: projectData.billingType || 'personal'
                 };
 
-                const { data: existingBilling } = await supabase.from('NEW_Billing').select('id').eq('client_id', activeClientId).maybeSingle();
+                const { data: existingBilling } = await supabase.from('billing').select('id').eq('client_id', activeClientId).maybeSingle();
 
                 if (existingBilling) {
-                    await supabase.from('NEW_Billing').update(billingData).eq('id', existingBilling.id);
+                    await supabase.from('billing').update(billingData).eq('id', existingBilling.id);
                 } else {
-                    await supabase.from('NEW_Billing').insert(billingData);
+                    await supabase.from('billing').insert(billingData);
                 }
             }
 
@@ -310,7 +310,7 @@ export const useProjects = () => {
                 projectData.reservationAmount !== undefined || projectData.items || projectData.forceNewBudget;
 
             if (hasBudgetChanges && activeProjectId) {
-                const { data: currentPrimary } = await supabase.from('NEW_Budget').select('*').eq('project_id', activeProjectId).eq('is_primary', true).maybeSingle();
+                const { data: currentPrimary } = await supabase.from('budget').select('*').eq('project_id', activeProjectId).eq('is_primary', true).maybeSingle();
                 const opts = await fetchBudgetOptions();
 
                 const currentModelName = opts.models?.find(m => m.id === currentPrimary?.model_option_id)?.name;
@@ -321,7 +321,7 @@ export const useProjects = () => {
                 const shouldCreateNewVersion = projectData.forceNewBudget || !currentPrimary;
 
                 if (shouldCreateNewVersion) {
-                    await supabase.from('NEW_Budget').update({ is_primary: false }).eq('project_id', activeProjectId);
+                    await supabase.from('budget').update({ is_primary: false }).eq('project_id', activeProjectId);
 
                     const selectedModel = opts.models?.find(m => m.name === (projectData.vehicleModel || currentModelName));
                     const selectedEngine = opts.engines?.find(e => e.name === (projectData.motorization || currentEngineName));
@@ -363,7 +363,7 @@ export const useProjects = () => {
                         notes: (projectData.projectNotes || projectData.budgetNotes || currentPrimary?.notes || '').trim()
                     };
 
-                    const { data: createdBudget, error: createError } = await supabase.from('NEW_Budget').insert(newBudgetData).select().single();
+                    const { data: createdBudget, error: createError } = await supabase.from('budget').insert(newBudgetData).select().single();
 
                     if (createError) {
                         console.error('❌ Error creating new budget version:', createError);
@@ -373,7 +373,7 @@ export const useProjects = () => {
 
                     if (projectData.items && projectData.items.length > 0) {
                         const items = buildBudgetItems(createdBudget.id, projectData.items);
-                        await supabase.from('NEW_Budget_Items').insert(items);
+                        await supabase.from('budget_items').insert(items);
                     }
 
                 } else if (currentPrimary) {
@@ -416,7 +416,7 @@ export const useProjects = () => {
                         budgetUpdate.notes = (projectData.projectNotes || projectData.budgetNotes || '').trim();
                     }
 
-                    const { error: updateError } = await supabase.from('NEW_Budget').update(budgetUpdate).eq('id', currentPrimary.id);
+                    const { error: updateError } = await supabase.from('budget').update(budgetUpdate).eq('id', currentPrimary.id);
 
                     if (updateError) {
                         console.error('❌ Error updating budget:', updateError);
@@ -425,10 +425,10 @@ export const useProjects = () => {
                     }
 
                     if (projectData.items) {
-                        await supabase.from('NEW_Budget_Items').delete().eq('budget_id', currentPrimary.id);
+                        await supabase.from('budget_items').delete().eq('budget_id', currentPrimary.id);
                         if (projectData.items.length > 0) {
                             const items = buildBudgetItems(currentPrimary.id, projectData.items);
-                            await supabase.from('NEW_Budget_Items').insert(items);
+                            await supabase.from('budget_items').insert(items);
                         }
                     }
                 }
@@ -440,7 +440,7 @@ export const useProjects = () => {
             if (projectData.status) projectUpdate.status = projectData.status;
 
             if (Object.keys(projectUpdate).length > 0) {
-                await supabase.from('NEW_Projects').update(projectUpdate).eq('id', activeProjectId);
+                await supabase.from('projects').update(projectUpdate).eq('id', activeProjectId);
             }
 
             queryClient.invalidateQueries({ queryKey: ['new-projects-list'] });

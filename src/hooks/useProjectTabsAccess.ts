@@ -54,8 +54,8 @@ export const useProjectTabsAccess = (project: UnifiedProject | null) => {
     }
   ];
 
-  const isProspect = project?.new_clients?.client_status === 'prospect';
-  const isClient = project?.new_clients?.client_status === 'client';
+  const isProspect = project?.clients?.client_status === 'prospect';
+  const isClient = project?.clients?.client_status === 'client';
 
   const allowedTabs = useMemo(() => {
     if (isProspect) {

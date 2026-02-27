@@ -579,7 +579,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
 
     // ── Build Print Data ────────────────────────────────────
     const buildPrintData = useCallback(async (): Promise<BudgetPrintData> => {
-        // Use the clientName prop directly since NEW_Projects no longer exists
+        // Use the clientName prop directly since projects no longer exists
         let printClientName = clientName || 'Cliente';
         let printClientEmail = '';
         let printClientPhone = '';

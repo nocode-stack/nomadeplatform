@@ -44,7 +44,7 @@ const ProjectCodeSelector = ({ value, onValueChange, disabled, allowEmpty = fals
       
       // Primero, obtener todos los slots disponibles (sin project_id)
       const { data: availableSlots, error: availableError } = await supabase
-        .from('NEW_Production_Schedule')
+        .from('production_schedule')
         .select('id, production_code, start_date, end_date, project_id')
         .is('project_id', null)
         .order('production_code');
@@ -59,7 +59,7 @@ const ProjectCodeSelector = ({ value, onValueChange, disabled, allowEmpty = fals
       // Si hay un slot actual asignado, obtenerlo por separado
       if (currentSlotId) {
         const { data: currentSlot, error: currentError } = await supabase
-          .from('NEW_Production_Schedule')
+          .from('production_schedule')
           .select('id, production_code, start_date, end_date, project_id')
           .eq('id', currentSlotId)
           .maybeSingle();

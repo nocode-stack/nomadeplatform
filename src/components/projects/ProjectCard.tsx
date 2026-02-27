@@ -139,8 +139,8 @@ const ProjectCard = ({ project, fullProject, onClick, viewMode = 'grid' }: Proje
               {project.currentPhase || project.statusText}
             </Badge>
             {/* Badge de estado del cliente */}
-            {fullProject?.new_clients?.client_status && (
-              <ClientStatusBadge status={fullProject.new_clients.client_status} />
+            {fullProject?.clients?.client_status && (
+              <ClientStatusBadge status={fullProject.clients.client_status} />
             )}
           </div>
           {getWarrantyBadge()}

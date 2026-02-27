@@ -34,7 +34,7 @@ const ProjectSelector = ({ value, onValueChange, error }: ProjectSelectorProps) 
         <SelectContent>
           {projects.map((project) => (
             <SelectItem key={project.id} value={project.id}>
-              {project.code} - {project.new_clients?.name || 'Sin cliente'}
+              {project.code} - {project.clients?.name || 'Sin cliente'}
             </SelectItem>
           ))}
         </SelectContent>

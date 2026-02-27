@@ -95,7 +95,7 @@ const ForcePasswordChangeModal = () => {
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 className="bg-gray-50/50 border-gray-100 rounded-xl px-4 py-6 focus:ring-primary/20 focus:border-primary transition-all pr-12"
-                                placeholder="Mínimo 8 caracteres"
+                                placeholder="Introducir contraseña"
                             />
                             <button
                                 type="button"

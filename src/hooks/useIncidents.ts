@@ -46,10 +46,10 @@ export const useIncidentsList = (projectId?: string) => {
       if (import.meta.env.DEV) console.log('📡 Fetching incidents from database...', projectId ? `for project: ${projectId}` : 'all incidents');
 
       let query = supabase
-        .from('NEW_Incidents')
+        .from('incidents')
         .select(`
           *,
-          project:NEW_Projects (
+          project:projects (
             id,
             project_code,
             client_name,
@@ -126,7 +126,7 @@ export const useCreateIncident = () => {
       const mainCategory = data.items[0].category;
 
       const { data: incident, error } = await supabase
-        .from('NEW_Incidents')
+        .from('incidents')
         .insert({
           project_id: data.project_id,
           category: mainCategory,
@@ -137,7 +137,7 @@ export const useCreateIncident = () => {
         })
         .select(`
           *,
-          project:NEW_Projects (
+          project:projects (
             id,
             project_code,
             client_name,
@@ -165,7 +165,7 @@ export const useCreateIncident = () => {
         }));
 
         const { error: itemsError } = await supabase
-          .from('NEW_Incident_Items')
+          .from('incident_items')
           .insert(itemsToInsert);
 
         if (itemsError) {
@@ -235,7 +235,7 @@ export const useUpdateIncidentStatus = () => {
       if (import.meta.env.DEV) console.log('📝 Update data:', updateData);
 
       const { data, error } = await supabase
-        .from('NEW_Incidents')
+        .from('incidents')
         .update(updateData)
         .eq('id', incidentId)
         .select()
@@ -277,7 +277,7 @@ export const useDeleteIncident = () => {
 
       // First delete incident items
       const { error: itemsError } = await supabase
-        .from('NEW_Incident_Items')
+        .from('incident_items')
         .delete()
         .eq('incident_id', incidentId);
 
@@ -288,7 +288,7 @@ export const useDeleteIncident = () => {
 
       // Then delete the incident
       const { error } = await supabase
-        .from('NEW_Incidents')
+        .from('incidents')
         .delete()
         .eq('id', incidentId);
 

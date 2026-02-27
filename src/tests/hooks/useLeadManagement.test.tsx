@@ -40,13 +40,13 @@ const createMockQueryBuilder = (result: any) => {
 vi.mock('@/integrations/supabase/client', () => {
     const mockFrom = vi.fn((table: string) => {
         console.log(`Mock calling from: ${table}`);
-        if (table === 'NEW_Clients') {
+        if (table === 'clients') {
             return createMockQueryBuilder({ data: { id: 'cli-1' }, error: null });
         }
-        if (table === 'NEW_Projects') {
+        if (table === 'projects') {
             return createMockQueryBuilder({ data: { id: 'proj-1', client_id: 'cli-1' }, error: null });
         }
-        if (table === 'NEW_Budget') {
+        if (table === 'budget') {
             return createMockQueryBuilder({ data: { id: 'bud-1' }, error: null });
         }
         if (table.includes('options') || table.includes('Budget_Packs') || table.includes('Budget_Electric')) {
@@ -107,17 +107,17 @@ describe('useProjects Lead Management', () => {
 
         await result.current.createProject(leadData);
 
-        // Verify NEW_Clients call
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Clients');
+        // Verify clients call
+        expect(supabase.from).toHaveBeenCalledWith('clients');
 
-        // Verify NEW_Billing call (since billingType is company)
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Billing');
+        // Verify billing call (since billingType is company)
+        expect(supabase.from).toHaveBeenCalledWith('billing');
 
-        // Verify NEW_Projects call
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Projects');
+        // Verify projects call
+        expect(supabase.from).toHaveBeenCalledWith('projects');
 
-        // Verify initial NEW_Budget call
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget');
+        // Verify initial budget call
+        expect(supabase.from).toHaveBeenCalledWith('budget');
     });
 
     it('should update project and billing data correctly', async () => {
@@ -137,11 +137,11 @@ describe('useProjects Lead Management', () => {
         await result.current.updateProject('proj-1', updateData);
 
         // Check client update
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Clients');
+        expect(supabase.from).toHaveBeenCalledWith('clients');
         // Check billing update/insert
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Billing');
+        expect(supabase.from).toHaveBeenCalledWith('billing');
         // Check budget update (discount and reservation)
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget');
+        expect(supabase.from).toHaveBeenCalledWith('budget');
     });
 
     it('should persist budget notes correctly', async () => {
@@ -156,6 +156,6 @@ describe('useProjects Lead Management', () => {
         await result.current.updateProject('proj-1', updateData);
 
         // budgetNotes triggers a project update that includes notes in the budget data
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Projects');
+        expect(supabase.from).toHaveBeenCalledWith('projects');
     });
 });

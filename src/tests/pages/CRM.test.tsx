@@ -125,24 +125,24 @@ describe('Componente CRM - Filtros', () => {
                     name: 'Juan García',
                     client_status: 'prospect',
                     is_hot_lead: true,
-                    NEW_Budget: [{
+                    budget: [{
                         is_primary: true,
                         model_option: { name: 'Neo' }
                     }],
-                    NEW_Billing: [],
-                    NEW_Contracts: [{ id: 'contract-1' }]
+                    billing: [],
+                    contracts: [{ id: 'contract-1' }]
                 },
                 {
                     id: '2',
                     name: 'Marta Ruiz',
                     client_status: 'client',
                     is_hot_lead: false,
-                    NEW_Budget: [{
+                    budget: [{
                         is_primary: true,
                         model_option: { name: 'Neo XL' }
                     }],
-                    NEW_Billing: [],
-                    NEW_Contracts: []
+                    billing: [],
+                    contracts: []
                 }
             ],
             isLoading: false,
@@ -244,9 +244,9 @@ describe('Componente CRM - Filtros', () => {
                     name: 'Carlos Sin Datos',
                     client_status: 'prospect',
                     is_hot_lead: false,
-                    NEW_Budget: [],
-                    NEW_Billing: [],
-                    NEW_Contracts: []
+                    budget: [],
+                    billing: [],
+                    contracts: []
                 }
             ],
             isLoading: false,

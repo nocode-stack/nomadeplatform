@@ -34,7 +34,7 @@ const ConvertProspectButton = ({
     mutationFn: async () => {
 
       const { data, error } = await supabase
-        .from('NEW_Clients')
+        .from('clients')
         .update({
           client_status: 'client',
           updated_at: new Date().toISOString()

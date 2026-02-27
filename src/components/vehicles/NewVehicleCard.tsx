@@ -43,11 +43,11 @@ const NewVehicleCard = ({ vehicle, onAssign, onEdit, onDelete, onViewDetail }: N
       if (!vehicle.projects?.id) return null;
 
       const { data, error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .select(`
           *,
-          engine_options!NEW_Budget_engine_option_id_fkey(name, power, transmission),
-          exterior_color_options!NEW_Budget_exterior_color_id_fkey(name)
+          engine_options!budget_engine_option_id_fkey(name, power, transmission),
+          exterior_color_options!budget_exterior_color_id_fkey(name)
         `)
         .eq('project_id', vehicle.projects.id)
         .eq('is_primary', true)

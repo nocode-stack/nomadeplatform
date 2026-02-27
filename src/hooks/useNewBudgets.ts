@@ -3,18 +3,18 @@ import { supabase } from '../integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '../integrations/supabase/types';
 
 // Types para la nueva estructura
-type NewBudget = Tables<'NEW_Budget'>;
-type NewBudgetInsert = TablesInsert<'NEW_Budget'>;
-type NewBudgetUpdate = TablesUpdate<'NEW_Budget'>;
+type NewBudget = Tables<'budget'>;
+type NewBudgetInsert = TablesInsert<'budget'>;
+type NewBudgetUpdate = TablesUpdate<'budget'>;
 
 type ModelOption = Tables<'model_options'>;
 type EngineOption = Tables<'engine_options'>;
 // exterior_color_options table removed
 type InteriorColorOption = Tables<'interior_color_options'>;
-type ElectricSystem = Tables<'NEW_Budget_Electric'>;
-type BudgetPack = Tables<'NEW_Budget_Packs'>;
-type ExtraPack = Tables<'NEW_Budget_Packs_Extras'>;
-type ExtraPackComponent = Tables<'NEW_Budget_Packs_Extras_Components'>;
+type ElectricSystem = Tables<'electric_system'>;
+type BudgetPack = Tables<'budget_packs'>;
+type ExtraPack = Tables<'budget_packs_extras'>;
+type ExtraPackComponent = Tables<'budget_packs_extras_components'>;
 
 // Hook para obtener un presupuesto específico
 export const useNewBudget = (budgetId: string) => {
@@ -24,14 +24,14 @@ export const useNewBudget = (budgetId: string) => {
       if (!budgetId) return null;
 
       const { data, error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .select(`
           *,
           engine_option:engine_options(*),
           model_option:model_options(*),
           interior_color:interior_color_options(*),
-          pack:NEW_Budget_Packs(*),
-          electric_system:NEW_Budget_Electric(*)
+          pack:budget_packs(*),
+          electric_system:electric_system(*)
         `)
         .eq('id', budgetId)
         .maybeSingle();
@@ -49,13 +49,13 @@ export const useProjectBudgets = (clientId: string) => {
     queryKey: ['project-budgets', clientId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .select(`
           *,
           engine_option:engine_options(name),
           model_option:model_options(name),
-          pack:NEW_Budget_Packs(name),
-          client:NEW_Clients!NEW_Budget_client_id_fkey(*)
+          pack:budget_packs(name),
+          client:clients!budget_client_id_fkey(*)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
@@ -72,13 +72,13 @@ export const useNewBudgets = (projectId?: string) => {
     queryKey: ['new-budgets', projectId],
     queryFn: async () => {
       let query = supabase
-        .from('NEW_Budget')
+        .from('budget')
         .select(`
           *,
           engine_option:engine_options(name),
           model_option:model_options(name),
-          pack:NEW_Budget_Packs(name),
-          client:NEW_Clients!NEW_Budget_client_id_fkey(*)
+          pack:budget_packs(name),
+          client:clients!budget_client_id_fkey(*)
         `)
         .order('created_at', { ascending: false });
 
@@ -102,7 +102,7 @@ export const useCreateNewBudget = () => {
       if (import.meta.env.DEV) console.log('🎯 Creando presupuesto:', budgetData);
 
       const { data, error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .insert(budgetData)
         .select()
         .single();
@@ -135,7 +135,7 @@ export const useUpdateNewBudget = () => {
       if (import.meta.env.DEV) console.log('🔄 Actualizando presupuesto:', id, updateData);
 
       const { data, error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .update(updateData)
         .eq('id', id)
         .select()
@@ -175,7 +175,7 @@ export const useDeleteNewBudget = () => {
   return useMutation({
     mutationFn: async (budgetId: string) => {
       const { error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .delete()
         .eq('id', budgetId);
 
@@ -205,7 +205,7 @@ export const useSetPrimaryBudget = () => {
 
       // First get the client_id for this budget (fallback just in case)
       const { data: budgetData } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .select('client_id')
         .eq('id', budgetId)
         .single();
@@ -218,7 +218,7 @@ export const useSetPrimaryBudget = () => {
 
       // First, unmark all other budgets as primary for this client
       const { error: unmarkError } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .update({ is_primary: false })
         .eq('client_id', resolvedClientId);
 
@@ -229,7 +229,7 @@ export const useSetPrimaryBudget = () => {
 
       // Then mark this budget as primary (and reactivate if historical)
       const { data, error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .update({ is_primary: true, is_active: true })
         .eq('id', budgetId)
         .select(`
@@ -375,7 +375,7 @@ export const useNewBudgetPacks = () => {
     queryKey: ['new-budget-packs'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Budget_Packs')
+        .from('budget_packs')
         .select('*')
         .eq('is_active', true)
         .order('name');
@@ -391,7 +391,7 @@ export const useElectricSystems = () => {
     queryKey: ['electric-systems'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Budget_Electric')
+        .from('electric_system')
         .select('*')
         .eq('is_active', true)
         .order('order_index');
@@ -407,7 +407,7 @@ export const useNewBudgetElectricSystems = () => {
     queryKey: ['new-budget-electric-systems'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Budget_Electric')
+        .from('electric_system')
         .select('*')
         .eq('is_active', true)
         .order('order_index');
@@ -423,7 +423,7 @@ export const useNewBudgetAdditionalItems = () => {
     queryKey: ['new-budget-additional-items'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Budget_Additional_Items')
+        .from('additional_items')
         .select('*')
         .eq('is_active', true)
         .order('order_index');
@@ -442,7 +442,7 @@ export const useNewBudgetItems = (budgetId?: string) => {
       if (!budgetId) return [];
 
       const { data, error } = await supabase
-        .from('NEW_Budget_Items')
+        .from('budget_items')
         .select('*')
         .eq('budget_id', budgetId)
         .order('order_index');
@@ -459,7 +459,7 @@ export const useNewBudgetExtraPacks = () => {
     queryKey: ['new-budget-extra-packs'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Budget_Packs_Extras')
+        .from('budget_packs_extras')
         .select('*')
         .eq('is_active', true)
         .order('order_index');
@@ -475,7 +475,7 @@ export const useNewBudgetExtraPackComponents = () => {
     queryKey: ['new-budget-extra-pack-components'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Budget_Packs_Extras_Components')
+        .from('budget_packs_extras_components')
         .select('*')
         .order('order_index');
 

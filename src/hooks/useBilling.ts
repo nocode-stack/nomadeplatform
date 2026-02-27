@@ -22,7 +22,7 @@ export const useUpdateBilling = () => {
 
       // Verificar si ya existe un registro de facturación
       const { data: existingBilling } = await supabase
-        .from('NEW_Billing')
+        .from('billing')
         .select('id')
         .eq('client_id', clientId)
         .single();
@@ -30,7 +30,7 @@ export const useUpdateBilling = () => {
       if (existingBilling) {
         // Actualizar registro existente
         const { error } = await supabase
-          .from('NEW_Billing')
+          .from('billing')
           .update({
             ...data,
             updated_at: new Date().toISOString()
@@ -44,7 +44,7 @@ export const useUpdateBilling = () => {
       } else {
         // Crear nuevo registro
         const { error } = await supabase
-          .from('NEW_Billing')
+          .from('billing')
           .insert({
             client_id: clientId,
             ...data,

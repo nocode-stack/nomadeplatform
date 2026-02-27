@@ -46,7 +46,7 @@ const projectInfoSchema = z.object({
   electricSystem: z.string().optional(),
   extraPackages: z.string().optional(),
   
-  // Facturación - campos que coinciden con NEW_Billing
+  // Facturación - campos que coinciden con billing
   billingType: z.string().optional(),
   billingName: z.string().optional(),
   billingNif: z.string().optional(),

@@ -78,10 +78,10 @@ const CRM = () => {
     // Map Supabase data to the structure the CRM expects
     const leads = (clientsData || []).map(client => {
         try {
-            const budgets = (client as any).NEW_Budget || [];
-            const contracts = (client as any).NEW_Contracts || [];
+            const budgets = (client as any).budget || [];
+            const contracts = (client as any).contracts || [];
             const primaryBudget = budgets.find((b: any) => b.is_primary) || budgets[0];
-            const billing = client.NEW_Billing?.[0];
+            const billing = client.billing?.[0];
 
             return {
                 id: client.id,
@@ -108,7 +108,7 @@ const CRM = () => {
                 discount: ((primaryBudget as any)?.discount_percentage * 100)?.toString() || '0',
                 discountAmount: (primaryBudget as any)?.discount_amount?.toString() || '0',
                 reservationAmount: (primaryBudget as any)?.reservation_amount?.toString() || (primaryBudget as any)?.reservation_price?.toString() || '1500',
-                items: (primaryBudget as any)?.NEW_Budget_Items || [],
+                items: (primaryBudget as any)?.budget_items || [],
                 budgetId: primaryBudget?.id,
                 hasBudgets: budgets.length > 0,
                 hasContracts: contracts.length > 0,

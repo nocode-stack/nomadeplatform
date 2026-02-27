@@ -110,7 +110,7 @@ export interface UnifiedProject {
   updated_at?: string;
 
   // Relationships - with backward compatibility
-  new_clients?: DatabaseClient | null;
+  clients?: DatabaseClient | null;
   clients?: DatabaseClient | null; // Backward compatibility
   vehicles?: DatabaseVehicle | null;
   production_slot?: DatabaseProductionSlot | null;

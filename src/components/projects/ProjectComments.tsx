@@ -46,7 +46,7 @@ const ProjectComments = ({ projectId }: ProjectCommentsProps) => {
       if (import.meta.env.DEV) console.log('🔍 Fetching comments for project:', projectId);
       
       const { data, error } = await supabase
-        .from('NEW_Comments')
+        .from('comments')
         .select(`
           id,
           message,
@@ -54,7 +54,7 @@ const ProjectComments = ({ projectId }: ProjectCommentsProps) => {
           created_at,
           updated_at,
           user_id,
-          user_profiles!NEW_Comments_user_id_fkey (
+          user_profiles!comments_user_id_fkey (
             name,
             email,
             avatar_url
@@ -80,7 +80,7 @@ const ProjectComments = ({ projectId }: ProjectCommentsProps) => {
       if (!user?.id) throw new Error('User not authenticated');
       
       const { data, error } = await supabase
-        .from('NEW_Comments')
+        .from('comments')
         .insert({
           project_id: projectId,
           user_id: user.id,
@@ -94,7 +94,7 @@ const ProjectComments = ({ projectId }: ProjectCommentsProps) => {
           created_at,
           updated_at,
           user_id,
-          user_profiles!NEW_Comments_user_id_fkey (
+          user_profiles!comments_user_id_fkey (
             name,
             email,
             avatar_url
@@ -122,7 +122,7 @@ const ProjectComments = ({ projectId }: ProjectCommentsProps) => {
   const deleteCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
       const { error } = await supabase
-        .from('NEW_Comments')
+        .from('comments')
         .delete()
         .eq('id', commentId);
 

@@ -180,10 +180,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           });
 
-          // Detect invite or recovery flow
+          // Detect invite or recovery flow — only from URL tokens, never from normal login
           const hash = window.location.hash;
           const search = window.location.search;
-          const isInvite = hash.includes('type=invite') || search.includes('type=invite') || (event === 'SIGNED_IN' && !sessionStorage.getItem('nomade_has_logged_in'));
+          const isInvite = hash.includes('type=invite') || search.includes('type=invite');
           const isRecovery = hash.includes('type=recovery') || search.includes('type=recovery') || event === 'PASSWORD_RECOVERY';
 
           if (isInvite || isRecovery) {

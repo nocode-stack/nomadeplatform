@@ -21,7 +21,7 @@ export const useOptimizedContractQuery = (projectId: string, budgetId?: string) 
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Contracts',
+          table: 'contracts',
           filter: filterString
         },
         () => {
@@ -35,7 +35,7 @@ export const useOptimizedContractQuery = (projectId: string, budgetId?: string) 
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Clients'
+          table: 'clients'
         },
         () => {
           logger.debug('Client data updated', { component: 'Contract', action: 'realtime' });
@@ -47,7 +47,7 @@ export const useOptimizedContractQuery = (projectId: string, budgetId?: string) 
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Billing'
+          table: 'billing'
         },
         () => {
           logger.debug('Billing data updated', { component: 'Contract', action: 'realtime' });
@@ -65,7 +65,7 @@ export const useOptimizedContractQuery = (projectId: string, budgetId?: string) 
     queryKey: ['contractStatuses', projectId, budgetId],
     queryFn: async () => {
       let query = supabase
-        .from('NEW_Contracts')
+        .from('contracts')
         .select('*')
         .eq('project_id', projectId)
         .eq('is_latest', true)
@@ -108,7 +108,7 @@ export const useOptimizedContractDetail = (projectId: string, contractType: stri
         {
           event: '*',
           schema: 'public',
-          table: 'NEW_Contracts',
+          table: 'contracts',
           filter: `project_id=eq.${projectId}`
         },
         () => {
@@ -126,7 +126,7 @@ export const useOptimizedContractDetail = (projectId: string, contractType: stri
     queryKey: ['contract', projectId, contractType],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Contracts')
+        .from('contracts')
         .select('*')
         .eq('project_id', projectId)
         .eq('contract_type', contractType)

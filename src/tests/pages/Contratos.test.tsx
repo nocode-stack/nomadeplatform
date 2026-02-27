@@ -101,7 +101,7 @@ const mockContracts = [
         updated_at: '2024-06-10T00:00:00Z',
         project: {
             project_code: 'PR-001',
-            new_clients: { name: 'Nomad Life' },
+            clients: { name: 'Nomad Life' },
             budgets: [{ is_primary: true, budget_code: 'BU-001' }],
         },
     },
@@ -116,7 +116,7 @@ const mockContracts = [
         updated_at: '2024-05-10T00:00:00Z',
         project: {
             project_code: 'PR-002',
-            new_clients: { name: 'Camping Sol' },
+            clients: { name: 'Camping Sol' },
             budgets: [{ is_primary: true, budget_code: 'BU-002' }],
         },
     },
@@ -131,7 +131,7 @@ const mockContracts = [
         updated_at: '2024-04-10T00:00:00Z',
         project: {
             project_code: 'PR-003',
-            new_clients: { name: 'Pedro Lopez' },
+            clients: { name: 'Pedro Lopez' },
             budgets: [{ is_primary: true, budget_code: 'BU-003' }],
         },
     },

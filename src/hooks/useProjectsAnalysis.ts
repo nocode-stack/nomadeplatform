@@ -8,7 +8,7 @@ export const HOOKS_USAGE_ANALYSIS = {
     useUnifiedProjectsList: {
       file: 'src/hooks/useUnifiedProjects.ts',
       queryKey: ['unified-projects'],
-      dataSource: 'NEW_Projects + NEW_Clients + NEW_Vehicles + NEW_Budget',
+      dataSource: 'projects + clients + vehicles + budget',
       returnType: 'UnifiedProject[]',
       usedIn: [
         'src/pages/Proyectos.tsx'
@@ -17,7 +17,7 @@ export const HOOKS_USAGE_ANALYSIS = {
     useProjectsList: {
       file: 'src/hooks/useNewProjects.ts',
       queryKey: ['new-projects-list'],
-      dataSource: 'NEW_Projects + NEW_Clients',
+      dataSource: 'projects + clients',
       returnType: 'Simplified project array',
       usedIn: [
         'src/pages/Proyectos.tsx'
@@ -26,7 +26,7 @@ export const HOOKS_USAGE_ANALYSIS = {
     useUnifiedProject: {
       file: 'src/hooks/useUnifiedProjects.ts',
       queryKey: ['unified-project', 'projectId'],
-      dataSource: 'NEW_Projects + NEW_Clients + NEW_Vehicles + NEW_Budget + phases',
+      dataSource: 'projects + clients + vehicles + budget + phases',
       returnType: 'UnifiedProject',
       usedIn: [
         'src/pages/ProjectDetail.tsx'
@@ -35,7 +35,7 @@ export const HOOKS_USAGE_ANALYSIS = {
     useProject: {
       file: 'src/hooks/useNewProjects.ts',
       queryKey: ['new-project', 'projectId'],
-      dataSource: 'NEW_Projects + NEW_Clients + phases',
+      dataSource: 'projects + clients + phases',
       returnType: 'Simplified project',
       usedIn: [
         'src/pages/ProjectDetail.tsx'
@@ -95,13 +95,13 @@ export const HOOKS_USAGE_ANALYSIS = {
         code: 'client_code for prospects, project_code for clients',
         model: 'From primary budget model_option',
         power: 'From primary budget engine_option with power + transmission',
-        client_name: 'From NEW_Clients.name'
+        client_name: 'From clients.name'
       },
       useProjectsList: {
         code: 'Always project_code',
         model: 'Hardcoded "Por definir"',
         power: 'Hardcoded "Por definir"',
-        client_name: 'From NEW_Clients.name'
+        client_name: 'From clients.name'
       }
     },
     queryInvalidation: {

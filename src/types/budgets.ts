@@ -61,6 +61,7 @@ export interface ElectricSystem {
   price: number;
   price_export?: number;
   discount_price?: number;
+  discount_price_export?: number;
   required_packs?: string[];
   pack_pricing_rules?: any; // JSONB field for dynamic pricing rules
   is_standalone: boolean;

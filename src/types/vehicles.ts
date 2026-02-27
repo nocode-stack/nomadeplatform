@@ -36,7 +36,7 @@ export interface VehicleFilters {
   estado_pago?: string;
 }
 
-// New vehicle types for NEW_Vehicles table with direct specifications
+// New vehicle types for vehicles table with direct specifications
 export interface NewVehicle {
   id: string;
   vehicle_code: string;

@@ -13,9 +13,9 @@ export const useProjectsMigration = () => {
     mutationFn: async (projectId: string) => {
       logger.project.update(projectId, { action: 'migration' });
 
-      // 1. Verificar que el proyecto existe en NEW_Projects
+      // 1. Verificar que el proyecto existe en projects
       const { data: newProject, error: newProjectError } = await supabase
-        .from('NEW_Projects')
+        .from('projects')
         .select('*')
         .eq('id', projectId)
         .single();
@@ -24,7 +24,7 @@ export const useProjectsMigration = () => {
 
       // 2. Verificar si ya tiene fases en el nuevo sistema
       const { data: existingNewPhases } = await supabase
-        .from('NEW_Project_Phase_Progress')
+        .from('project_phase_progress')
         .select('id')
         .eq('project_id', projectId)
         .limit(1);
@@ -60,9 +60,9 @@ export const useProjectsMigration = () => {
     mutationFn: async () => {
       logger.info('Vinculación masiva iniciada', { component: 'Migration' });
 
-      // Obtener todos los proyectos de NEW_Projects
+      // Obtener todos los proyectos de projects
       const { data: projects, error } = await supabase
-        .from('NEW_Projects')
+        .from('projects')
         .select('id, project_code');
 
       if (error) throw error;

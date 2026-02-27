@@ -45,7 +45,7 @@ const ContractDetailDialog = ({ open, onOpenChange, project, contractType, statu
                 contractData: {
                     ...formData,
                     project_id: project.id,
-                    client_id: project.new_clients?.id || formData.client_id || '',
+                    client_id: project.clients?.id || formData.client_id || '',
                     contract_type: contractType,
                     contract_status: 'generado',
                 },
@@ -69,7 +69,7 @@ const ContractDetailDialog = ({ open, onOpenChange, project, contractType, statu
                     contractData: {
                         ...formData,
                         project_id: project.id,
-                        client_id: project.new_clients?.id || formData.client_id || '',
+                        client_id: project.clients?.id || formData.client_id || '',
                         contract_type: contractType,
                         contract_status: 'generado',
                     },

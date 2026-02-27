@@ -71,7 +71,7 @@ export const EditProductionSlotDialog: React.FC<EditProductionSlotDialogProps> =
       if (import.meta.env.DEV) console.log('🔄 Updating production slot...', slot.id, data);
 
       const { error } = await supabase
-        .from('NEW_Production_Schedule')
+        .from('production_schedule')
         .update({
           production_code: data.production_code,
           start_date: data.start_date,

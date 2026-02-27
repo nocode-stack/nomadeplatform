@@ -24,10 +24,10 @@ const createMockQueryBuilder = (result: any) => {
 vi.mock('@/integrations/supabase/client', () => ({
     supabase: {
         from: vi.fn((table: string) => {
-            if (table === 'NEW_Budget_Additional_Items') {
+            if (table === 'additional_items') {
                 return createMockQueryBuilder({ data: [{ id: '1', name: 'Placa Solar', price: 500 }], error: null });
             }
-            if (table === 'NEW_Budget_Items') {
+            if (table === 'budget_items') {
                 return createMockQueryBuilder({ data: { id: 'item-101' }, error: null });
             }
             return createMockQueryBuilder({ data: [], error: null });
@@ -66,7 +66,7 @@ describe('Additional Items Hooks', () => {
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
         expect(result.current.data).toHaveLength(1);
         expect(result.current.data![0].name).toBe('Placa Solar');
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget_Additional_Items');
+        expect(supabase.from).toHaveBeenCalledWith('additional_items');
     });
 
     it('should create a new catalog item (personalized/template)', async () => {
@@ -83,7 +83,7 @@ describe('Additional Items Hooks', () => {
 
         await result.current.mutateAsync(newItem);
 
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget_Additional_Items');
+        expect(supabase.from).toHaveBeenCalledWith('additional_items');
         // Verify it sent correct data
         expect((supabase.from as any).mock.results[0].value.insert).toHaveBeenCalledWith(expect.objectContaining({
             name: 'Batería Litio',
@@ -108,7 +108,7 @@ describe('Additional Items Hooks', () => {
             quantity: 2
         });
 
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget_Items');
+        expect(supabase.from).toHaveBeenCalledWith('budget_items');
         expect((supabase.from as any).mock.results[0].value.insert).toHaveBeenCalledWith(expect.objectContaining({
             budget_id: 'bud-123',
             name: 'Inversor',
@@ -124,7 +124,7 @@ describe('Additional Items Hooks', () => {
 
         await result.current.mutateAsync('item-to-delete');
 
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget_Items');
+        expect(supabase.from).toHaveBeenCalledWith('budget_items');
         expect((supabase.from as any).mock.results[0].value.delete).toHaveBeenCalled();
     });
 });

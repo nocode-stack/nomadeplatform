@@ -11,13 +11,13 @@ export const useProjectPhases = (projectId: string) => {
         queryKey: ['new-project-phases', projectId],
         queryFn: async () => {
             const { data, error } = await supabase
-                .from('NEW_Project_Phase_Progress')
+                .from('project_phase_progress')
                 .select(`
           *,
-          NEW_Project_Phase_Template(*)
+          project_phase_template(*)
         `)
                 .eq('project_id', projectId)
-                .order('NEW_Project_Phase_Template(phase_order)');
+                .order('project_phase_template(phase_order)');
 
             if (error) throw error;
             return data || [];
@@ -31,7 +31,7 @@ export const useProjectPhases = (projectId: string) => {
             if (status === 'completed') updateData.end_date = new Date().toISOString().split('T')[0];
             else if (status === 'in_progress') updateData.start_date = new Date().toISOString().split('T')[0];
 
-            const { error } = await supabase.from('NEW_Project_Phase_Progress').update(updateData).eq('id', phaseId);
+            const { error } = await supabase.from('project_phase_progress').update(updateData).eq('id', phaseId);
             if (error) throw error;
         },
         onSuccess: () => {

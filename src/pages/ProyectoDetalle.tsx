@@ -48,7 +48,7 @@ const ProyectoDetalle = () => {
     refetch
   } = useUnifiedProject(id || '');
 
-  // Cargar las fases del proyecto desde NEW_Projects para mostrar la fase actual
+  // Cargar las fases del proyecto desde projects para mostrar la fase actual
   const {
     data: newProject
   } = useProject(id || '');
@@ -60,13 +60,13 @@ const ProyectoDetalle = () => {
       if (!id) return null;
 
       const { data, error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .select(`
           *,
           engine_option:engine_options(*),
           model_option:model_options(*),
           exterior_color_option:exterior_color_options(*),
-          pack:NEW_Budget_Packs(*)
+          pack:budget_packs(*)
         `)
         .eq('project_id', id)
         .eq('is_primary', true)
@@ -90,19 +90,19 @@ const ProyectoDetalle = () => {
     refetch: refetchIncidents
   } = useNewIncidentsList(id);
 
-  // Query para contar todos los comentarios de este proyecto específico usando NEW_Comments
+  // Query para contar todos los comentarios de este proyecto específico usando comments
   const { data: totalCommentsCount = 0 } = useQuery({
     queryKey: ['new-comments-total-count', id],
     queryFn: async () => {
       if (!id) return 0;
 
       const { count, error } = await supabase
-        .from('NEW_Comments')
+        .from('comments')
         .select('*', { count: 'exact', head: true })
         .eq('project_id', id);
 
       if (error) {
-        console.error('Error fetching NEW_Comments count:', error);
+        console.error('Error fetching comments count:', error);
         return 0;
       }
 
@@ -154,12 +154,12 @@ const ProyectoDetalle = () => {
   // Mutation para convertir prospect a cliente
   const convertToClientMutation = useMutation({
     mutationFn: async () => {
-      if (!project.new_clients?.id) throw new Error('Cliente no encontrado');
+      if (!project.clients?.id) throw new Error('Cliente no encontrado');
 
       const { error } = await supabase
-        .from('NEW_Clients')
+        .from('clients')
         .update({ client_status: 'client' })
-        .eq('id', project.new_clients.id);
+        .eq('id', project.clients.id);
 
       if (error) throw error;
     },
@@ -210,7 +210,7 @@ const ProyectoDetalle = () => {
     if (newProject?.project_phase_progress && newProject.project_phase_progress.length > 0) {
       const inProgress = newProject.project_phase_progress.find((p: any) => p.status === 'in_progress');
       if (inProgress) {
-        return inProgress.NEW_Project_Phase_Template?.group || statusText;
+        return inProgress.project_phase_template?.group || statusText;
       }
 
       const completed = newProject.project_phase_progress.filter((p: any) => p.status === 'completed');
@@ -218,16 +218,16 @@ const ProyectoDetalle = () => {
 
       if (pending.length > 0) {
         const nextPending = pending.sort((a: any, b: any) =>
-          (a.NEW_Project_Phase_Template?.phase_order || 0) - (b.NEW_Project_Phase_Template?.phase_order || 0)
+          (a.project_phase_template?.phase_order || 0) - (b.project_phase_template?.phase_order || 0)
         )[0];
-        return nextPending.NEW_Project_Phase_Template?.group || statusText;
+        return nextPending.project_phase_template?.group || statusText;
       }
 
       if (completed.length > 0) {
         const lastCompleted = completed.sort((a: any, b: any) =>
-          (b.NEW_Project_Phase_Template?.phase_order || 0) - (a.NEW_Project_Phase_Template?.phase_order || 0)
+          (b.project_phase_template?.phase_order || 0) - (a.project_phase_template?.phase_order || 0)
         )[0];
-        return lastCompleted.NEW_Project_Phase_Template?.group || statusText;
+        return lastCompleted.project_phase_template?.group || statusText;
       }
     }
     return statusText;
@@ -248,10 +248,10 @@ const ProyectoDetalle = () => {
           </button>
           <span className="mx-2">›</span>
           <span className="text-blue-600 font-medium truncate">
-            {project.new_clients?.client_status === 'prospect'
-              ? (project.new_clients?.client_code || 'PC_25_XXX')
+            {project.clients?.client_status === 'prospect'
+              ? (project.clients?.client_code || 'PC_25_XXX')
               : (project.code || 'PR_25_XXX')
-            } ({project.new_clients?.name || 'Sin cliente'})
+            } ({project.clients?.name || 'Sin cliente'})
           </span>
         </div>
 
@@ -261,7 +261,7 @@ const ProyectoDetalle = () => {
       </div>
 
       {/* Header con información actualizada del cliente - USANDO ESTADO DE LA BD */}
-      <div className={`${project.new_clients?.client_status === 'prospect'
+      <div className={`${project.clients?.client_status === 'prospect'
         ? 'bg-gradient-to-r from-orange-400 to-orange-500'
         : 'bg-gradient-to-r from-blue-400 to-blue-500'
         } text-white rounded-lg px-4 md:px-6 py-4 overflow-hidden`}>
@@ -269,12 +269,12 @@ const ProyectoDetalle = () => {
           {/* Lado izquierdo: Tres conceptos principales en vertical */}
           <div className="flex flex-col space-y-1 min-w-0">
             <div className="text-xl lg:text-2xl font-bold truncate">
-              {project.new_clients?.client_status === 'prospect'
-                ? (project.new_clients?.client_code || 'PC_25_XXX')
+              {project.clients?.client_status === 'prospect'
+                ? (project.clients?.client_code || 'PC_25_XXX')
                 : (project.code || 'PR_25_XXX')
               }
             </div>
-            <div className="text-lg lg:text-xl font-medium truncate">{project.new_clients?.name || 'Sin cliente'}</div>
+            <div className="text-lg lg:text-xl font-medium truncate">{project.clients?.name || 'Sin cliente'}</div>
             <div className="text-base lg:text-lg truncate">{project.model}</div>
           </div>
 
@@ -297,13 +297,13 @@ const ProyectoDetalle = () => {
                   `${primaryBudget.engine_option.power} ${primaryBudget.engine_option.transmission}` :
                   project.power || '-'} | {project.interior_color || '-'} int | {primaryBudget?.exterior_color_option?.name || project.exterior_color || '-'} ext
               </div>
-              <div className={`text-xs mt-1 ${project.new_clients?.client_status === 'prospect'
+              <div className={`text-xs mt-1 ${project.clients?.client_status === 'prospect'
                 ? 'text-orange-100'
                 : 'text-blue-100'
                 }`}>
-                Cliente: {project.new_clients?.name || 'Sin cliente'} | Email: {project.new_clients?.email || '-'}
+                Cliente: {project.clients?.name || 'Sin cliente'} | Email: {project.clients?.email || '-'}
               </div>
-              <div className={`text-xs ${project.new_clients?.client_status === 'prospect'
+              <div className={`text-xs ${project.clients?.client_status === 'prospect'
                 ? 'text-orange-100'
                 : 'text-blue-100'
                 }`}>
@@ -414,7 +414,7 @@ const ProyectoDetalle = () => {
                       <h4 className="text-lg font-semibold text-gray-900">Información del Cliente</h4>
 
                       {/* Switch para convertir prospect a cliente */}
-                      {project.new_clients?.client_status === 'prospect' && (
+                      {project.clients?.client_status === 'prospect' && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <div className="flex items-center space-x-3">
@@ -496,7 +496,7 @@ const ProyectoDetalle = () => {
 
                         <div className="flex justify-between items-center py-3 border-b border-gray-100 md:col-span-2">
                           <span className="text-gray-600">Código Cliente</span>
-                          <span className="font-medium text-gray-900">{project.new_clients?.client_code || project.clients?.client_code || '-'}</span>
+                          <span className="font-medium text-gray-900">{project.clients?.client_code || project.clients?.client_code || '-'}</span>
                         </div>
                       </div>
                     </div>

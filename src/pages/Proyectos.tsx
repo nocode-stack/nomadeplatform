@@ -55,7 +55,7 @@ const Proyectos = () => {
 
       // Filtro por tipo (prospect vs client)
       if (filters.type && filters.type.length > 0) {
-        const isProspect = project.new_clients?.client_status === 'prospect';
+        const isProspect = project.clients?.client_status === 'prospect';
         const projectType = isProspect ? 'prospect' : 'client';
         if (!filters.type.includes(projectType)) return false;
       }
@@ -266,15 +266,15 @@ const Proyectos = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-6 flex-1">
                         {/* Código */}
-                        <div className={`${project.new_clients?.client_status === 'prospect'
+                        <div className={`${project.clients?.client_status === 'prospect'
                           ? 'bg-primary/10'
                           : 'bg-primary/5'
                           } rounded-xl p-4 min-w-[140px] shadow-sm`}>
-                          <div className={`text-[10px] font-bold uppercase tracking-wider ${project.new_clients?.client_status === 'prospect'
+                          <div className={`text-[10px] font-bold uppercase tracking-wider ${project.clients?.client_status === 'prospect'
                             ? 'text-primary'
                             : 'text-primary/60'
                             }`}>
-                            {project.new_clients?.client_status === 'prospect' ? 'Código Prospect' : 'Código Project'}
+                            {project.clients?.client_status === 'prospect' ? 'Código Prospect' : 'Código Project'}
                           </div>
                           <div className="font-bold text-foreground text-xl">{project.code || 'Pendiente'}</div>
                         </div>
@@ -282,7 +282,7 @@ const Proyectos = () => {
                         {/* Cliente */}
                         <div className="min-w-0 flex-1">
                           <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Cliente</div>
-                          <div className="text-foreground font-bold text-lg truncate">{project.new_clients?.name || 'Sin cliente'}</div>
+                          <div className="text-foreground font-bold text-lg truncate">{project.clients?.name || 'Sin cliente'}</div>
                         </div>
 
                         {/* Modelo */}
@@ -295,7 +295,7 @@ const Proyectos = () => {
                         <div className="min-w-0">
                           <div className="text-xs text-gray-500 font-medium">Estado</div>
                           <Badge className={`${getStatusColor(project.status)} font-medium border`}>
-                            {project.new_clients?.client_status === 'prospect'
+                            {project.clients?.client_status === 'prospect'
                               ? (project.currentPhase || getStatusText(project.status))
                               : getStatusText(project.status)
                             }

@@ -94,7 +94,7 @@ describe('ProyectoDetalle Page', () => {
         model: 'Neo',
         status: 'prospect',
         progress: 10,
-        new_clients: {
+        clients: {
             id: 'client-1',
             name: 'Juan Test',
             client_status: 'prospect',

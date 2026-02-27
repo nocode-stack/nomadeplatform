@@ -31,7 +31,7 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
     };
 
     const handleSendEmail = () => {
-        const client = budget.project?.NEW_Clients;
+        const client = budget.project?.clients;
         const subject = encodeURIComponent(`Presupuesto Nomade - ${budget.budget_code}`);
         const body = encodeURIComponent(`Hola,\n\nAdjunto te enviamos el presupuesto ${budget.budget_code} para tu proyecto ${budget.project?.project_code || ''}.\n\nQuedamos a tu disposición para cualquier duda.\n\nUn saludo,\nEquipo Nomade`);
         window.location.href = `mailto:${client?.email || ''}?subject=${subject}&body=${body}`;
@@ -170,9 +170,9 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
                                 <div className="space-y-2">
                                     <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#94a3b8]">Cliente</h3>
                                     <div className="space-y-0.5">
-                                        <p className="font-bold text-xl">{budget.project?.NEW_Clients?.name || 'Cliente No Identificado'}</p>
-                                        <p className="text-base text-[#475569]">{budget.project?.NEW_Clients?.email || '-'}</p>
-                                        <p className="text-base text-[#475569]">{budget.project?.NEW_Clients?.phone || '-'}</p>
+                                        <p className="font-bold text-xl">{budget.project?.clients?.name || 'Cliente No Identificado'}</p>
+                                        <p className="text-base text-[#475569]">{budget.project?.clients?.email || '-'}</p>
+                                        <p className="text-base text-[#475569]">{budget.project?.clients?.phone || '-'}</p>
                                     </div>
                                 </div>
                                 <div className="space-y-2">

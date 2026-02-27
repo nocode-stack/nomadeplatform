@@ -85,24 +85,24 @@ const ProjectDetail = () => {
                   {project.code}
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Cliente: {project.new_clients?.name}
+                  Cliente: {project.clients?.name}
                 </p>
                 {/* Debug info - mostrando toda la info del cliente */}
                 <div className="text-sm text-gray-500 mt-2 p-2 bg-gray-100 rounded">
-                  <p>Client ID: {project.new_clients?.id}</p>
-                  <p>Client Status: {project.new_clients?.client_status || 'undefined'}</p>
-                  <p>Client Code: {project.new_clients?.client_code}</p>
-                  <p>Condición botón: {project.new_clients?.client_status === 'prospect' ? 'TRUE - Debería mostrar botón' : 'FALSE - No mostrará botón'}</p>
+                  <p>Client ID: {project.clients?.id}</p>
+                  <p>Client Status: {project.clients?.client_status || 'undefined'}</p>
+                  <p>Client Code: {project.clients?.client_code}</p>
+                  <p>Condición botón: {project.clients?.client_status === 'prospect' ? 'TRUE - Debería mostrar botón' : 'FALSE - No mostrará botón'}</p>
                 </div>
               </div>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             {/* Mostrar botón de conversión solo si es prospect */}
-            {project.new_clients?.client_status === 'prospect' && (
+            {project.clients?.client_status === 'prospect' && (
               <ConvertProspectButton 
-                clientId={project.new_clients.id}
-                clientName={project.new_clients.name || 'Cliente'}
+                clientId={project.clients.id}
+                clientName={project.clients.name || 'Cliente'}
                 onSuccess={() => refetch()}
               />
             )}

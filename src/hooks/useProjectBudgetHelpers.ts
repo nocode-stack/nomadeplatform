@@ -33,8 +33,8 @@ export async function fetchBudgetOptions(): Promise<BudgetOptions> {
         supabase.from('engine_options').select('id, name, price_modifier').eq('is_active', true),
         supabase.from('exterior_color_options').select('id, name, price_modifier').eq('is_active', true),
         supabase.from('interior_color_options').select('id, name, price_modifier').eq('is_active', true),
-        supabase.from('NEW_Budget_Packs').select('id, name, price').eq('is_active', true),
-        supabase.from('NEW_Budget_Electric').select('id, name, price').eq('is_active', true)
+        supabase.from('budget_packs').select('id, name, price').eq('is_active', true),
+        supabase.from('electric_system').select('id, name, price').eq('is_active', true)
     ]);
 
     return { models, engines, exteriorColors, interiorColors, packs, electricSystems };

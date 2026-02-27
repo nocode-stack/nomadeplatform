@@ -86,7 +86,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
 
         // Fetch client directly (projectId is now clientId)
         const { data: client } = await supabase
-            .from('NEW_Clients')
+            .from('clients')
             .select('*')
             .eq('id', projectId)
             .single();
@@ -95,7 +95,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
 
         // Fetch primary budget with model/engine options
         const { data: budget } = await supabase
-            .from('NEW_Budget')
+            .from('budget')
             .select(`
                 *,
                 model_option:model_options(name),
@@ -108,14 +108,14 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
 
         // Fetch billing data
         const { data: billing } = await supabase
-            .from('NEW_Billing')
+            .from('billing')
             .select('*')
             .eq('client_id', projectId)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
 
-        return { id: projectId, new_clients: client, primaryBudget: budget, billingData: billing, new_vehicles: null };
+        return { id: projectId, clients: client, primaryBudget: budget, billingData: billing, vehicles: null };
     };
 
     // Open the inline form
@@ -160,7 +160,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                 contractData: {
                     ...formData,
                     project_id: projectId,
-                    client_id: activeForm.project.new_clients?.id || formData.client_id || '',
+                    client_id: activeForm.project.clients?.id || formData.client_id || '',
                     budget_id: primaryBudgetId,
                     contract_type: activeForm.contractType,
                     contract_status: 'generado',
@@ -191,7 +191,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                     contractData: {
                         ...formData,
                         project_id: projectId,
-                        client_id: activeForm.project.new_clients?.id || formData.client_id || '',
+                        client_id: activeForm.project.clients?.id || formData.client_id || '',
                         budget_id: primaryBudgetId,
                         contract_type: activeForm.contractType,
                         contract_status: 'generado',

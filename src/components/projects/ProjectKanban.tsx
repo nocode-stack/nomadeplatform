@@ -186,7 +186,7 @@ const ProjectKanban = ({ projects, onProjectClick }: ProjectKanbanProps) => {
                               {/* Cliente */}
                               <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider truncate bg-muted/30 px-2 py-1 rounded border border-border/50">
                                 <User className="h-3 w-3 inline mr-2 text-primary" />
-                                {project.new_clients?.name || 'Venta Libre'}
+                                {project.clients?.name || 'Venta Libre'}
                               </div>
 
                               {/* Modelo */}

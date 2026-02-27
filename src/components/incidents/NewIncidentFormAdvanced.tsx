@@ -178,7 +178,7 @@ const NewIncidentFormAdvanced = ({ preselectedProjectId }: NewIncidentFormAdvanc
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Cliente:</span>
-                  <span className="ml-2">{project.new_clients?.name || 'N/A'}</span>
+                  <span className="ml-2">{project.clients?.name || 'N/A'}</span>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Modelo:</span>

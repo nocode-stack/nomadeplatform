@@ -25,7 +25,7 @@ import { formatDate } from '../../utils/projectUtils';
 import { useToast } from '@/hooks/use-toast';
 import { useUnifiedProject } from '../../hooks/useUnifiedProjects';
 
-// Local interfaces that match the NEW_Budget structure
+// Local interfaces that match the budget structure
 interface DatabaseBudget {
   id: string;
   budget_code: string | null;
@@ -67,13 +67,13 @@ const ProjectSpecsFromBudget = ({ projectId }: ProjectSpecsFromBudgetProps) => {
 
 
       const { data, error } = await supabase
-        .from('NEW_Budget')
+        .from('budget')
         .select(`
           *,
           engine_option:engine_options(*),
           model_option:model_options(*),
-          pack:NEW_Budget_Packs(*),
-          electric_system:NEW_Budget_Electric(*)
+          pack:budget_packs(*),
+          electric_system:electric_system(*)
         `)
         .eq('project_id', projectId)
         .order('created_at', { ascending: false });
@@ -187,7 +187,7 @@ const ProjectSpecsFromBudget = ({ projectId }: ProjectSpecsFromBudgetProps) => {
       model: budget.model_option?.name || '',
       vehicleOption: budget.engine_option?.name || '',
       packs: budget.pack?.name ? [budget.pack.name] : [],
-      extras: [] as string[], // Los extras ahora están en NEW_Budget_Items
+      extras: [] as string[], // Los extras ahora están en budget_items
       electricSystem: budget.electric_system?.name || '',
       interiorColor: '',
       discounts: [] as { name: string; amount: number }[]

@@ -88,18 +88,18 @@ const EditProjectForm = ({
 
   // Cargar datos de billing desde el inicio
   const { data: billingData, isLoading: billingLoading } = useBillingData(
-    projectData?.new_clients?.id
+    projectData?.clients?.id
   );
 
   // Configurar defaultValues con datos reales cargados
   const getDefaultValues = (): EditProjectFormData => {
     const defaults: EditProjectFormData = {
-      clientName: projectData?.new_clients?.name || '',
-      clientEmail: projectData?.new_clients?.email || '',
-      clientPhone: projectData?.new_clients?.phone || '',
-      clientDni: projectData?.new_clients?.dni || '',
-      clientAddress: projectData?.new_clients?.address || '',
-      clientBirthDate: projectData?.new_clients?.birthdate || '',
+      clientName: projectData?.clients?.name || '',
+      clientEmail: projectData?.clients?.email || '',
+      clientPhone: projectData?.clients?.phone || '',
+      clientDni: projectData?.clients?.dni || '',
+      clientAddress: projectData?.clients?.address || '',
+      clientBirthDate: projectData?.clients?.birthdate || '',
       productionCodeId: projectData?.production_slot?.id || '',
       comercial: projectData?.comercial || '',
       billingType: 'personal',
@@ -175,9 +175,9 @@ const EditProjectForm = ({
 
     try {
       // Update client data
-      if (projectData?.new_clients?.id) {
+      if (projectData?.clients?.id) {
         const { error: clientError } = await supabase
-          .from('NEW_Clients')
+          .from('clients')
           .update({
             name: data.clientName,
             email: data.clientEmail,
@@ -186,7 +186,7 @@ const EditProjectForm = ({
             address: data.clientAddress || null,
             birthdate: data.clientBirthDate || null,
           })
-          .eq('id', projectData.new_clients.id);
+          .eq('id', projectData.clients.id);
 
         if (clientError) throw clientError;
 
@@ -213,15 +213,15 @@ const EditProjectForm = ({
 
         // Check if billing record exists
         const { data: existingBilling } = await supabase
-          .from('NEW_Billing')
+          .from('billing')
           .select('id')
-          .eq('client_id', projectData.new_clients.id)
+          .eq('client_id', projectData.clients.id)
           .maybeSingle();
 
         if (existingBilling) {
           // Update existing billing record
           const { error: billingError } = await supabase
-            .from('NEW_Billing')
+            .from('billing')
             .update(billingUpdateData)
             .eq('id', existingBilling.id);
 
@@ -229,9 +229,9 @@ const EditProjectForm = ({
         } else {
           // Create new billing record
           const { error: billingError } = await supabase
-            .from('NEW_Billing')
+            .from('billing')
             .insert({
-              client_id: projectData.new_clients.id,
+              client_id: projectData.clients.id,
               ...billingUpdateData,
             });
 
@@ -240,13 +240,13 @@ const EditProjectForm = ({
 
         // Invalidar cache para sincronizar con otros componentes
         await queryClient.invalidateQueries({
-          queryKey: ['billing-data', projectData.new_clients.id]
+          queryKey: ['billing-data', projectData.clients.id]
         });
       }
 
       // Update project data
       const { error: projectError } = await supabase
-        .from('NEW_Projects')
+        .from('projects')
         .update({
           slot_id: data.productionCodeId || null,
           comercial: data.comercial || null,
@@ -326,21 +326,21 @@ const EditProjectForm = ({
                 <h3 className="text-lg font-semibold text-gray-900">Información del Proyecto</h3>
 
                 {/* Status del Cliente */}
-                <div className={`p-3 rounded-md border ${projectData?.new_clients?.client_status === 'prospect'
+                <div className={`p-3 rounded-md border ${projectData?.clients?.client_status === 'prospect'
                   ? 'bg-yellow-50 border-yellow-200'
                   : 'bg-green-50 border-green-200'
                   }`}>
                   <div className="flex items-center justify-between">
                     <div>
                       <label className="text-sm font-medium text-gray-700">Estado del Cliente</label>
-                      <p className={`text-lg font-semibold mt-1 ${projectData?.new_clients?.client_status === 'prospect'
+                      <p className={`text-lg font-semibold mt-1 ${projectData?.clients?.client_status === 'prospect'
                         ? 'text-yellow-700'
                         : 'text-green-700'
                         }`}>
-                        {projectData?.new_clients?.client_status === 'prospect' ? 'Prospecto' : 'Cliente'}
+                        {projectData?.clients?.client_status === 'prospect' ? 'Prospecto' : 'Cliente'}
                       </p>
                     </div>
-                    {projectData?.new_clients?.client_status === 'prospect' && (
+                    {projectData?.clients?.client_status === 'prospect' && (
                       <div className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
                         ⚠️ Los prospectos no pueden tener códigos de producción
                       </div>
@@ -355,7 +355,7 @@ const EditProjectForm = ({
                       {projectData?.project_code || projectData?.code || 'Sin código'}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {projectData?.new_clients?.client_status === 'prospect'
+                      {projectData?.clients?.client_status === 'prospect'
                         ? 'Los códigos se asignan automáticamente al convertir el prospecto en cliente'
                         : 'Código asignado automáticamente al proyecto'
                       }
@@ -374,14 +374,14 @@ const EditProjectForm = ({
                             <ProjectCodeSelector
                               value={field.value}
                               onValueChange={field.onChange}
-                              disabled={isLoading || projectData?.new_clients?.client_status === 'prospect'}
+                              disabled={isLoading || projectData?.clients?.client_status === 'prospect'}
                               allowEmpty={true}
-                              isProspect={projectData?.new_clients?.client_status === 'prospect'}
+                              isProspect={projectData?.clients?.client_status === 'prospect'}
                             />
                           </FormControl>
                           <FormMessage />
                           <div className="text-sm text-gray-600 mt-1">
-                            {projectData?.new_clients?.client_status === 'prospect' ? (
+                            {projectData?.clients?.client_status === 'prospect' ? (
                               <p className="text-xs text-yellow-600 bg-yellow-50 p-2 rounded border-l-4 border-yellow-200">
                                 ⚠️ <strong>Prospecto:</strong> Convierte al cliente para poder asignar códigos de producción
                               </p>

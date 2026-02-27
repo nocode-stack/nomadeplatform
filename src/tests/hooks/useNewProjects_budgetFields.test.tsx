@@ -74,8 +74,8 @@ describe('useProjects budget fields persistence', () => {
 
         await result.current.updateProject('test-project-id', updateData);
 
-        // Should call NEW_Budget update
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget');
+        // Should call budget update
+        expect(supabase.from).toHaveBeenCalledWith('budget');
         expect(mockQueryBuilder.update).toHaveBeenCalledWith(expect.objectContaining({
             discount_percentage: 0.10
         }));
@@ -92,8 +92,8 @@ describe('useProjects budget fields persistence', () => {
 
         await result.current.updateProject('test-project-id', updateData);
 
-        // Should call NEW_Budget update
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget');
+        // Should call budget update
+        expect(supabase.from).toHaveBeenCalledWith('budget');
         expect(mockQueryBuilder.update).toHaveBeenCalledWith(expect.objectContaining({
             reservation_amount: 2000
         }));
@@ -110,10 +110,10 @@ describe('useProjects budget fields persistence', () => {
 
         await result.current.updateProject('test-project-id', updateData);
 
-        // Should call NEW_Budget update
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget');
+        // Should call budget update
+        expect(supabase.from).toHaveBeenCalledWith('budget');
         // It also deletes and re-inserts items
-        expect(supabase.from).toHaveBeenCalledWith('NEW_Budget_Items');
+        expect(supabase.from).toHaveBeenCalledWith('budget_items');
         expect(mockQueryBuilder.delete).toHaveBeenCalled();
         expect(mockQueryBuilder.insert).toHaveBeenCalled();
     });

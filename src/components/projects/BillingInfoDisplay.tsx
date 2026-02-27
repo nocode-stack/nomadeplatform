@@ -11,14 +11,14 @@ interface BillingInfoDisplayProps {
 const BillingInfoDisplay: React.FC<BillingInfoDisplayProps> = ({ project }) => {
   // Cargar datos de facturación - usar el mismo query key que useBillingData
   const { data: billingData, isLoading } = useQuery({
-    queryKey: ['billing-data', project?.new_clients?.id],
+    queryKey: ['billing-data', project?.clients?.id],
     queryFn: async () => {
-      if (!project?.new_clients?.id) return null;
+      if (!project?.clients?.id) return null;
 
       const { data, error } = await supabase
-        .from('NEW_Billing')
+        .from('billing')
         .select('*')
-        .eq('client_id', project.new_clients.id)
+        .eq('client_id', project.clients.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -30,7 +30,7 @@ const BillingInfoDisplay: React.FC<BillingInfoDisplayProps> = ({ project }) => {
 
       return data;
     },
-    enabled: !!project?.new_clients?.id,
+    enabled: !!project?.clients?.id,
   });
 
   if (isLoading) {

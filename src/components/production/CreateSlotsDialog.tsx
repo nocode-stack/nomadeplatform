@@ -42,7 +42,7 @@ export const CreateSlotsDialog: React.FC<CreateSlotsDialogProps> = ({
     queryKey: ['production-slots-for-numbering'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('NEW_Production_Schedule')
+        .from('production_schedule')
         .select('production_code, id, start_date, end_date')
         .order('production_code', { ascending: true });
       
@@ -97,7 +97,7 @@ export const CreateSlotsDialog: React.FC<CreateSlotsDialogProps> = ({
 
     return {
       interval_days,
-      duration_days: 50 // Default duration since NEW_Production_Schedule doesn't have estimated_duration_days
+      duration_days: 50 // Default duration since production_schedule doesn't have estimated_duration_days
     };
   };
 
@@ -139,7 +139,7 @@ export const CreateSlotsDialog: React.FC<CreateSlotsDialogProps> = ({
       }
 
       const { error } = await supabase
-        .from('NEW_Production_Schedule')
+        .from('production_schedule')
         .insert(slots);
 
       if (error) throw error;

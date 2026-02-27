@@ -39,7 +39,7 @@ const ProductionSlotSelector = ({ value, onValueChange, disabled, allowEmpty = f
       
       // Obtener slots disponibles + slot actual del proyecto si existe
       const { data, error } = await supabase
-        .from('NEW_Production_Schedule')
+        .from('production_schedule')
         .select('*')
         .or(`project_id.is.null,project_id.eq.${currentProjectId || 'null'}`)
         .order('production_code');

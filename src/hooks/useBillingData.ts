@@ -10,7 +10,7 @@ export const useBillingData = (clientId: string | undefined) => {
       }
       
       const { data, error } = await supabase
-        .from('NEW_Billing')
+        .from('billing')
         .select('*')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false })
