@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/layout/Layout';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -47,6 +48,7 @@ import { useClients, useDeleteLead, useToggleHotLead } from '../hooks/useClients
 
 const CRM = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedLead, setSelectedLead] = useState<any>(null);
@@ -353,6 +355,48 @@ const CRM = () => {
                 <NewLeadModal
                     open={isModalOpen}
                     onOpenChange={setIsModalOpen}
+                    onLeadCreated={(newLeadData) => {
+                        // Refetch the clients list, then open the detail modal for the new lead
+                        queryClient.invalidateQueries({ queryKey: ['common-clients-list'] }).then(() => {
+                            // Small delay to let the query refetch complete
+                            setTimeout(() => {
+                                const freshLeads = queryClient.getQueryData<any[]>(['common-clients-list']);
+                                if (freshLeads) {
+                                    const newClientId = newLeadData?.client_id;
+                                    const matchingClient = freshLeads.find((c: any) => c.id === newClientId);
+                                    if (matchingClient) {
+                                        // Build the lead object just like the leads mapping does
+                                        const budgets = matchingClient.budget || [];
+                                        const contracts = matchingClient.contracts || [];
+                                        const primaryBudget = budgets.find((b: any) => b.is_primary) || budgets[0];
+                                        const billing = matchingClient.billing?.[0];
+                                        const leadObj = {
+                                            id: matchingClient.id,
+                                            client_id: matchingClient.id,
+                                            name: matchingClient.name || 'Sin nombre',
+                                            company: billing?.name || 'Empresa no definida',
+                                            status: matchingClient.client_status || 'prospect',
+                                            email: matchingClient.email || '',
+                                            phone: matchingClient.phone || '',
+                                            dni: matchingClient.dni || '',
+                                            birthDate: matchingClient.birthdate || '',
+                                            address: matchingClient.address || '',
+                                            comercial: 'No asignado',
+                                            isHotLead: matchingClient.is_hot_lead || false,
+                                            vehicleModel: primaryBudget?.model_option?.name || '',
+                                            motorization: primaryBudget?.engine_option?.name || '',
+                                            hasBudgets: budgets.length > 0,
+                                            hasContracts: contracts.length > 0,
+                                            billingType: billing?.type || 'personal',
+                                            _raw: matchingClient
+                                        };
+                                        setSelectedLead(leadObj);
+                                        setIsDetailModalOpen(true);
+                                    }
+                                }
+                            }, 500);
+                        });
+                    }}
                 />
 
                 <LeadDetailModal

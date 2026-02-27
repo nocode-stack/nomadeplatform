@@ -156,8 +156,9 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
                 description: "El lead se ha guardado correctamente.",
             });
 
-            if (onLeadCreated) onLeadCreated(adaptedData);
-            // Modal stays open after registering — user closes manually
+            if (onLeadCreated) onLeadCreated({ ...adaptedData, client_id: (newProject as any)?.client_id, _raw: { id: (newProject as any)?.client_id } });
+            // Close this modal — the parent will open the detail modal
+            onOpenChange(false);
         } catch (error: any) {
             console.error('❌ Error creating lead:', error);
             toast({
