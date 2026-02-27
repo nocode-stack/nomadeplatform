@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -89,88 +89,59 @@ const locationLegalTexts: Record<Location, string[]> = {
 const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintViewProps) => {
     const docRef = useRef<HTMLDivElement>(null);
 
-    // ── Auto-scale to fit A4 on print ──────────────────────
-    useEffect(() => {
-        if (!open) return;
-
-        const handleBeforePrint = () => {
-            const el = docRef.current;
-            if (!el) return;
-
-            // Reset zoom & width so we measure true content height
-            (el.style as any).zoom = '1';
-            el.style.setProperty('width', '210mm', 'important');
-            void el.offsetHeight; // force layout recalc
-
-            const contentHeight = el.scrollHeight;
-            // A4 height at 96 CSS-px/inch ≈ 297mm × 96/25.4 ≈ 1122px
-            const a4HeightPx = 1122;
-
-            if (contentHeight > a4HeightPx) {
-                const scale = Math.max(a4HeightPx / contentHeight, 0.5);
-                (el.style as any).zoom = String(scale);
-                // Expand width so that after zoom it visually fills the full A4 page
-                el.style.setProperty('width', `${210 / scale}mm`, 'important');
-            }
-        };
-
-        const handleAfterPrint = () => {
-            const el = docRef.current;
-            if (el) {
-                (el.style as any).zoom = '';
-                el.style.removeProperty('width');
-            }
-        };
-
-        window.addEventListener('beforeprint', handleBeforePrint);
-        window.addEventListener('afterprint', handleAfterPrint);
-
-        return () => {
-            window.removeEventListener('beforeprint', handleBeforePrint);
-            window.removeEventListener('afterprint', handleAfterPrint);
-        };
-    }, [open]);
-
     if (!data) return null;
 
-    const handlePrint = () => {
-        window.print();
+    // ── Shared: capture document as image and render into a single-page A4 PDF ──
+    const generatePDF = async () => {
+        const el = docRef.current;
+        if (!el) return null;
+
+        const html2canvas = (await import('html2canvas')).default;
+        const { jsPDF } = await import('jspdf');
+
+        const canvas = await html2canvas(el, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#FFFFFF',
+        });
+
+        const a4W = 210; // mm
+        const a4H = 297; // mm
+        // Full-width: image always spans the A4 width
+        let imgW = a4W;
+        let imgH = (canvas.height * a4W) / canvas.width;
+        let offsetX = 0;
+
+        // If taller than A4, scale uniformly so height = A4H
+        if (imgH > a4H) {
+            const s = a4H / imgH;
+            imgW = a4W * s;
+            imgH = a4H;
+            offsetX = (a4W - imgW) / 2; // center horizontally
+        }
+
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, 0, imgW, imgH);
+        return pdf;
+    };
+
+    const handlePrint = async () => {
+        try {
+            const pdf = await generatePDF();
+            if (pdf) pdf.save(`Presupuesto_${data.budgetCode}.pdf`);
+        } catch (err) {
+            console.error('Error generating PDF:', err);
+            window.print(); // fallback
+        }
     };
 
     const handleEmail = async () => {
-        // 1. Generate PDF from the print document
-        const printDoc = document.getElementById('budget-print-document');
-        if (printDoc) {
-            try {
-                const html2canvas = (await import('html2canvas')).default;
-                const { jsPDF } = await import('jspdf');
-
-                const canvas = await html2canvas(printDoc, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#FFFFFF',
-                });
-
-                const a4W = 210; // A4 width in mm
-                const a4H = 297; // A4 height in mm
-                let imgWidth = a4W;
-                let imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                // If content is taller than A4, scale down proportionally
-                if (imgHeight > a4H) {
-                    const scaleFactor = a4H / imgHeight;
-                    imgWidth = imgWidth * scaleFactor;
-                    imgHeight = a4H;
-                }
-
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                // Center horizontally if scaled down
-                const xOffset = (a4W - imgWidth) / 2;
-                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', xOffset, 0, imgWidth, imgHeight);
-                pdf.save(`Presupuesto_${data.budgetCode}.pdf`);
-            } catch (err) {
-                console.error('Error generating PDF:', err);
-            }
+        // 1. Generate & download PDF
+        try {
+            const pdf = await generatePDF();
+            if (pdf) pdf.save(`Presupuesto_${data.budgetCode}.pdf`);
+        } catch (err) {
+            console.error('Error generating PDF:', err);
         }
 
         // 2. Build a nice email body

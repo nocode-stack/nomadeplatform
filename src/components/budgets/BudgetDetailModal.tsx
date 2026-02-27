@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -25,50 +25,42 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
     const { data: regionalConfigs } = useRegionalConfig();
     const docRef = useRef<HTMLDivElement>(null);
 
-    // ── Auto-scale to fit A4 on print ──────────────────────
-    useEffect(() => {
-        if (!open) return;
-
-        const handleBeforePrint = () => {
-            const el = docRef.current;
-            if (!el) return;
-
-            (el.style as any).zoom = '1';
-            el.style.setProperty('width', '100%', 'important');
-            void el.offsetHeight;
-
-            const contentHeight = el.scrollHeight;
-            const a4HeightPx = 1122; // 297mm at 96dpi
-
-            if (contentHeight > a4HeightPx) {
-                const scale = Math.max(a4HeightPx / contentHeight, 0.5);
-                (el.style as any).zoom = String(scale);
-                // Expand width so after zoom it visually fills the full page
-                el.style.setProperty('width', `${100 / scale}%`, 'important');
-            }
-        };
-
-        const handleAfterPrint = () => {
-            const el = docRef.current;
-            if (el) {
-                (el.style as any).zoom = '';
-                el.style.removeProperty('width');
-            }
-        };
-
-        window.addEventListener('beforeprint', handleBeforePrint);
-        window.addEventListener('afterprint', handleAfterPrint);
-
-        return () => {
-            window.removeEventListener('beforeprint', handleBeforePrint);
-            window.removeEventListener('afterprint', handleAfterPrint);
-        };
-    }, [open]);
-
     if (!budget) return null;
 
-    const handlePrint = () => {
-        window.print();
+    const handlePrint = async () => {
+        const el = docRef.current;
+        if (!el) { window.print(); return; }
+
+        try {
+            const html2canvas = (await import('html2canvas')).default;
+            const { jsPDF } = await import('jspdf');
+
+            const canvas = await html2canvas(el, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#FFFFFF',
+            });
+
+            const a4W = 210;
+            const a4H = 297;
+            let imgW = a4W;
+            let imgH = (canvas.height * a4W) / canvas.width;
+            let offsetX = 0;
+
+            if (imgH > a4H) {
+                const s = a4H / imgH;
+                imgW = a4W * s;
+                imgH = a4H;
+                offsetX = (a4W - imgW) / 2;
+            }
+
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, 0, imgW, imgH);
+            pdf.save(`Presupuesto_${budget.budget_code}.pdf`);
+        } catch (err) {
+            console.error('Error generating PDF:', err);
+            window.print();
+        }
     };
 
     const handleSendEmail = () => {
