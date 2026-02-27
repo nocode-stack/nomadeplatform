@@ -5,9 +5,11 @@ const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || '').split(',').map((
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('Origin') || '';
-  // Allow localhost origins for development
   const isLocalhost = origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1');
-  const allowedOrigin = isLocalhost ? origin : (ALLOWED_ORIGINS.includes(origin) ? origin : (ALLOWED_ORIGINS[0] || ''));
+  // Allow known domain patterns (vercel deployments + custom domain)
+  const isTrustedDomain = origin.endsWith('.vercel.app') || origin.endsWith('.nomade-nation.com');
+  const isExplicitlyAllowed = ALLOWED_ORIGINS.includes(origin);
+  const allowedOrigin = (isLocalhost || isTrustedDomain || isExplicitlyAllowed) ? origin : (ALLOWED_ORIGINS[0] || '');
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
