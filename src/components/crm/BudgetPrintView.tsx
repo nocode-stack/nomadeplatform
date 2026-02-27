@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -87,6 +87,45 @@ const locationLegalTexts: Record<Location, string[]> = {
 
 // ── Print View Component ────────────────────────────────────
 const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintViewProps) => {
+    const docRef = useRef<HTMLDivElement>(null);
+
+    // ── Auto-scale to fit A4 on print ──────────────────────
+    useEffect(() => {
+        if (!open) return;
+
+        const handleBeforePrint = () => {
+            const el = docRef.current;
+            if (!el) return;
+
+            // Reset zoom so we measure the true content height
+            (el.style as any).zoom = '1';
+            void el.offsetHeight; // force layout recalc
+
+            const contentHeight = el.scrollHeight;
+            // A4 height at 96 CSS-px/inch ≈ 297mm × 96/25.4 ≈ 1122px
+            const a4HeightPx = 1122;
+
+            if (contentHeight > a4HeightPx) {
+                const scale = a4HeightPx / contentHeight;
+                (el.style as any).zoom = String(Math.max(scale, 0.5));
+            }
+        };
+
+        const handleAfterPrint = () => {
+            const el = docRef.current;
+            if (el) {
+                (el.style as any).zoom = '';
+            }
+        };
+
+        window.addEventListener('beforeprint', handleBeforePrint);
+        window.addEventListener('afterprint', handleAfterPrint);
+
+        return () => {
+            window.removeEventListener('beforeprint', handleBeforePrint);
+            window.removeEventListener('afterprint', handleAfterPrint);
+        };
+    }, [open]);
 
     if (!data) return null;
 
@@ -108,10 +147,22 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                     backgroundColor: '#FFFFFF',
                 });
 
-                const imgWidth = 210; // A4 width in mm
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                const a4W = 210; // A4 width in mm
+                const a4H = 297; // A4 height in mm
+                let imgWidth = a4W;
+                let imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                // If content is taller than A4, scale down proportionally
+                if (imgHeight > a4H) {
+                    const scaleFactor = a4H / imgHeight;
+                    imgWidth = imgWidth * scaleFactor;
+                    imgHeight = a4H;
+                }
+
                 const pdf = new jsPDF('p', 'mm', 'a4');
-                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+                // Center horizontally if scaled down
+                const xOffset = (a4W - imgWidth) / 2;
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', xOffset, 0, imgWidth, imgHeight);
                 pdf.save(`Presupuesto_${data.budgetCode}.pdf`);
             } catch (err) {
                 console.error('Error generating PDF:', err);
@@ -246,13 +297,14 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                         /* ── The PDF document itself ── */
                         #budget-print-document {
                             width: 210mm !important;
-                            min-height: 297mm !important;
+                            min-height: auto !important;
+                            height: auto !important;
                             margin: 0 !important;
                             padding: 0 !important;
                             overflow: visible !important;
                             display: flex !important;
                             flex-direction: column !important;
-                            /* NO transform scale — native resolution for max quality */
+                            /* zoom is applied dynamically via JS beforeprint handler */
                         }
 
                         /* ── Force exact color reproduction ── */
@@ -417,6 +469,7 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                 <div className="print-scroll-container flex-1 overflow-y-auto bg-white">
                     <div
                         id="budget-print-document"
+                        ref={docRef}
                         className="w-full text-[#1A1A1A] font-sans bg-white flex flex-col"
                     >
 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -23,6 +23,43 @@ interface BudgetDetailModalProps {
 const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProps) => {
     const { data: budgetItems = [] } = useNewBudgetItems(budget?.id);
     const { data: regionalConfigs } = useRegionalConfig();
+    const docRef = useRef<HTMLDivElement>(null);
+
+    // ── Auto-scale to fit A4 on print ──────────────────────
+    useEffect(() => {
+        if (!open) return;
+
+        const handleBeforePrint = () => {
+            const el = docRef.current;
+            if (!el) return;
+
+            (el.style as any).zoom = '1';
+            void el.offsetHeight;
+
+            const contentHeight = el.scrollHeight;
+            const a4HeightPx = 1122; // 297mm at 96dpi
+
+            if (contentHeight > a4HeightPx) {
+                const scale = a4HeightPx / contentHeight;
+                (el.style as any).zoom = String(Math.max(scale, 0.5));
+            }
+        };
+
+        const handleAfterPrint = () => {
+            const el = docRef.current;
+            if (el) {
+                (el.style as any).zoom = '';
+            }
+        };
+
+        window.addEventListener('beforeprint', handleBeforePrint);
+        window.addEventListener('afterprint', handleAfterPrint);
+
+        return () => {
+            window.removeEventListener('beforeprint', handleBeforePrint);
+            window.removeEventListener('afterprint', handleAfterPrint);
+        };
+    }, [open]);
 
     if (!budget) return null;
 
@@ -133,7 +170,7 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
                         }
                     `}} />
 
-                    <div id="budget-document" className="w-full space-y-0 text-[#1A1A1A] font-sans bg-white">
+                    <div id="budget-document" ref={docRef} className="w-full space-y-0 text-[#1A1A1A] font-sans bg-white">
 
                         {/* 1. Hero Image (Back at the top) */}
                         <div className="w-full h-[200px] overflow-hidden">
