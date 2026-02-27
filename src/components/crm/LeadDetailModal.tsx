@@ -583,7 +583,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                 </TabsContent>
 
                                 <TabsContent value="presupuesto" className="mt-0 animate-fade-in-up">
-                                    <BudgetListTab projectId={lead?.id} clientName={lead?.name} />
+                                    <BudgetListTab projectId={lead?.client_id || lead?._raw?.id || lead?.id} clientName={lead?.name} />
                                 </TabsContent>
 
                                 <TabsContent value="contratos" className="mt-0 animate-fade-in-up">

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -123,6 +123,17 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
             items: [],
         },
     });
+
+    // Reset form when modal opens
+    useEffect(() => {
+        if (open) {
+            form.reset();
+            setCreatedProjectId(null);
+            setIsHotLead(false);
+            setActiveTab('cliente');
+            setClientSubTab('contacto');
+        }
+    }, [open]);
 
     const onSubmit = async (data: NewLeadFormData) => {
         if (import.meta.env.DEV) console.log('✅ Form submission valid, saving lead:', data);
