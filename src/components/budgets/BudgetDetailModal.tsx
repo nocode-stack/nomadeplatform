@@ -34,14 +34,17 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
             if (!el) return;
 
             (el.style as any).zoom = '1';
+            el.style.setProperty('width', '100%', 'important');
             void el.offsetHeight;
 
             const contentHeight = el.scrollHeight;
             const a4HeightPx = 1122; // 297mm at 96dpi
 
             if (contentHeight > a4HeightPx) {
-                const scale = a4HeightPx / contentHeight;
-                (el.style as any).zoom = String(Math.max(scale, 0.5));
+                const scale = Math.max(a4HeightPx / contentHeight, 0.5);
+                (el.style as any).zoom = String(scale);
+                // Expand width so after zoom it visually fills the full page
+                el.style.setProperty('width', `${100 / scale}%`, 'important');
             }
         };
 
@@ -49,6 +52,7 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
             const el = docRef.current;
             if (el) {
                 (el.style as any).zoom = '';
+                el.style.removeProperty('width');
             }
         };
 

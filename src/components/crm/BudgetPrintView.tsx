@@ -97,8 +97,9 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
             const el = docRef.current;
             if (!el) return;
 
-            // Reset zoom so we measure the true content height
+            // Reset zoom & width so we measure true content height
             (el.style as any).zoom = '1';
+            el.style.setProperty('width', '210mm', 'important');
             void el.offsetHeight; // force layout recalc
 
             const contentHeight = el.scrollHeight;
@@ -106,8 +107,10 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
             const a4HeightPx = 1122;
 
             if (contentHeight > a4HeightPx) {
-                const scale = a4HeightPx / contentHeight;
-                (el.style as any).zoom = String(Math.max(scale, 0.5));
+                const scale = Math.max(a4HeightPx / contentHeight, 0.5);
+                (el.style as any).zoom = String(scale);
+                // Expand width so that after zoom it visually fills the full A4 page
+                el.style.setProperty('width', `${210 / scale}mm`, 'important');
             }
         };
 
@@ -115,6 +118,7 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
             const el = docRef.current;
             if (el) {
                 (el.style as any).zoom = '';
+                el.style.removeProperty('width');
             }
         };
 
