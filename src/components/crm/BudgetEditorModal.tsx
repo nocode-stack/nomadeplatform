@@ -452,16 +452,32 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                 iva_rate: calculations.ivaRate,
             };
 
+            // Resolve the actual client_id from the projects table
+            let resolvedClientId = projectId;
+            let resolvedProjectId: string | null = null;
+            if (projectId) {
+                const { data: projectData } = await supabase
+                    .from('projects')
+                    .select('client_id')
+                    .eq('id', projectId)
+                    .maybeSingle() as { data: { client_id: string | null } | null };
+                if (projectData?.client_id) {
+                    resolvedClientId = projectData.client_id;
+                    resolvedProjectId = projectId;
+                }
+            }
+
             // Si estamos editando un presupuesto existente, marcarlo como no primario
             // y copiar su project_id al nuevo presupuesto
-            let existingProjectId: string | null = null;
             if (budgetId) {
                 const { data: oldBudget } = await supabase
                     .from('budget')
                     .select('project_id')
                     .eq('id', budgetId)
                     .single() as { data: { project_id: string | null } | null };
-                existingProjectId = oldBudget?.project_id || null;
+                if (oldBudget?.project_id) {
+                    resolvedProjectId = oldBudget.project_id;
+                }
 
                 await supabase
                     .from('budget')
@@ -473,8 +489,8 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             const { data: newBudget, error: createError } = await supabase
                 .from('budget')
                 .insert({
-                    client_id: projectId,
-                    project_id: existingProjectId,
+                    client_id: resolvedClientId,
+                    project_id: resolvedProjectId,
                     status: 'draft',
                     is_primary: true,
                     is_active: true,
@@ -594,6 +610,19 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
         let printClientName = clientName || 'Cliente';
         let printClientEmail = '';
         let printClientPhone = '';
+
+        // Fetch client email and phone from database
+        if (projectId) {
+            const { data: clientData } = await supabase
+                .from('clients')
+                .select('email, phone')
+                .eq('id', projectId)
+                .maybeSingle();
+            if (clientData) {
+                printClientEmail = clientData.email || '';
+                printClientPhone = clientData.phone || '';
+            }
+        }
 
         const modelObj = models.find(m => m.id === selectedModel);
         const engineObj = engines.find(e => e.id === selectedEngine);
