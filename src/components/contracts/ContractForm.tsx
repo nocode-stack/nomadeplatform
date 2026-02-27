@@ -220,6 +220,29 @@ const ContractForm: React.FC<ContractFormProps> = ({
     enabled: !!project.id && !!contractType
   });
 
+  // Fetch existing sibling contracts (other types) to pre-fill shared fields
+  const { data: siblingContract } = useQuery({
+    queryKey: ['siblingContract', project.id, contractType],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('*')
+        .eq('project_id', project.id)
+        .neq('contract_type', contractType)
+        .eq('is_latest', true)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching sibling contract:', error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!project.id && !!contractType
+  });
+
   // Query separada para obtener datos del cliente y facturación
   const { data: clientBillingData } = useQuery({
     queryKey: ['clientBilling', project.clients?.id],
@@ -309,38 +332,55 @@ const ContractForm: React.FC<ContractFormProps> = ({
   // Inicializar formulario con datos del contrato existente o datos base
   useEffect(() => {
     if (existingContract && !formData.id) {
-      // Cargar contrato existente
+      // Cargar contrato existente, rellenando campos vacíos desde contratos hermanos
+      const sibling = siblingContract as any;
       setFormData({
         ...existingContract,
         payment_reserve: existingContract.payment_reserve || 0,
-        vehicle_engine: existingContract.vehicle_engine || '',
+        vehicle_engine: existingContract.vehicle_engine || sibling?.vehicle_engine || '',
         delivery_months: existingContract.delivery_months || 0,
         payment_first_percentage: existingContract.payment_first_percentage || 0,
         payment_first_amount: existingContract.payment_first_amount || 0,
         payment_second_percentage: existingContract.payment_second_percentage || 0,
         payment_second_amount: existingContract.payment_second_amount || 0,
         payment_third_percentage: existingContract.payment_third_percentage || 0,
-        payment_third_amount: existingContract.payment_third_amount || 0
+        payment_third_amount: existingContract.payment_third_amount || 0,
+        // Fill empty shared fields from sibling contracts
+        billing_entity_name: existingContract.billing_entity_name || sibling?.billing_entity_name || '',
+        billing_entity_nif: existingContract.billing_entity_nif || sibling?.billing_entity_nif || '',
+        billing_address: existingContract.billing_address || sibling?.billing_address || '',
+        vehicle_vin: existingContract.vehicle_vin || sibling?.vehicle_vin || '',
+        vehicle_plate: existingContract.vehicle_plate || sibling?.vehicle_plate || '',
+        vehicle_model: existingContract.vehicle_model || sibling?.vehicle_model || '',
+        iban: existingContract.iban || sibling?.iban || 'ES80 0081 7011 1900 0384 8192',
       });
-    } else if (!existingContract && clientBillingData && !formData.id) {
+    } else if (!isLoading && !existingContract && clientBillingData && !formData.id) {
       // Inicializar con datos del cliente y facturación si no hay contrato
       const { client, billing } = clientBillingData;
+
+      // Pre-fill shared fields from sibling contract (other contract type for same project)
+      const sibling = siblingContract as any;
+
       setFormData(prev => ({
         ...prev,
         project_id: project.id,
         client_id: client?.id || '',
         contract_type: contractType,
-        client_full_name: client?.name || '',
-        client_dni: client?.dni || '',
-        client_email: client?.email || '',
-        client_phone: client?.phone || '',
-        billing_entity_name: billing?.name !== client?.name ? (billing?.name || '') : '',
-        billing_entity_nif: billing?.nif || '',
-        billing_address: billing?.billing_address || client?.address || '',
-        iban: 'ES80 0081 7011 1900 0384 8192'
+        client_full_name: sibling?.client_full_name || client?.name || '',
+        client_dni: sibling?.client_dni || client?.dni || '',
+        client_email: sibling?.client_email || client?.email || '',
+        client_phone: sibling?.client_phone || client?.phone || '',
+        billing_entity_name: sibling?.billing_entity_name || (billing?.name !== client?.name ? (billing?.name || '') : ''),
+        billing_entity_nif: sibling?.billing_entity_nif || billing?.nif || '',
+        billing_address: sibling?.billing_address || billing?.billing_address || client?.address || '',
+        iban: sibling?.iban || 'ES80 0081 7011 1900 0384 8192',
+        vehicle_vin: sibling?.vehicle_vin || prev.vehicle_vin,
+        vehicle_plate: sibling?.vehicle_plate || prev.vehicle_plate,
+        vehicle_engine: sibling?.vehicle_engine || prev.vehicle_engine,
+        vehicle_model: sibling?.vehicle_model || prev.vehicle_model,
       }));
     }
-  }, [existingContract, clientBillingData, project.id, contractType, formData.id]);
+  }, [isLoading, existingContract, clientBillingData, siblingContract, project.id, contractType, formData.id]);
 
   // Actualizar datos del cliente y facturación cuando cambien
   useEffect(() => {
@@ -359,6 +399,13 @@ const ContractForm: React.FC<ContractFormProps> = ({
       }));
     }
   }, [clientBillingData, existingContract, formData.id]);
+
+  // Notify parent when formData is initialized (so Save/Send buttons work)
+  useEffect(() => {
+    if (onFormDataChange && formData.client_full_name) {
+      onFormDataChange(formData);
+    }
+  }, [formData.id, formData.client_full_name]); // Only on init, not every keystroke
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const vehicleSpecsComparison = useVehicleSpecsComparison((vehicleData as any) ?? null, {
@@ -590,9 +637,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
         'payment_first_percentage',
         'payment_first_amount',
         'payment_second_percentage',
-        'payment_second_amount',
-        'payment_third_percentage',
-        'payment_third_amount'
+        'payment_second_amount'
       );
     } else if (contractType === 'sale_contract') {
       allFields.push('total_price');
@@ -999,7 +1044,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
                   value={formData.payment_reserve || 0}
                   onChange={(displayValue, numericValue) => handleNumericInputChange('payment_reserve', displayValue)}
                   readOnly={isFieldReadOnly('payment_reserve')}
-                  className={`pr-8 ${isFieldReadOnly('payment_reserve') ? "bg-muted" : ""}`}
+                  className={`pr-8 ${getFieldStyle('payment_reserve')}`}
                   allowDecimals={true}
                   min={0}
                 />
@@ -1035,7 +1080,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
                   value={formData.delivery_months || 0}
                   onChange={(displayValue, numericValue) => handleNumericInputChange('delivery_months', displayValue)}
                   readOnly={isFieldReadOnly('delivery_months')}
-                  className={isFieldReadOnly('delivery_months') ? "bg-muted" : ""}
+                  className={getFieldStyle('delivery_months')}
                   allowDecimals={false}
                   min={0}
                 />
@@ -1070,7 +1115,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
                         value={formData.payment_first_percentage || 0}
                         onChange={(displayValue, numericValue) => handlePaymentChange('first', 'percentage', displayValue)}
                         readOnly={isFieldReadOnly('payment_first_percentage')}
-                        className={`pr-8 ${isFieldReadOnly('payment_first_percentage') ? "bg-muted" : ""}`}
+                        className={`pr-8 ${getFieldStyle('payment_first_percentage')}`}
                         allowDecimals={true}
                         min={0}
                         max={100}
@@ -1086,7 +1131,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
                         value={formData.payment_first_amount || 0}
                         onChange={(displayValue, numericValue) => handlePaymentChange('first', 'amount', displayValue)}
                         readOnly={isFieldReadOnly('payment_first_amount')}
-                        className={`pr-8 ${isFieldReadOnly('payment_first_amount') ? "bg-muted" : ""}`}
+                        className={`pr-8 ${getFieldStyle('payment_first_amount')}`}
                         allowDecimals={true}
                         min={0}
                       />
@@ -1105,7 +1150,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
                         value={formData.payment_second_percentage || 0}
                         onChange={(displayValue, numericValue) => handlePaymentChange('second', 'percentage', displayValue)}
                         readOnly={isFieldReadOnly('payment_second_percentage')}
-                        className={`pr-8 ${isFieldReadOnly('payment_second_percentage') ? "bg-muted" : ""}`}
+                        className={`pr-8 ${getFieldStyle('payment_second_percentage')}`}
                         allowDecimals={true}
                         min={0}
                         max={100}
@@ -1121,7 +1166,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
                         value={formData.payment_second_amount || 0}
                         onChange={(displayValue, numericValue) => handlePaymentChange('second', 'amount', displayValue)}
                         readOnly={isFieldReadOnly('payment_second_amount')}
-                        className={`pr-8 ${isFieldReadOnly('payment_second_amount') ? "bg-muted" : ""}`}
+                        className={`pr-8 ${getFieldStyle('payment_second_amount')}`}
                         allowDecimals={true}
                         min={0}
                       />

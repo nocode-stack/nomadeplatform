@@ -125,28 +125,20 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
         const bodyText = [
             `Hola ${firstName},`,
             ``,
-            `¡Muchas gracias por tu interés en Nomade Nation! 🏕️`,
+            `¡Muchas gracias por tu interés en Nomade Nation!`,
             ``,
             `Adjunto encontrarás tu presupuesto personalizado con todos los detalles de tu camper:`,
-            ``,
-            `📋  PRESUPUESTO: ${data.budgetCode}`,
+            `PRESUPUESTO: ${data.budgetCode}`,
             `🚐  MODELO: ${data.modelName}`,
             `⚙️  MOTOR: ${data.engineName}`,
             data.packName ? `📦  PACK: ${data.packName}` : '',
-            `💰  TOTAL: ${totalFormatted} €`,
-            ``,
+            `TOTAL: ${totalFormatted} €`,
             `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-            ``,
             `Si tienes cualquier duda o quieres hacer algún cambio, no dudes en escribirnos. Estamos aquí para ayudarte a crear la camper de tus sueños.`,
             ``,
-            `¡Seguimos en contacto! 🤙`,
-            ``,
+            `¡Seguimos en contacto!`,
             `Un saludo,`,
             `El equipo de Nomade Nation`,
-            ``,
-            `───────────────────`,
-            `🌐 www.nomade-nation.com`,
-            `📧 info@nomade-nation.com`,
         ].filter(Boolean).join('\n');
 
         // 3. Open Gmail compose in a new tab (uses the browser's logged-in Google session)
@@ -607,11 +599,11 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                                     </div>
 
                                     {/* Total highlight */}
-                                    <div className="bg-gradient-to-r from-[#2C3E50] to-[#34495E] px-6 py-4 flex justify-between items-center">
-                                        <span className="text-white font-bold text-xs uppercase tracking-[0.15em]">
-                                            Precio TOTAL
+                                    <div className="bg-[#F3F4F6] px-6 py-3 flex justify-between items-center border-t border-[#E5E7EB]">
+                                        <span className="text-[#6B7280] font-semibold text-xs uppercase tracking-[0.15em]">
+                                            Precio Total
                                         </span>
-                                        <span className="text-2xl font-black text-[#C59D5F] tabular-nums">
+                                        <span className="text-lg font-bold text-[#E8734A] tabular-nums">
                                             {fmt(data.total)} €
                                         </span>
                                     </div>
@@ -623,9 +615,9 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                                                 <span className="text-[#9CA3AF]">+IEDMT</span>
                                                 <span className="font-bold tabular-nums">{fmt(data.iedmt)} €</span>
                                             </div>
-                                            <div className="flex justify-between items-center pt-1">
-                                                <span className="text-[11px] font-bold uppercase tracking-wider text-[#E8734A]">Total + IEDMT</span>
-                                                <span className="text-xl font-black text-[#E8734A] tabular-nums">
+                                            <div className="flex justify-between items-center bg-gradient-to-r from-[#2C3E50] to-[#34495E] -mx-6 px-6 py-3 mt-2">
+                                                <span className="text-white font-bold text-sm uppercase tracking-wider">Total + IEDMT</span>
+                                                <span className="text-2xl font-black text-[#C59D5F] tabular-nums">
                                                     {fmt(data.totalWithIedmt || data.total)} €
                                                 </span>
                                             </div>

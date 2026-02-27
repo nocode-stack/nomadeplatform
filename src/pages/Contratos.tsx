@@ -79,7 +79,7 @@ const Contratos = () => {
         date: c.created_at ? format(new Date(c.created_at), 'dd/MM/yyyy', { locale: es }) : 'N/A',
         budgetCode: c.budget?.budget_code || 'Presupuesto no asignado',
         type: mapContractType(c.contract_type),
-        isPrimary: c.budget?.is_primary || false,
+        isPrimary: c.is_latest || false,
         isCurrent: c.is_latest,
         model: c.vehicle_model || 'N/A'
     }));

@@ -12,7 +12,8 @@ import {
     Pencil
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { useNewBudgets, useNewBudgetItems } from '../hooks/useNewBudgets';
+import { useNewBudgets, useNewBudgetItems, useSetPrimaryBudget } from '../hooks/useNewBudgets';
+import { useToast } from '@/hooks/use-toast';
 import BudgetPrintView from '../components/crm/BudgetPrintView';
 import BudgetEditorModal from '../components/crm/BudgetEditorModal';
 import type { BudgetPrintData, LineItem } from '../components/crm/BudgetPrintView';
@@ -177,6 +178,8 @@ const Presupuestos = () => {
     const searchTerm = searchParams.get('search') || '';
     const { data: budgets = [], isLoading } = useNewBudgets();
     const { data: regionalConfigs } = useRegionalConfig();
+    const setPrimaryMutation = useSetPrimaryBudget();
+    const { toast } = useToast();
 
     // Print view state
     const [printViewOpen, setPrintViewOpen] = useState(false);
@@ -223,6 +226,30 @@ const Presupuestos = () => {
         setEditorClientName(budget.client?.name || undefined);
         setEditorOpen(true);
     }, []);
+
+    const handleTogglePrimary = useCallback(async (budget: JoinedNewBudget, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (budget.is_primary) return; // Already primary
+        try {
+            await setPrimaryMutation.mutateAsync({
+                budgetId: budget.id,
+                clientId: budget.client_id || '',
+                confirmed: true,
+            });
+            toast({
+                title: 'Presupuesto actualizado',
+                description: `${budget.budget_code || 'Presupuesto'} es ahora el principal.`,
+            });
+        } catch (error: any) {
+            if (error?.message !== 'CONFIRMATION_REQUIRED') {
+                toast({
+                    title: 'Error',
+                    description: error.message || 'No se pudo actualizar el presupuesto.',
+                    variant: 'destructive',
+                });
+            }
+        }
+    }, [setPrimaryMutation, toast]);
 
     const filteredBudgets = budgets.filter(b => {
         const matchesSearch =
@@ -317,9 +344,17 @@ const Presupuestos = () => {
                                                 <Badge variant="secondary" className="font-mono text-[10px] tracking-tighter">
                                                     {budget.budget_code}
                                                 </Badge>
-                                                {budget.is_primary && (
-                                                    <Star className="h-4 w-4 text-amber-500 fill-amber-500 animate-pulse-star" />
-                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleTogglePrimary(budget, e)}
+                                                    className={`p-0.5 rounded-lg transition-all duration-300 ${budget.is_primary
+                                                        ? 'text-amber-500 cursor-default'
+                                                        : 'text-muted-foreground/30 hover:text-amber-400 hover:scale-110 cursor-pointer'
+                                                        }`}
+                                                    title={budget.is_primary ? 'Presupuesto principal' : 'Marcar como principal'}
+                                                >
+                                                    <Star className={`h-4 w-4 transition-all duration-300 ${budget.is_primary ? 'fill-amber-500 animate-pulse-star' : ''}`} />
+                                                </button>
                                             </div>
                                             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
                                                 {budget.created_at ? new Date(budget.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}

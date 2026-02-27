@@ -137,7 +137,7 @@ export default {
 				},
 				'pulse-star': {
 					'0%, 100%': { transform: 'scale(1)', opacity: '1' },
-					'50%': { transform: 'scale(1.2)', opacity: '0.8' }
+					'50%': { transform: 'scale(1.08)', opacity: '0.85' }
 				}
 			},
 			animation: {
@@ -148,7 +148,7 @@ export default {
 				'scale-in': 'scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
 				'pulse-subtle': 'pulse-subtle 3s ease-in-out infinite',
 				'logo-breath': 'logo-breath 8s ease-in-out infinite',
-				'pulse-star': 'pulse-star 2s ease-in-out infinite'
+				'pulse-star': 'pulse-star 5s ease-in-out infinite'
 			}
 		}
 	},

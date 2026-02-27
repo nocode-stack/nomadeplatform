@@ -452,11 +452,20 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                 iva_rate: calculations.ivaRate,
             };
 
-            // Si estamos editando un presupuesto existente, marcarlo como inactivo
+            // Si estamos editando un presupuesto existente, marcarlo como no primario
+            // y copiar su project_id al nuevo presupuesto
+            let existingProjectId: string | null = null;
             if (budgetId) {
+                const { data: oldBudget } = await supabase
+                    .from('budget')
+                    .select('project_id')
+                    .eq('id', budgetId)
+                    .single() as { data: { project_id: string | null } | null };
+                existingProjectId = oldBudget?.project_id || null;
+
                 await supabase
                     .from('budget')
-                    .update({ is_active: false, is_primary: false })
+                    .update({ is_primary: false })
                     .eq('id', budgetId);
             }
 
@@ -464,12 +473,13 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             const { data: newBudget, error: createError } = await supabase
                 .from('budget')
                 .insert({
-                    client_id: projectId, // projectId prop now carries the client ID
+                    client_id: projectId,
+                    project_id: existingProjectId,
                     status: 'draft',
                     is_primary: true,
                     is_active: true,
                     ...budgetPayload,
-                })
+                } as any)
                 .select()
                 .single();
 
@@ -537,6 +547,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             }
 
             queryClient.invalidateQueries({ queryKey: ['project-budgets'] });
+            queryClient.invalidateQueries({ queryKey: ['new-budgets'] });
             queryClient.invalidateQueries({ queryKey: ['new-budget-items'] });
 
             toast({
@@ -1327,9 +1338,9 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                 )}
 
                                 {/* PVP with discounts applied - This is our Total with IVA */}
-                                <div className="flex justify-between items-center bg-[#F3F4F6] -mx-6 px-6 py-3">
-                                    <p className="text-sm font-bold uppercase">Precio TOTAL</p>
-                                    <p className="text-xl font-black text-[#1A1A1A] tabular-nums">
+                                <div className="flex justify-between items-center bg-[#F3F4F6] -mx-6 px-6 py-2.5">
+                                    <p className="text-xs font-semibold uppercase text-[#6B7280]">Precio Total</p>
+                                    <p className="text-sm font-bold text-[#E8734A] tabular-nums">
                                         {fmtDecimal(calculations.total)} €
                                     </p>
                                 </div>
@@ -1356,9 +1367,9 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                                 <span className="text-[#9CA3AF]">+IEDMT</span>
                                                 <span className="tabular-nums">{fmtDecimal(calculations.iedmt)} €</span>
                                             </div>
-                                            <div className="flex justify-between items-center bg-[#2C3E50] -mx-6 px-6 py-3 rounded-lg mt-2">
-                                                <span className="text-white font-bold text-xs uppercase tracking-wider">Total+IEDMT</span>
-                                                <span className="text-white font-black text-lg tabular-nums">
+                                            <div className="flex justify-between items-center bg-gradient-to-r from-[#2C3E50] to-[#34495E] -mx-6 px-6 py-4 rounded-xl mt-3 shadow-lg">
+                                                <span className="text-white font-bold text-sm uppercase tracking-wider">Total + IEDMT</span>
+                                                <span className="text-[#C59D5F] font-black text-2xl tabular-nums">
                                                     {fmtDecimal(calculations.totalWithIedmt)} €
                                                 </span>
                                             </div>

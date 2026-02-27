@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
-import { Bookmark, Handshake, FileCheck, Loader2, Plus, Star, Eye, ArrowLeft, Save, Send, X, AlertTriangle } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Bookmark, Handshake, FileCheck, Loader2, Plus, Eye, ArrowLeft, Save, Send, X, AlertTriangle } from 'lucide-react';
 import { useOptimizedContractQuery } from '../../hooks/useOptimizedContractQuery';
 import { useContractVersioning } from '../../hooks/useContractVersioning';
-import { useToggleContractPrimary } from '../../hooks/useToggleContractPrimary';
+
 import { useProjectBudgets } from '../../hooks/useNewBudgets';
 import { useToast } from '../../hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,9 +45,10 @@ const getContractTitle = (type: string) => {
 interface ContractsTabProps {
     projectId?: string;
     leadStatus?: string;
+    onContractFormOpen?: (isOpen: boolean) => void;
 }
 
-const ContractsTab = ({ projectId }: ContractsTabProps) => {
+const ContractsTab = ({ projectId, onContractFormOpen }: ContractsTabProps) => {
     // Get budgets to find the primary one
     const { data: budgets, isLoading: isLoadingBudgets } = useProjectBudgets(projectId || '');
     const primaryBudget = budgets?.find(b => b.is_primary) || budgets?.[0];
@@ -63,7 +64,7 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
     const noBudget = !isLoading && !primaryBudgetId;
 
     const { generateContract, sendContract } = useContractVersioning(projectId || '');
-    const togglePrimary = useToggleContractPrimary();
+
     const { toast } = useToast();
     const [creatingType, setCreatingType] = useState<string | null>(null);
 
@@ -73,6 +74,11 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
     const [formProgress, setFormProgress] = useState<number>(0);
     const [isSaving, setIsSaving] = useState(false);
     const [isSending, setIsSending] = useState(false);
+
+    // Notify parent when contract form is opened/closed
+    useEffect(() => {
+        onContractFormOpen?.(!!activeForm);
+    }, [activeForm, onContractFormOpen]);
 
     // Find an existing contract for the given type
     const findContract = (type: string) => {
@@ -217,16 +223,6 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
         setFormProgress(progress);
     }, []);
 
-    // Handle toggling is_primary
-    const handleTogglePrimary = (contract: any) => {
-        if (!contract) return;
-        togglePrimary.mutate({
-            contractId: contract.id,
-            projectId: projectId || '',
-            contractType: contract.contract_type,
-            isPrimary: !contract.is_primary,
-        });
-    };
 
     if (isLoading) {
         return (
@@ -245,9 +241,9 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
         const contractStatus = contract?.estado_visual || 'generated';
 
         return (
-            <div className="space-y-4 animate-fade-in-up">
-                {/* Header with back button */}
-                <div className="flex items-center justify-between">
+            <div className="animate-fade-in-up">
+                {/* Header with back button — sticky, flush with parent edges */}
+                <div className="flex items-center justify-between sticky top-0 z-10 bg-card py-4 border-b border-border -mx-8 px-8">
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
@@ -302,8 +298,9 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                 </div>
 
                 {/* The actual form */}
-                <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+                <div className="bg-card rounded-2xl border border-border shadow-sm p-6 mt-6">
                     <ContractForm
+                        key={`${activeForm.contractType}-${activeForm.project.id}`}
                         project={activeForm.project}
                         contractType={activeForm.contractType}
                         status={contractStatus}
@@ -352,25 +349,6 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                                 className={`p-4 flex items-center justify-between transition-colors group ${exists ? 'hover:bg-slate-50/50' : 'bg-muted/10'}`}
                             >
                                 <div className="flex items-center space-x-4">
-                                    {/* Star for primary */}
-                                    <button
-                                        type="button"
-                                        onClick={() => exists && handleTogglePrimary(contract)}
-                                        disabled={!exists || togglePrimary.isPending}
-                                        className={`p-1 rounded-lg transition-all ${exists
-                                            ? 'cursor-pointer hover:scale-110'
-                                            : 'cursor-not-allowed opacity-30'
-                                            }`}
-                                        title={exists ? (contract.is_primary ? 'Quitar como principal' : 'Marcar como principal') : 'No disponible'}
-                                    >
-                                        <Star
-                                            className={`w-4 h-4 transition-all ${exists && contract.is_primary
-                                                ? 'fill-amber-400 text-amber-400'
-                                                : 'text-muted-foreground/30'
-                                                }`}
-                                        />
-                                    </button>
-
                                     {/* Contract type icon */}
                                     <div className={`p-3 rounded-xl ${exists ? type.colors : type.disabledColors}`}>
                                         <Icon className="w-5 h-5" />
@@ -432,12 +410,8 @@ const ContractsTab = ({ projectId }: ContractsTabProps) => {
                 </div>
             </div>
 
-            <div className="p-4 bg-muted/30 rounded-xl border border-dashed border-border flex items-center justify-center">
-                <p className="text-[10px] text-muted-foreground italic text-center uppercase tracking-wide">
-                    Nota: Solo los contratos marcados con ★ se mostrarán como principales en la ficha de contacto.
-                </p>
-            </div>
-        </div>
+
+        </div >
     );
 };
 

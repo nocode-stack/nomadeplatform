@@ -98,6 +98,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
     const [clientSubTab, setClientSubTab] = React.useState<'contacto' | 'facturacion'>('contacto');
     const [currentProjectId, setCurrentProjectId] = React.useState(lead?.id);
     const [isHotLead, setIsHotLead] = React.useState(lead?.isHotLead || false);
+    const [isContractFormOpen, setIsContractFormOpen] = React.useState(false);
     const toggleHotLeadMutation = useToggleHotLead();
 
     useEffect(() => {
@@ -268,6 +269,61 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
         }
     };
 
+    // Auto-save client data when switching tabs away from 'cliente'
+    const handleTabChange = async (newTab: string) => {
+        if (activeTab === 'cliente' && newTab !== 'cliente') {
+            // Silently save client data before switching tabs
+            const data = form.getValues();
+            const clientId = lead?.client_id || lead?._raw?.id;
+            if (clientId) {
+                try {
+                    await supabase
+                        .from('clients')
+                        .update({
+                            name: data.clientName,
+                            email: data.clientEmail,
+                            phone: data.clientPhone,
+                            dni: data.clientDni || null,
+                            address: data.clientAddress || null,
+                            birthdate: data.clientBirthDate || null,
+                        })
+                        .eq('id', clientId);
+
+                    // Also save billing data
+                    const billingData = {
+                        client_id: clientId,
+                        name: data.clientBillingName || data.clientName,
+                        email: data.clientBillingEmail || data.clientEmail,
+                        phone: data.clientBillingPhone || data.clientPhone,
+                        billing_address: data.clientBillingAddress || data.clientAddress,
+                        nif: data.otherPersonDni || data.clientBillingCompanyCif || data.clientDni || '',
+                        type: data.billingType || 'personal',
+                    };
+
+                    const { data: existingBilling } = await supabase
+                        .from('billing')
+                        .select('id')
+                        .eq('client_id', clientId)
+                        .maybeSingle();
+
+                    if (existingBilling) {
+                        await supabase.from('billing').update(billingData).eq('id', existingBilling.id);
+                    } else {
+                        await supabase.from('billing').insert(billingData);
+                    }
+
+                    toast({
+                        title: "Datos guardados",
+                        description: "La información del cliente se ha guardado automáticamente.",
+                    });
+                } catch (error) {
+                    console.error('Error auto-saving client data:', error);
+                }
+            }
+        }
+        setActiveTab(newTab);
+    };
+
     const onInvalid = (errors: any) => {
         console.warn('❌ Form validation failed:', errors);
 
@@ -337,8 +393,8 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                 </div>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex flex-col flex-1 overflow-hidden">
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex flex-col flex-1 overflow-hidden">
+                        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col overflow-hidden">
                             <div className="px-6 pt-2 bg-card border-b border-border shrink-0">
                                 <TabsList className="bg-transparent h-14 w-full p-0">
                                     <TabsTrigger
@@ -395,7 +451,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                 </div>
                             )}
 
-                            <div className="flex-1 overflow-y-auto p-8 bg-card custom-scrollbar">
+                            <div className={`flex-1 overflow-y-auto px-8 pb-8 bg-card custom-scrollbar ${activeTab === 'contratos' ? 'pt-0' : 'pt-8'}`}>
                                 <TabsContent value="cliente" className="mt-0 animate-fade-in-up">
                                     {clientSubTab === 'contacto' && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
@@ -531,7 +587,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                 </TabsContent>
 
                                 <TabsContent value="contratos" className="mt-0 animate-fade-in-up">
-                                    <ContractsTab projectId={currentProjectId} leadStatus={lead?.status} />
+                                    <ContractsTab projectId={currentProjectId} leadStatus={lead?.status} onContractFormOpen={setIsContractFormOpen} />
                                 </TabsContent>
                             </div>
                         </Tabs>
@@ -547,8 +603,9 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                 Cerrar
                             </Button>
                             <Button
-                                type="submit"
-                                disabled={isLoading}
+                                type="button"
+                                onClick={form.handleSubmit(onSubmit, onInvalid)}
+                                disabled={isLoading || isContractFormOpen}
                                 className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-8 h-12 shadow-lg shadow-primary/20 transition-all active:scale-95"
                             >
                                 {isLoading ? (
@@ -561,7 +618,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                 )}
                             </Button>
                         </div>
-                    </form>
+                    </div>
                 </Form>
             </DialogContent>
 
