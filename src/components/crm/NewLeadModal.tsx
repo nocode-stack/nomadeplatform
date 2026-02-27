@@ -146,10 +146,7 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
             });
 
             if (onLeadCreated) onLeadCreated(adaptedData);
-            onOpenChange(false);
-            form.reset();
-            setCreatedProjectId(null);
-            setIsHotLead(false);
+            // Modal stays open after registering — user closes manually
         } catch (error: any) {
             console.error('❌ Error creating lead:', error);
             toast({

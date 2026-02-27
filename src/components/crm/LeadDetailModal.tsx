@@ -256,7 +256,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                 title: "Cliente actualizado",
                 description: "La información del cliente se ha guardado correctamente.",
             });
-            onOpenChange(false);
+            // Modal stays open after saving
         } catch (error: any) {
             console.error('❌ Error saving client details:', error);
             toast({
