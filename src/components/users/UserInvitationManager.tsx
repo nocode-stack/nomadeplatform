@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Mail, Briefcase, Clock, CheckCircle2, Users, AlertCircle, Plus, Search, Filter, X, MoreVertical, Trash2 } from 'lucide-react';
+import { UserPlus, Mail, Briefcase, Clock, CheckCircle2, Users, AlertCircle, Plus, Search, Filter, X, MoreVertical, Trash2, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { InviteUserModal } from './InviteUserModal';
 import {
@@ -80,6 +80,46 @@ export const UserInvitationManager = () => {
                 variant: "destructive",
             });
         }
+    });
+
+    const resendInvitation = useMutation({
+        mutationFn: async (user: AuthorizedUser) => {
+            if (import.meta.env.DEV) console.log('📨 Resending invitation to:', user.email);
+            const { data, error } = await supabase.functions.invoke('invite-user', {
+                body: {
+                    email: user.email,
+                    name: user.name,
+                    department: user.department,
+                },
+            });
+            if (error) {
+                console.error('❌ Resend invitation error:', error);
+                throw error;
+            }
+            return data;
+        },
+        onSuccess: (_data, user) => {
+            toast({
+                title: "Invitación reenviada",
+                description: `Se ha reenviado el email de invitación a ${user.email}`,
+            });
+        },
+        onError: async (error: any, user) => {
+            console.error('❌ Error resending invitation:', error);
+            let errorMessage = `No se pudo reenviar la invitación a ${user.email}.`;
+            if (error.context) {
+                try {
+                    const body = await error.context.json();
+                    if (body?.details) errorMessage = body.details;
+                    else if (body?.error) errorMessage = body.error;
+                } catch (_e) { /* ignore parse error */ }
+            }
+            toast({
+                title: "Error al reenviar",
+                description: errorMessage,
+                variant: "destructive",
+            });
+        },
     });
 
     // Extract unique values for filters
@@ -284,6 +324,14 @@ export const UserInvitationManager = () => {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-48 rounded-xl border-border shadow-xl bg-card">
+                                        <DropdownMenuItem
+                                            className="cursor-pointer font-medium"
+                                            onClick={() => resendInvitation.mutate(user)}
+                                            disabled={resendInvitation.isPending}
+                                        >
+                                            <Send className="w-4 h-4 mr-2" />
+                                            Reenviar invitación
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem
                                             className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer font-medium"
                                             onClick={() => deactivateUser.mutate(user.id)}

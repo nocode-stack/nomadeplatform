@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -11,6 +12,7 @@ import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
 const ForcePasswordChangeModal = () => {
     const { mustSetPassword, setMustSetPassword, changePassword } = useAuth();
     const { toast } = useToast();
+    const location = useLocation();
 
     const [formData, setFormData] = useState({
         password: '',
@@ -20,7 +22,7 @@ const ForcePasswordChangeModal = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // No mostrar el modal si no es necesario o si estamos en la intro
-    const isIntroPage = window.location.pathname.includes('/intro');
+    const isIntroPage = location.pathname.includes('/intro');
     if (!mustSetPassword || isIntroPage) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +69,12 @@ const ForcePasswordChangeModal = () => {
 
     return (
         <Dialog open={mustSetPassword} onOpenChange={() => { }}>
-            <DialogContent className="sm:max-w-md bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl p-8 rounded-3xl animate-in fade-in zoom-in duration-300">
+            <DialogContent
+                className="sm:max-w-md bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl p-8 rounded-3xl animate-in fade-in zoom-in duration-300 [&>button]:hidden"
+                onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+                onPointerDownOutside={(e) => e.preventDefault()}
+            >
                 <div className="flex flex-col items-center text-center space-y-4 mb-6">
                     <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-2">
                         <ShieldCheck className="w-8 h-8 text-primary animate-pulse" />

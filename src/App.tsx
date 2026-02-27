@@ -55,8 +55,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         <AuthProvider>
-          <ForcePasswordChangeModal />
           <BrowserRouter>
+            <ForcePasswordChangeModal />
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 {/* Rutas públicas */}

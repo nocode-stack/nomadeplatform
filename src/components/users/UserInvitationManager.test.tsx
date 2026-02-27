@@ -188,4 +188,14 @@ describe('UserInvitationManager - Filtros', () => {
         const deactivateButtons = screen.getAllByText(/Dar de baja/i);
         expect(deactivateButtons[0]).toBeInTheDocument();
     });
+
+    it('debería mostrar la opción "Reenviar invitación" en el menú de usuario', async () => {
+        renderUserInvitationManager();
+
+        const moreButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg'));
+        fireEvent.click(moreButtons[1]);
+
+        const resendButtons = screen.getAllByText(/Reenviar invitación/i);
+        expect(resendButtons[0]).toBeInTheDocument();
+    });
 });
