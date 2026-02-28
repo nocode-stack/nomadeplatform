@@ -9,7 +9,8 @@ import {
     Eye,
     Star,
     Loader2,
-    Pencil
+    Pencil,
+    UserX
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useNewBudgets, useNewBudgetItems, useSetPrimaryBudget } from '../hooks/useNewBudgets';
@@ -156,7 +157,7 @@ const buildPrintDataFromBudget = (
         clientPhone: client?.phone || '',
         modelName: budget.model_option?.name || '–',
         engineName: budget.engine_option?.name || '–',
-        interiorColorName: '–',
+        interiorColorName: (budget as any).interior_color?.name || '–',
         packName: budget.pack?.name || '–',
         lineItems,
         subtotal,
@@ -196,6 +197,7 @@ const Presupuestos = () => {
     const [filter, setFilter] = useState(searchTerm);
     const [showOnlyPrimary, setShowOnlyPrimary] = useState(false);
     const [selectedModel, setSelectedModel] = useState<string>('all');
+    const [hideDeletedClients, setHideDeletedClients] = useState(true);
 
     // Fetch items for the selected budget (for print view)
     const { data: budgetItems = [] } = useNewBudgetItems(selectedBudgetId);
@@ -258,8 +260,9 @@ const Presupuestos = () => {
 
         const matchesPrimary = !showOnlyPrimary || b.is_primary;
         const matchesModel = selectedModel === 'all' || b.model_option?.name === selectedModel;
+        const matchesDeleted = !hideDeletedClients || b.client?.is_active !== false;
 
-        return matchesSearch && matchesPrimary && matchesModel;
+        return matchesSearch && matchesPrimary && matchesModel && matchesDeleted;
     });
 
     const models = Array.from(new Set(budgets.map(b => b.model_option?.name).filter(Boolean)));
@@ -292,6 +295,21 @@ const Presupuestos = () => {
                         >
                             <Star className={`h-3.5 w-3.5 animate-pulse-star ${showOnlyPrimary ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
                             Solo Actuales
+                        </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-3 bg-muted/40 px-4 py-2 rounded-xl border border-border/50">
+                        <Switch
+                            id="deleted-filter"
+                            checked={hideDeletedClients}
+                            onCheckedChange={setHideDeletedClients}
+                        />
+                        <Label
+                            htmlFor="deleted-filter"
+                            className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                        >
+                            <UserX className={`h-3.5 w-3.5 ${hideDeletedClients ? 'text-destructive' : 'text-muted-foreground'}`} />
+                            Ocultar eliminados
                         </Label>
                     </div>
 

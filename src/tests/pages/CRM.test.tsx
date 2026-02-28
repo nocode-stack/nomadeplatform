@@ -4,6 +4,7 @@ import CRM from '../../pages/CRM';
 import { BrowserRouter } from 'react-router-dom';
 import React from 'react';
 import { useClients } from '../../hooks/useClients';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock de useNavigate
 const mockNavigate = vi.fn();
@@ -71,6 +72,7 @@ vi.mock('lucide-react', () => ({
     X: () => <div />,
     Loader2: () => <div />,
     Trash2: () => <div />,
+    CalendarDays: () => <div />,
     Flame: (props: any) => <div data-testid={props['data-testid']} className="flame-icon" />,
 }));
 
@@ -103,11 +105,16 @@ vi.mock('../../components/crm/LeadDetailModal', () => ({
 }));
 
 const renderCRM = () => {
+    const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+    });
     try {
         return render(
-            <BrowserRouter>
-                <CRM />
-            </BrowserRouter>
+            <QueryClientProvider client={queryClient}>
+                <BrowserRouter>
+                    <CRM />
+                </BrowserRouter>
+            </QueryClientProvider>
         );
     } catch (e) {
         console.error("Render error:", e);

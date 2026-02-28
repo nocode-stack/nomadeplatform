@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -13,6 +13,8 @@ import type { Location } from '@/hooks/useRegionalPricing';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import SendBudgetEmailDialog from './SendBudgetEmailDialog';
+import { generateBudgetPdfBlob, generateBudgetPdfBase64 } from '../crm/BudgetPdfDocument';
+import type { BudgetPdfData, LineItem as PdfLineItem } from '../crm/BudgetPdfDocument';
 
 interface BudgetDetailModalProps {
     open: boolean;
@@ -24,102 +26,125 @@ interface BudgetDetailModalProps {
 const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProps) => {
     const { data: budgetItems = [] } = useNewBudgetItems(budget?.id);
     const { data: regionalConfigs } = useRegionalConfig();
-    const docRef = useRef<HTMLDivElement>(null);
     const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
     if (!budget) return null;
 
-    const handlePrint = async () => {
-        const el = docRef.current;
-        if (!el) { window.print(); return; }
+    // ── Build PDF data from budget object ──────────────────
+    const buildPdfData = (): BudgetPdfData | null => {
+        if (!budget) return null;
 
-        try {
-            const html2canvas = (await import('html2canvas')).default;
-            const { jsPDF } = await import('jspdf');
+        const location: Location = budget.iva_rate === 7
+            ? 'canarias'
+            : budget.iva_rate === 0
+                ? 'internacional'
+                : 'peninsula';
 
-            const canvas = await html2canvas(el, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#FFFFFF',
+        const lineItems: PdfLineItem[] = [];
+
+        // Base item
+        if (budget.base_price) {
+            lineItems.push({
+                name: 'Base Camperización + Modelo',
+                subtitle: budget.model_option?.name,
+                quantity: 1,
+                unitPrice: budget.base_price,
+                total: budget.base_price,
             });
+        }
 
-            const a4W = 210;
-            const a4H = 297;
-            let imgW = a4W;
-            let imgH = (canvas.height * a4W) / canvas.width;
-            let offsetX = 0;
+        // Pack
+        if (budget.pack_price && budget.pack_price > 0) {
+            lineItems.push({
+                name: 'Pack Equipamiento',
+                subtitle: budget.pack?.name,
+                quantity: 1,
+                unitPrice: budget.pack_price,
+                total: budget.pack_price,
+            });
+        }
 
-            if (imgH > a4H) {
-                const s = a4H / imgH;
-                imgW = a4W * s;
-                imgH = a4H;
-                offsetX = (a4W - imgW) / 2;
-            }
+        // Electric system
+        if (budget.electric_system_price && budget.electric_system_price > 0) {
+            lineItems.push({
+                name: 'Sistema Eléctrico',
+                quantity: 1,
+                unitPrice: budget.electric_system_price,
+                total: budget.electric_system_price,
+            });
+        }
 
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', offsetX, 0, imgW, imgH);
-            pdf.save(`Presupuesto_${budget.budget_code}.pdf`);
+        // Color modifier
+        if (budget.color_modifier && budget.color_modifier !== 0) {
+            lineItems.push({
+                name: 'Suplemento Color',
+                quantity: 1,
+                unitPrice: budget.color_modifier,
+                total: budget.color_modifier,
+            });
+        }
+
+        // Additional items
+        for (const item of budgetItems) {
+            const isDiscount = item.is_discount || (item.line_total && item.line_total < 0);
+            lineItems.push({
+                name: item.name || '',
+                quantity: item.quantity || 1,
+                unitPrice: item.price || 0,
+                total: item.line_total || 0,
+                isDiscount: !!isDiscount,
+            });
+        }
+
+        const dbTexts = getRegionalLegalText(regionalConfigs, location);
+
+        return {
+            budgetCode: budget.budget_code || '',
+            date: budget.created_at
+                ? format(new Date(budget.created_at), "d 'de' MMMM, yyyy", { locale: es })
+                : '',
+            location: location as 'peninsula' | 'canarias' | 'internacional',
+            clientName: budget.project?.clients?.name || 'Cliente',
+            clientEmail: budget.project?.clients?.email || '',
+            clientPhone: budget.project?.clients?.phone || '',
+            modelName: budget.model_option?.name || '-',
+            engineName: budget.engine_option?.name || '-',
+            interiorColorName: (budget as any).interior_color?.name || '',
+            packName: budget.pack?.name || '-',
+            lineItems,
+            subtotal: budget.subtotal || 0,
+            discountPercentage: budget.discount_percentage ? Math.round(budget.discount_percentage * 100) : undefined,
+            discountPercentAmount: budget.discount_amount || undefined,
+            ivaRate: budget.iva_rate || 21,
+            ivaAmount: ((budget.subtotal || 0) - (budget.discount_amount || 0)) * ((budget.iva_rate || 21) / 100),
+            total: budget.total || 0,
+            reservationAmount: budget.reservation_amount || undefined,
+            legalTexts: dbTexts.length > 0 ? dbTexts : undefined,
+        };
+    };
+
+    const handlePrint = async () => {
+        const pdfData = buildPdfData();
+        if (!pdfData) return;
+        try {
+            const blob = await generateBudgetPdfBlob(pdfData);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Presupuesto_${budget.budget_code}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         } catch (err) {
             console.error('Error generating PDF:', err);
-            window.print();
         }
     };
+
 
     const handleSendEmail = () => {
         setEmailDialogOpen(true);
     };
-
-    const generatePdfBase64 = useCallback(async (): Promise<string | null> => {
-        const el = docRef.current;
-        if (!el) return null;
-
-        try {
-            const html2canvas = (await import('html2canvas')).default;
-            const { jsPDF } = await import('jspdf');
-
-            const canvas = await html2canvas(el, {
-                scale: 1.5,
-                useCORS: true,
-                backgroundColor: '#FFFFFF',
-            });
-
-            const a4W = 210;
-            const a4H = 297;
-            const marginX = 5; // lateral only
-            const marginY = 0;
-            const contentW = a4W - marginX * 2;
-            const pageContentH = a4H - marginY * 2;
-
-            const scale = contentW / canvas.width;
-            const totalContentH = canvas.height * scale;
-            const totalPages = Math.ceil(totalContentH / pageContentH);
-
-            const pdf = new jsPDF('p', 'mm', 'a4');
-
-            for (let page = 0; page < totalPages; page++) {
-                if (page > 0) pdf.addPage();
-
-                const srcY = Math.round((page * pageContentH) / scale);
-                const srcH = Math.min(Math.round(pageContentH / scale), canvas.height - srcY);
-
-                const pageCanvas = document.createElement('canvas');
-                pageCanvas.width = canvas.width;
-                pageCanvas.height = srcH;
-                const ctx = pageCanvas.getContext('2d')!;
-                ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
-
-                const sliceH = srcH * scale;
-                pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.85), 'JPEG', marginX, marginY, contentW, sliceH);
-            }
-
-            const pdfOutput = pdf.output('datauristring');
-            const base64 = pdfOutput.split(',')[1];
-            return base64;
-        } catch (err) {
-            console.error('Error generating PDF:', err);
-            return null;
-        }
-    }, []);
 
 
 
@@ -217,7 +242,7 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
                         }
                     `}} />
 
-                    <div id="budget-document" ref={docRef} className="w-full space-y-0 text-[#1A1A1A] font-sans bg-white">
+                    <div id="budget-document" className="w-full space-y-0 text-[#1A1A1A] font-sans bg-white">
 
                         {/* 1. Hero Image (Back at the top) */}
                         <div className="w-full h-[200px] overflow-hidden">
@@ -265,6 +290,7 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
                                         <p><span className="text-[#94a3b8] uppercase text-[11px] mr-3">Modelo:</span> <strong>{budget.model_option?.name || '-'}</strong></p>
                                         <p><span className="text-[#94a3b8] uppercase text-[11px] mr-3">Motor:</span> <strong>{budget.engine_option?.name || '-'}</strong></p>
                                         <p><span className="text-[#94a3b8] uppercase text-[11px] mr-3">Pack:</span> <strong>{budget.pack?.name || '-'}</strong></p>
+                                        <p><span className="text-[#94a3b8] uppercase text-[11px] mr-3">Interior:</span> <strong>{(budget as any).interior_color?.name || '-'}</strong></p>
                                     </div>
                                 </div>
                             </div>
@@ -452,7 +478,16 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
                 modelName={budget.model_option?.name || ''}
                 engineName={budget.engine_option?.name || ''}
                 packName={budget.pack?.name || ''}
-                generatePdf={generatePdfBase64}
+                generatePdf={async () => {
+                    const pdfData = buildPdfData();
+                    if (!pdfData) return null;
+                    try {
+                        return await generateBudgetPdfBase64(pdfData);
+                    } catch (err) {
+                        console.error('Error generating PDF base64:', err);
+                        return null;
+                    }
+                }}
             />
         </Dialog>
     );

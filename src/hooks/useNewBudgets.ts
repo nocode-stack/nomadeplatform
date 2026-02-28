@@ -54,6 +54,7 @@ export const useProjectBudgets = (clientId: string) => {
           *,
           engine_option:engine_options(name),
           model_option:model_options(name),
+          interior_color:interior_color_options(name),
           pack:budget_packs(name),
           client:clients!budget_client_id_fkey(*)
         `)
@@ -77,6 +78,7 @@ export const useNewBudgets = (projectId?: string) => {
           *,
           engine_option:engine_options(name),
           model_option:model_options(name),
+          interior_color:interior_color_options(name),
           pack:budget_packs(name),
           client:clients!budget_client_id_fkey(*)
         `)

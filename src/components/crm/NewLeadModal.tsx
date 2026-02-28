@@ -30,17 +30,24 @@ import BudgetListTab from './BudgetListTab';
 import ContractsTab from './ContractsTab';
 import { useProjects } from '../../hooks/useNewProjects';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../../hooks/useAuth';
 
 const newLeadSchema = z.object({
     // Información del Cliente
+    leadType: z.string().min(1, 'El tipo de lead es obligatorio'),
+    fair: z.string().optional(),
     clientName: z.string().min(1, 'El nombre es obligatorio'),
-    clientLastName: z.string().optional(),
+    clientSurname: z.string().min(1, 'Los apellidos son obligatorios'),
     clientPhone: z.string().min(1, 'El teléfono es obligatorio'),
     clientEmail: z.string().email('Email válido requerido'),
     clientDni: z.string().optional(),
     clientBirthDate: z.string().optional(),
+    comercial: z.string().min(1, 'El comercial asignado es obligatorio'),
+    country: z.string().min(1, 'El país es obligatorio'),
+    autonomousCommunity: z.string().min(1, 'La comunidad autónoma es obligatoria'),
+    city: z.string().optional(),
     clientAddress: z.string().optional(),
-    comercial: z.string().optional(),
+    addressNumber: z.string().optional(),
 
     // Proyecto
     vehicleModel: z.string().optional(),
@@ -55,19 +62,30 @@ const newLeadSchema = z.object({
     // Facturación
     billingType: z.enum(['personal', 'other_person', 'company']).default('personal'),
     clientBillingName: z.string().optional(),
+    clientBillingSurname: z.string().optional(),
     clientBillingEmail: z.string().optional(),
     clientBillingPhone: z.string().optional(),
     clientBillingAddress: z.string().optional(),
     otherPersonName: z.string().optional(),
+    otherPersonSurname: z.string().optional(),
     otherPersonEmail: z.string().optional(),
     otherPersonPhone: z.string().optional(),
     otherPersonAddress: z.string().optional(),
     otherPersonDni: z.string().optional(),
+    otherPersonCountry: z.string().optional(),
+    otherPersonAutonomousCommunity: z.string().optional(),
+    otherPersonCity: z.string().optional(),
+    otherPersonAddressNumber: z.string().optional(),
+    otherPersonBirthDate: z.string().optional(),
     clientBillingCompanyName: z.string().optional(),
     clientBillingCompanyCif: z.string().optional(),
     clientBillingCompanyPhone: z.string().optional(),
     clientBillingCompanyEmail: z.string().optional(),
     clientBillingCompanyAddress: z.string().optional(),
+    clientBillingCompanyCountry: z.string().optional(),
+    clientBillingCompanyAutonomousCommunity: z.string().optional(),
+    clientBillingCompanyCity: z.string().optional(),
+    clientBillingCompanyAddressNumber: z.string().optional(),
     discount: z.string().optional().default('0'),
     budgetNotes: z.string().optional(),
     items: z.array(z.object({
@@ -97,18 +115,25 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
 
     const { createProject } = useProjects();
     const { toast } = useToast();
+    const { user } = useAuth();
 
     const form = useForm<NewLeadFormData>({
         resolver: zodResolver(newLeadSchema),
         defaultValues: {
+            leadType: '',
+            fair: '',
             clientName: '',
-            clientLastName: '',
+            clientSurname: '',
             clientPhone: '',
             clientEmail: '',
             clientDni: '',
             clientBirthDate: '',
-            clientAddress: '',
             comercial: '',
+            country: '',
+            autonomousCommunity: '',
+            city: '',
+            clientAddress: '',
+            addressNumber: '',
             vehicleModel: '',
             motorization: '',
             furnitureColor: '',
@@ -124,16 +149,24 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
         },
     });
 
-    // Reset form when modal opens
+    // Reset form when modal opens — default comercial to current user's name
     useEffect(() => {
         if (open) {
             form.reset();
+            // Pre-select current user as comercial if their name matches one of the options
+            if (user?.name) {
+                const comercialOptions = ['Arnau', 'Youssef', 'David', 'Cristina', 'Marc'];
+                const match = comercialOptions.find(opt => opt.toLowerCase() === user.name.toLowerCase());
+                if (match) {
+                    form.setValue('comercial', match);
+                }
+            }
             setCreatedProjectId(null);
             setIsHotLead(false);
             setActiveTab('cliente');
             setClientSubTab('contacto');
         }
-    }, [open]);
+    }, [open, user?.name]);
 
     const onSubmit = async (data: NewLeadFormData) => {
         if (import.meta.env.DEV) console.log('✅ Form submission valid, saving lead:', data);
@@ -267,12 +300,67 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
                                 <TabsContent value="cliente" className="mt-0 animate-fade-in-up">
                                     {clientSubTab === 'contacto' && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
+                                            {/* Tipo de lead */}
+                                            <FormField
+                                                control={form.control}
+                                                name="leadType"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Tipo de Lead *</FormLabel>
+                                                        <Select onValueChange={field.onChange} value={field.value}>
+                                                            <FormControl>
+                                                                <SelectTrigger className="rounded-xl border-border h-12 bg-background">
+                                                                    <SelectValue placeholder="Selecciona tipo" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="B2C">B2C</SelectItem>
+                                                                <SelectItem value="B2B">B2B</SelectItem>
+                                                                <SelectItem value="B2B2C">B2B2C</SelectItem>
+                                                                <SelectItem value="Rent Partner">Rent Partner</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Fira */}
+                                            <FormField
+                                                control={form.control}
+                                                name="fair"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Feria?</FormLabel>
+                                                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                                                            <FormControl>
+                                                                <SelectTrigger className="rounded-xl border-border h-12 bg-background">
+                                                                    <SelectValue placeholder="Selecciona fira (opcional)" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="Alacant">Alacant</SelectItem>
+                                                                <SelectItem value="Múrcia">Múrcia</SelectItem>
+                                                                <SelectItem value="Jerez">Jerez</SelectItem>
+                                                                <SelectItem value="Bilbao">Bilbao</SelectItem>
+                                                                <SelectItem value="Madrid">Madrid</SelectItem>
+                                                                <SelectItem value="Düsseldorf">Düsseldorf</SelectItem>
+                                                                <SelectItem value="Barcelona">Barcelona</SelectItem>
+                                                                <SelectItem value="Zamora">Zamora</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Nombre */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientName"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-foreground font-bold">Nombre Completo *</FormLabel>
+                                                        <FormLabel className="text-foreground font-bold">Nombre *</FormLabel>
                                                         <FormControl>
                                                             <Input placeholder="Nombre del cliente" {...field} className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
                                                         </FormControl>
@@ -281,6 +369,22 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
                                                 )}
                                             />
 
+                                            {/* Apellidos */}
+                                            <FormField
+                                                control={form.control}
+                                                name="clientSurname"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Apellidos *</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="Apellidos del cliente" {...field} className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Teléfono */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientPhone"
@@ -298,6 +402,7 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
                                                 )}
                                             />
 
+                                            {/* Email */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientEmail"
@@ -315,6 +420,7 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
                                                 )}
                                             />
 
+                                            {/* DNI / CIF */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientDni"
@@ -329,12 +435,13 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
                                                 )}
                                             />
 
+                                            {/* Data de naixement */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientBirthDate"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-foreground font-bold">Fecha de Nacimiento</FormLabel>
+                                                        <FormLabel className="text-foreground font-bold">Data de Naixement</FormLabel>
                                                         <FormControl>
                                                             <div className="relative">
                                                                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -346,12 +453,13 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
                                                 )}
                                             />
 
+                                            {/* Comercial assignat */}
                                             <FormField
                                                 control={form.control}
                                                 name="comercial"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-foreground font-bold">Comercial Responsable</FormLabel>
+                                                        <FormLabel className="text-foreground font-bold">Comercial Assignat *</FormLabel>
                                                         <Select onValueChange={field.onChange} value={field.value}>
                                                             <FormControl>
                                                                 <SelectTrigger className="rounded-xl border-border h-12 bg-background">
@@ -371,14 +479,75 @@ const NewLeadModal = ({ open, onOpenChange, onLeadCreated }: NewLeadModalProps) 
                                                 )}
                                             />
 
+                                            {/* País */}
+                                            <FormField
+                                                control={form.control}
+                                                name="country"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">País *</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="Ej: España" className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Comunidad autónoma */}
+                                            <FormField
+                                                control={form.control}
+                                                name="autonomousCommunity"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Comunidad Autónoma *</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="Ej: Catalunya" className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Ciudad */}
+                                            <FormField
+                                                control={form.control}
+                                                name="city"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Ciudad</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Dirección cliente */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientAddress"
                                                 render={({ field }) => (
-                                                    <FormItem className="md:col-span-2">
-                                                        <FormLabel className="text-foreground font-bold">Dirección de Envío</FormLabel>
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Dirección Cliente</FormLabel>
                                                         <FormControl>
                                                             <Input placeholder="Dirección completa del cliente" {...field} className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Número (puerta/piso) */}
+                                            <FormField
+                                                control={form.control}
+                                                name="addressNumber"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Número (puerta/piso)</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="Ej: 3-2ª" className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>

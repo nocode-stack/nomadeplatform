@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -8,6 +8,8 @@ import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { Printer, Mail, X } from 'lucide-react';
 import SendBudgetEmailDialog from '../budgets/SendBudgetEmailDialog';
+import { generateBudgetPdfBlob, generateBudgetPdfBase64 } from './BudgetPdfDocument';
+import type { BudgetPdfData } from './BudgetPdfDocument';
 
 // ── Types ──────────────────────────────────────────────────
 type Location = 'peninsula' | 'canarias' | 'internacional';
@@ -43,7 +45,9 @@ interface BudgetPrintData {
     subtotal: number;
     discountPercentage?: number;
     discountPercentAmount?: number;
+    discountPercentLabel?: string;
     discountFixed?: number;
+    discountFixedLabel?: string;
     ivaRate: number;
     ivaAmount: number;
     total: number;
@@ -90,227 +94,46 @@ const locationLegalTexts: Record<Location, string[]> = {
 // ── Print View Component ────────────────────────────────────
 const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintViewProps) => {
     const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-    const docRef = useRef<HTMLDivElement>(null);
 
-    // ── Auto-scale to fit A4 on print ──────────────────────
-    useEffect(() => {
-        if (!open) return;
-
-        const handleBeforePrint = () => {
-            const el = docRef.current;
-            if (!el) return;
-
-            // Reset zoom & width so we measure true content height
-            (el.style as any).zoom = '1';
-            el.style.setProperty('width', '210mm', 'important');
-            void el.offsetHeight; // force layout recalc
-
-            const contentHeight = el.scrollHeight;
-            // A4 height at 96 CSS-px/inch ≈ 297mm × 96/25.4 ≈ 1122px
-            const a4HeightPx = 1122;
-
-            if (contentHeight > a4HeightPx) {
-                const scale = Math.max(a4HeightPx / contentHeight, 0.5);
-                (el.style as any).zoom = String(scale);
-                // Expand width so that after zoom it visually fills the full A4 page
-                el.style.setProperty('width', `${210 / scale}mm`, 'important');
-            }
+    // ── Build the data object for the PDF document ──────────
+    const buildPdfData = useCallback((): BudgetPdfData | null => {
+        if (!data) return null;
+        return {
+            ...data,
+            legalTexts: legalTexts && legalTexts.length > 0 ? legalTexts : undefined,
         };
+    }, [data, legalTexts]);
 
-        const handleAfterPrint = () => {
-            const el = docRef.current;
-            if (el) {
-                (el.style as any).zoom = '';
-                el.style.removeProperty('width');
-            }
-        };
-
-        window.addEventListener('beforeprint', handleBeforePrint);
-        window.addEventListener('afterprint', handleAfterPrint);
-
-        return () => {
-            window.removeEventListener('beforeprint', handleBeforePrint);
-            window.removeEventListener('afterprint', handleAfterPrint);
-        };
-    }, [open]);
-
-    const generatePdfBase64 = useCallback(async (): Promise<string | null> => {
-        const printDoc = document.getElementById('budget-print-document');
-        if (!printDoc) return null;
-
+    // ── Generate base64 PDF for email attachment ────────────
+    const handleGeneratePdfBase64 = useCallback(async (): Promise<string | null> => {
+        const pdfData = buildPdfData();
+        if (!pdfData) return null;
         try {
-            const html2canvas = (await import('html2canvas')).default;
-            const { jsPDF } = await import('jspdf');
-
-            const canvas = await html2canvas(printDoc, {
-                scale: 1.5,
-                useCORS: true,
-                backgroundColor: '#FFFFFF',
-            });
-
-            const a4W = 210;
-            const a4H = 297;
-            const marginX = 5; // lateral only
-            const marginY = 0;
-            const contentW = a4W - marginX * 2;
-            const pageContentH = a4H - marginY * 2;
-
-            // Scale: how many mm per canvas pixel
-            const scale = contentW / canvas.width;
-            const totalContentH = canvas.height * scale;
-
-            // Detect protected zones (sections that must not be split)
-            const protectedZones: { startMm: number; endMm: number }[] = [];
-            const summaryEl = document.getElementById('budget-summary-block');
-            if (summaryEl && printDoc) {
-                const docRect = printDoc.getBoundingClientRect();
-                const sumRect = summaryEl.getBoundingClientRect();
-                const relTop = sumRect.top - docRect.top;
-                const relBottom = relTop + sumRect.height;
-                // Convert from screen px to canvas px, then to mm
-                const canvasScale = canvas.height / printDoc.scrollHeight;
-                protectedZones.push({
-                    startMm: relTop * canvasScale * scale,
-                    endMm: relBottom * canvasScale * scale,
-                });
-            }
-
-            // Calculate smart page breaks
-            const pageBreaks: number[] = [0]; // start of each page in mm
-            let cursor = 0;
-            while (cursor + pageContentH < totalContentH) {
-                let breakAt = cursor + pageContentH;
-                // Check if this break would split a protected zone
-                for (const zone of protectedZones) {
-                    if (breakAt > zone.startMm && breakAt < zone.endMm) {
-                        // Would split! Move break to just before the zone
-                        breakAt = zone.startMm;
-                        break;
-                    }
-                }
-                pageBreaks.push(breakAt);
-                cursor = breakAt;
-            }
-
-            const pdf = new jsPDF('p', 'mm', 'a4');
-
-            for (let i = 0; i < pageBreaks.length; i++) {
-                if (i > 0) pdf.addPage();
-
-                const startMm = pageBreaks[i];
-                const endMm = i + 1 < pageBreaks.length ? pageBreaks[i + 1] : totalContentH;
-                const sliceH = endMm - startMm;
-
-                const srcY = Math.round(startMm / scale);
-                const srcH = Math.round(sliceH / scale);
-
-                const pageCanvas = document.createElement('canvas');
-                pageCanvas.width = canvas.width;
-                pageCanvas.height = srcH;
-                const ctx = pageCanvas.getContext('2d')!;
-                ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
-
-                pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.85), 'JPEG', marginX, marginY, contentW, sliceH);
-            }
-
-            const pdfOutput = pdf.output('datauristring');
-            const base64 = pdfOutput.split(',')[1];
-            return base64;
+            return await generateBudgetPdfBase64(pdfData);
         } catch (err) {
-            console.error('Error generating PDF:', err);
+            console.error('Error generating PDF base64:', err);
             return null;
         }
-    }, []);
+    }, [buildPdfData]);
 
     if (!data) return null;
 
-    // ── Shared: capture document as image and render into multi-page A4 PDF ──
-    const generatePDF = async () => {
-        const el = docRef.current;
-        if (!el) return null;
-
-        const html2canvas = (await import('html2canvas')).default;
-        const { jsPDF } = await import('jspdf');
-
-        const canvas = await html2canvas(el, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#FFFFFF',
-        });
-
-        const a4W = 210;
-        const a4H = 297;
-        const marginX = 5; // lateral only
-        const marginY = 0;
-        const contentW = a4W - marginX * 2;
-        const pageContentH = a4H - marginY * 2;
-
-        const scale = contentW / canvas.width;
-        const totalContentH = canvas.height * scale;
-
-        // Detect protected zones
-        const protectedZones: { startMm: number; endMm: number }[] = [];
-        const summaryEl = document.getElementById('budget-summary-block');
-        if (summaryEl && el) {
-            const docRect = el.getBoundingClientRect();
-            const sumRect = summaryEl.getBoundingClientRect();
-            const relTop = sumRect.top - docRect.top;
-            const relBottom = relTop + sumRect.height;
-            const canvasScale = canvas.height / el.scrollHeight;
-            protectedZones.push({
-                startMm: relTop * canvasScale * scale,
-                endMm: relBottom * canvasScale * scale,
-            });
-        }
-
-        // Calculate smart page breaks
-        const pageBreaks: number[] = [0];
-        let cursor = 0;
-        while (cursor + pageContentH < totalContentH) {
-            let breakAt = cursor + pageContentH;
-            for (const zone of protectedZones) {
-                if (breakAt > zone.startMm && breakAt < zone.endMm) {
-                    breakAt = zone.startMm;
-                    break;
-                }
-            }
-            pageBreaks.push(breakAt);
-            cursor = breakAt;
-        }
-
-        const pdf = new jsPDF('p', 'mm', 'a4');
-
-        for (let i = 0; i < pageBreaks.length; i++) {
-            if (i > 0) pdf.addPage();
-
-            const startMm = pageBreaks[i];
-            const endMm = i + 1 < pageBreaks.length ? pageBreaks[i + 1] : totalContentH;
-            const sliceH = endMm - startMm;
-
-            const srcY = Math.round(startMm / scale);
-            const srcH = Math.round(sliceH / scale);
-
-            const pageCanvas = document.createElement('canvas');
-            pageCanvas.width = canvas.width;
-            pageCanvas.height = srcH;
-            const ctx = pageCanvas.getContext('2d')!;
-            ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
-
-            pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.85), 'JPEG', marginX, marginY, contentW, sliceH);
-        }
-
-        return pdf;
-    };
-
-
-
+    // ── Download PDF ────────────────────────────────────────
     const handlePrint = async () => {
+        const pdfData = buildPdfData();
+        if (!pdfData) return;
         try {
-            const pdf = await generatePDF();
-            if (pdf) pdf.save(`Presupuesto_${data.budgetCode}.pdf`);
+            const blob = await generateBudgetPdfBlob(pdfData);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Presupuesto_${data.budgetCode}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         } catch (err) {
             console.error('Error generating PDF:', err);
-            window.print(); // fallback
         }
     };
 
@@ -341,248 +164,12 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                     </div>
                 </div>
 
-                {/* ── Print Styles (High-Quality A4) ── */}
-                <style dangerouslySetInnerHTML={{
-                    __html: `
-                    @media print {
-                        /* ── Page setup ── */
-                        @page {
-                            size: A4 portrait;
-                            margin: 0;
-                        }
 
-                        /* ── Reset everything outside the document ── */
-                        html, body {
-                            margin: 0 !important;
-                            padding: 0 !important;
-                            background: white !important;
-                            overflow: visible !important;
-                            width: 210mm !important;
-                            height: 297mm !important;
-                            -webkit-print-color-adjust: exact !important;
-                            print-color-adjust: exact !important;
-                        }
-
-                        /* ── Hide everything except our print document ── */
-                        #root,
-                        #app-header,
-                        aside,
-                        header,
-                        nav,
-                        .print-hidden,
-                        .print-hide {
-                            display: none !important;
-                        }
-
-                        /* ── Radix overlay — hide the backdrop ── */
-                        [data-radix-portal] > div:first-child {
-                            display: none !important;
-                            background: transparent !important;
-                        }
-
-                        /* ── Dialog container → full-page print layout ── */
-                        div[role="dialog"].print-dialog-root,
-                        .print-dialog-root {
-                            position: fixed !important;
-                            inset: 0 !important;
-                            width: 210mm !important;
-                            height: 297mm !important;
-                            max-width: 210mm !important;
-                            max-height: 297mm !important;
-                            transform: none !important;
-                            border: none !important;
-                            border-radius: 0 !important;
-                            box-shadow: none !important;
-                            padding: 0 !important;
-                            margin: 0 !important;
-                            background: white !important;
-                            overflow: visible !important;
-                            display: block !important;
-                        }
-
-                        /* ── The scrollable wrapper → no scroll, full visible ── */
-                        .print-scroll-container {
-                            overflow: visible !important;
-                            height: auto !important;
-                            max-height: none !important;
-                        }
-
-                        /* ── The PDF document itself ── */
-                        #budget-print-document {
-                            width: 210mm !important;
-                            min-height: auto !important;
-                            height: auto !important;
-                            margin: 0 !important;
-                            padding: 0 !important;
-                            overflow: visible !important;
-                            display: flex !important;
-                            flex-direction: column !important;
-                            /* zoom is applied dynamically via JS beforeprint handler */
-                        }
-
-                        /* ── Force exact color reproduction ── */
-                        * {
-                            -webkit-print-color-adjust: exact !important;
-                            print-color-adjust: exact !important;
-                        }
-
-                        /* ── Images: max quality ── */
-                        #budget-print-document img {
-                            image-rendering: -webkit-optimize-contrast !important;
-                            image-rendering: high-quality !important;
-                        }
-
-                        /* ── Hero: proportional height ── */
-                        #budget-print-document .print-hero {
-                            height: 28mm !important;
-                            min-height: 28mm !important;
-                            max-height: 28mm !important;
-                            flex-shrink: 0 !important;
-                        }
-
-                        /* ── Header ── */
-                        #budget-print-document .print-header {
-                            padding: 0 8mm !important;
-                            margin-top: -3mm !important;
-                            padding-bottom: 1mm !important;
-                            flex-shrink: 0 !important;
-                        }
-                        #budget-print-document .print-header img {
-                            height: 10mm !important;
-                        }
-                        #budget-print-document .print-header h2 {
-                            font-size: 20pt !important;
-                        }
-
-                        /* ── Content area: fills remaining space ── */
-                        #budget-print-document .print-content {
-                            padding: 3mm 8mm 4mm 8mm !important;
-                            flex: 1 !important;
-                            display: flex !important;
-                            flex-direction: column !important;
-                            justify-content: space-between !important;
-                            gap: 0 !important;
-                        }
-
-                        /* ── Client/project info ── */
-                        #budget-print-document .print-info-box {
-                            flex-shrink: 0 !important;
-                        }
-                        #budget-print-document .print-info-box > div {
-                            padding: 2.5mm 4mm !important;
-                        }
-                        #budget-print-document .print-info-box p,
-                        #budget-print-document .print-info-box span,
-                        #budget-print-document .print-info-box strong {
-                            font-size: 8pt !important;
-                            line-height: 1.3 !important;
-                        }
-                        #budget-print-document .print-info-box .text-lg {
-                            font-size: 10pt !important;
-                        }
-                        #budget-print-document .print-info-box .text-\\[10px\\] {
-                            font-size: 7pt !important;
-                        }
-
-                        /* ── Table ── */
-                        #budget-print-document table {
-                            flex-shrink: 0 !important;
-                            font-size: 8pt !important;
-                        }
-                        #budget-print-document table th {
-                            font-size: 7pt !important;
-                            padding-top: 1.5mm !important;
-                            padding-bottom: 1.5mm !important;
-                        }
-                        #budget-print-document table td {
-                            padding-top: 1.5mm !important;
-                            padding-bottom: 1.5mm !important;
-                            font-size: 8pt !important;
-                        }
-                        #budget-print-document table .text-\\[11px\\] {
-                            font-size: 7pt !important;
-                        }
-                        #budget-print-document table .text-\\[10px\\] {
-                            font-size: 6.5pt !important;
-                        }
-
-                        /* ── Sub-items (pack includes) ── */
-                        #budget-print-document .grid.grid-cols-2 {
-                            gap: 0.5mm 3mm !important;
-                        }
-
-                        /* ── Signature + Totals side-by-side ── */
-                        #budget-print-document .print-signature-totals {
-                            flex-shrink: 0 !important;
-                            gap: 4mm !important;
-                        }
-                        #budget-print-document .print-signature .h-24 {
-                            height: 12mm !important;
-                        }
-                        #budget-print-document .print-signature .text-\\[10px\\] {
-                            font-size: 6.5pt !important;
-                        }
-
-                        /* ── Totals box ── */
-                        #budget-print-document .print-totals {
-                            font-size: 8pt !important;
-                        }
-                        #budget-print-document .print-totals .text-2xl {
-                            font-size: 14pt !important;
-                        }
-                        #budget-print-document .print-totals .text-xl {
-                            font-size: 12pt !important;
-                        }
-                        #budget-print-document .print-totals .text-sm {
-                            font-size: 8pt !important;
-                        }
-                        #budget-print-document .print-totals .text-xs,
-                        #budget-print-document .print-totals .text-\\[11px\\] {
-                            font-size: 7pt !important;
-                        }
-                        #budget-print-document .print-totals > div {
-                            padding: 2mm 4mm !important;
-                        }
-
-                        /* ── Legal text ── */
-                        #budget-print-document .print-legal {
-                            padding-top: 2mm !important;
-                            flex-shrink: 0 !important;
-                        }
-                        #budget-print-document .print-legal .text-\\[10px\\] {
-                            font-size: 6.5pt !important;
-                            line-height: 1.3 !important;
-                        }
-                        #budget-print-document .print-legal .space-y-1\\.5 {
-                            gap: 0.5mm !important;
-                        }
-                        #budget-print-document .print-legal .mb-3 {
-                            margin-bottom: 1mm !important;
-                        }
-
-                        /* ── Footer ── */
-                        #budget-print-document .print-footer {
-                            padding-top: 2mm !important;
-                            flex-shrink: 0 !important;
-                        }
-                        #budget-print-document .print-footer img {
-                            height: 4mm !important;
-                        }
-                        #budget-print-document .print-footer .text-\\[10px\\] {
-                            font-size: 6.5pt !important;
-                        }
-                        #budget-print-document .print-footer .text-\\[9px\\] {
-                            font-size: 6pt !important;
-                        }
-                    }
-                    `
-                }} />
 
                 {/* ── Document ───────────────────────── */}
-                <div className="print-scroll-container flex-1 overflow-y-auto bg-white p-0">
+                <div className="flex-1 overflow-y-auto bg-white p-0">
                     <div
                         id="budget-print-document"
-                        ref={docRef}
                         className="w-full text-[#1A1A1A] font-sans bg-white flex flex-col p-0 m-0"
                     >
 
@@ -737,13 +324,13 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                                         </div>
                                         {data.discountPercentage != null && data.discountPercentage > 0 && (
                                             <div className="flex justify-between text-sm text-emerald-600 italic">
-                                                <span>Dto. {data.discountPercentage}%</span>
+                                                <span>{data.discountPercentLabel ? `${data.discountPercentLabel} (${data.discountPercentage}%)` : `Dto. ${data.discountPercentage}%`}</span>
                                                 <span className="font-bold tabular-nums">-{fmt(data.discountPercentAmount || 0)} €</span>
                                             </div>
                                         )}
                                         {data.discountFixed != null && data.discountFixed > 0 && (
                                             <div className="flex justify-between text-sm text-emerald-600 italic">
-                                                <span>Dto. fijo</span>
+                                                <span>{data.discountFixedLabel || 'Dto. fijo'}</span>
                                                 <span className="font-bold tabular-nums">-{fmt(data.discountFixed)} €</span>
                                             </div>
                                         )}
@@ -853,7 +440,7 @@ const BudgetPrintView = ({ open, onOpenChange, data, legalTexts }: BudgetPrintVi
                 modelName={data.modelName}
                 engineName={data.engineName}
                 packName={data.packName}
-                generatePdf={generatePdfBase64}
+                generatePdf={handleGeneratePdfBase64}
             />
         </Dialog>
     );

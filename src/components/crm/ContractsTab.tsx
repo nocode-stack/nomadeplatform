@@ -411,7 +411,7 @@ const ContractsTab = ({ projectId, onContractFormOpen }: ContractsTabProps) => {
             </div>
 
 
-        </div >
+        </div>
     );
 };
 

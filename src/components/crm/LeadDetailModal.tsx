@@ -37,13 +37,20 @@ import { useToast } from '@/hooks/use-toast';
 
 const leadDetailSchema = z.object({
     // Información del Cliente
+    leadType: z.string().optional().default(''),
+    fair: z.string().optional(),
     clientName: z.string().min(1, 'El nombre es obligatorio'),
+    clientSurname: z.string().optional().default(''),
     clientPhone: z.string().min(1, 'El teléfono es obligatorio'),
     clientEmail: z.string().email('Email válido requerido'),
     clientDni: z.string().optional(),
     clientBirthDate: z.string().optional(),
+    comercial: z.string().optional().default(''),
+    country: z.string().optional().default(''),
+    autonomousCommunity: z.string().optional().default(''),
+    city: z.string().optional(),
     clientAddress: z.string().optional(),
-    comercial: z.string().optional(),
+    addressNumber: z.string().optional(),
 
     // Proyecto
     vehicleModel: z.string().optional(),
@@ -58,19 +65,30 @@ const leadDetailSchema = z.object({
     // Facturación
     billingType: z.enum(['personal', 'other_person', 'company']).default('personal'),
     clientBillingName: z.string().optional(),
+    clientBillingSurname: z.string().optional(),
     clientBillingEmail: z.string().optional(),
     clientBillingPhone: z.string().optional(),
     clientBillingAddress: z.string().optional(),
     otherPersonName: z.string().optional(),
+    otherPersonSurname: z.string().optional(),
     otherPersonEmail: z.string().optional(),
     otherPersonPhone: z.string().optional(),
     otherPersonAddress: z.string().optional(),
     otherPersonDni: z.string().optional(),
+    otherPersonCountry: z.string().optional(),
+    otherPersonAutonomousCommunity: z.string().optional(),
+    otherPersonCity: z.string().optional(),
+    otherPersonAddressNumber: z.string().optional(),
+    otherPersonBirthDate: z.string().optional(),
     clientBillingCompanyName: z.string().optional(),
     clientBillingCompanyCif: z.string().optional(),
     clientBillingCompanyPhone: z.string().optional(),
     clientBillingCompanyEmail: z.string().optional(),
     clientBillingCompanyAddress: z.string().optional(),
+    clientBillingCompanyCountry: z.string().optional(),
+    clientBillingCompanyAutonomousCommunity: z.string().optional(),
+    clientBillingCompanyCity: z.string().optional(),
+    clientBillingCompanyAddressNumber: z.string().optional(),
     discount: z.string().optional().default('0'),
     budgetNotes: z.string().optional(),
     items: z.array(z.object({
@@ -110,13 +128,20 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
     const form = useForm<LeadDetailFormData>({
         resolver: zodResolver(leadDetailSchema),
         defaultValues: {
+            leadType: lead?.leadType || '',
+            fair: lead?.fair || '',
             clientName: lead?.name || '',
+            clientSurname: lead?.surname || '',
             clientPhone: lead?.phone || '',
             clientEmail: lead?.email || '',
             clientDni: lead?.dni || '',
             clientBirthDate: lead?.birthDate || lead?.birthdate || '',
-            clientAddress: lead?.address || '',
             comercial: lead?.comercial || '',
+            country: lead?.country || '',
+            autonomousCommunity: lead?.autonomousCommunity || '',
+            city: lead?.city || '',
+            clientAddress: lead?.address || '',
+            addressNumber: lead?.addressNumber || '',
             vehicleModel: lead?.vehicleModel || '',
             motorization: lead?.motorization || '',
             furnitureColor: lead?.furnitureColor || '',
@@ -135,13 +160,20 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
     useEffect(() => {
         if (lead) {
             form.reset({
+                leadType: lead.leadType || '',
+                fair: lead.fair || '',
                 clientName: lead.name || '',
+                clientSurname: lead.surname || '',
                 clientPhone: lead.phone || '',
                 clientEmail: lead.email || '',
                 clientDni: lead.dni || '',
                 clientBirthDate: lead.birthDate || lead.birthdate || '',
-                clientAddress: lead.address || '',
                 comercial: lead.comercial || '',
+                country: lead.country || '',
+                autonomousCommunity: lead.autonomousCommunity || '',
+                city: lead.city || '',
+                clientAddress: lead.address || '',
+                addressNumber: lead.addressNumber || '',
                 vehicleModel: lead.vehicleModel || '',
                 motorization: lead.motorization || '',
                 furnitureColor: lead.furnitureColor || '',
@@ -150,7 +182,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                 electricalSystem: lead.electricalSystem || '',
                 extraPacks: lead.extraPacks || 'Pack Nomade',
                 projectNotes: lead.projectNotes || '',
-                billingType: 'personal',
+                billingType: lead.billingType || 'personal',
                 discount: lead.discount || '0',
                 budgetNotes: lead.budgetNotes || '',
                 items: lead.items || [],
@@ -178,14 +210,28 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                 form.setValue('otherPersonName', billing.name || '');
                                 form.setValue('otherPersonEmail', billing.email || '');
                                 form.setValue('otherPersonPhone', billing.phone || '');
-                                form.setValue('otherPersonAddress', billing.billing_address || '');
                                 form.setValue('otherPersonDni', billing.nif || '');
+                                // Cargar campos individuales de dirección de otra persona
+                                const bAny = billing as any;
+                                form.setValue('otherPersonSurname', bAny.surname || '');
+                                form.setValue('otherPersonAddress', bAny.address_street || billing.billing_address || '');
+                                form.setValue('otherPersonAddressNumber', bAny.office_unit || '');
+                                form.setValue('otherPersonCountry', bAny.country || '');
+                                form.setValue('otherPersonAutonomousCommunity', bAny.autonomous_community || '');
+                                form.setValue('otherPersonCity', bAny.city || '');
+                                form.setValue('otherPersonBirthDate', bAny.birth_date || '');
                             } else if (billingType === 'company') {
                                 form.setValue('clientBillingCompanyName', billing.name || '');
                                 form.setValue('clientBillingCompanyCif', billing.nif || '');
                                 form.setValue('clientBillingCompanyPhone', billing.phone || '');
                                 form.setValue('clientBillingCompanyEmail', billing.email || '');
-                                form.setValue('clientBillingCompanyAddress', billing.billing_address || '');
+                                // Cargar campos individuales de dirección de empresa
+                                const bAny = billing as any;
+                                form.setValue('clientBillingCompanyAddress', bAny.address_street || '');
+                                form.setValue('clientBillingCompanyAddressNumber', bAny.office_unit || '');
+                                form.setValue('clientBillingCompanyCountry', bAny.country || '');
+                                form.setValue('clientBillingCompanyAutonomousCommunity', bAny.autonomous_community || '');
+                                form.setValue('clientBillingCompanyCity', bAny.city || '');
                             }
                         }
                     });
@@ -205,21 +251,29 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                 .from('clients')
                 .update({
                     name: data.clientName,
+                    surname: data.clientSurname || null,
                     email: data.clientEmail,
                     phone: data.clientPhone,
                     dni: data.clientDni || null,
                     address: data.clientAddress || null,
+                    address_number: data.addressNumber || null,
                     birthdate: data.clientBirthDate || null,
+                    comercial: data.comercial || null,
+                    lead_type: data.leadType || null,
+                    fair: data.fair || null,
+                    country: data.country || null,
+                    autonomous_community: data.autonomousCommunity || null,
+                    city: data.city || null,
                 })
                 .eq('id', clientId);
 
             if (clientError) throw clientError;
 
-            // 2. Actualizar comercial en projects (si existe)
-            if (data.comercial && lead?.id) {
+            // 2. Actualizar comercial en projects (siempre, incluso si se vacía)
+            if (lead?.id) {
                 await supabase
                     .from('projects')
-                    .update({ comercial: data.comercial })
+                    .update({ comercial: data.comercial || null })
                     .eq('id', lead.id);
             }
 
@@ -232,6 +286,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                     billingName = data.clientBillingCompanyName || data.clientName;
                     billingEmail = data.clientBillingCompanyEmail || data.clientEmail;
                     billingPhone = data.clientBillingCompanyPhone || data.clientPhone;
+                    // Solo la dirección de calle, sin concatenar
                     billingAddress = data.clientBillingCompanyAddress || data.clientAddress || '';
                     billingNif = data.clientBillingCompanyCif || '';
                 } else if (data.billingType === 'other_person') {
@@ -241,10 +296,11 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                     billingAddress = data.otherPersonAddress || data.clientAddress || '';
                     billingNif = data.otherPersonDni || '';
                 } else {
-                    billingName = data.clientBillingName || data.clientName;
-                    billingEmail = data.clientBillingEmail || data.clientEmail;
-                    billingPhone = data.clientBillingPhone || data.clientPhone;
-                    billingAddress = data.clientBillingAddress || data.clientAddress || '';
+                    // 'personal' — billing mirrors client data directly
+                    billingName = data.clientName;
+                    billingEmail = data.clientEmail;
+                    billingPhone = data.clientPhone;
+                    billingAddress = data.clientAddress || '';
                     billingNif = data.clientDni || '';
                 }
 
@@ -256,6 +312,31 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                     billing_address: billingAddress,
                     nif: billingNif,
                     type: data.billingType,
+                    // Guardar campos individuales de dirección
+                    ...(data.billingType === 'company' ? {
+                        country: data.clientBillingCompanyCountry || '',
+                        autonomous_community: data.clientBillingCompanyAutonomousCommunity || '',
+                        city: data.clientBillingCompanyCity || '',
+                        address_street: data.clientBillingCompanyAddress || '',
+                        office_unit: data.clientBillingCompanyAddressNumber || '',
+                    } : data.billingType === 'other_person' ? {
+                        surname: data.otherPersonSurname || '',
+                        country: data.otherPersonCountry || '',
+                        autonomous_community: data.otherPersonAutonomousCommunity || '',
+                        city: data.otherPersonCity || '',
+                        address_street: data.otherPersonAddress || '',
+                        office_unit: data.otherPersonAddressNumber || '',
+                        birth_date: data.otherPersonBirthDate || null,
+                    } : {
+                        // personal — sync client address fields to billing
+                        surname: data.clientSurname || '',
+                        country: data.country || '',
+                        autonomous_community: data.autonomousCommunity || '',
+                        city: data.city || '',
+                        address_street: data.clientAddress || '',
+                        office_unit: data.addressNumber || '',
+                        birth_date: data.clientBirthDate || null,
+                    }),
                 };
 
                 const { data: existingBilling } = await supabase
@@ -276,13 +357,20 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                 onLeadUpdated({
                     ...lead,
                     name: data.clientName,
+                    surname: data.clientSurname || '',
                     email: data.clientEmail,
                     phone: data.clientPhone,
                     dni: data.clientDni || '',
                     birthDate: data.clientBirthDate || '',
                     birthdate: data.clientBirthDate || '',
                     address: data.clientAddress || '',
+                    addressNumber: data.addressNumber || '',
                     comercial: data.comercial || lead?.comercial || '',
+                    leadType: data.leadType || '',
+                    fair: data.fair || '',
+                    country: data.country || '',
+                    autonomousCommunity: data.autonomousCommunity || '',
+                    city: data.city || '',
                 });
             }
 
@@ -315,13 +403,29 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                         .from('clients')
                         .update({
                             name: data.clientName,
+                            surname: data.clientSurname || null,
                             email: data.clientEmail,
                             phone: data.clientPhone,
                             dni: data.clientDni || null,
                             address: data.clientAddress || null,
+                            address_number: data.addressNumber || null,
                             birthdate: data.clientBirthDate || null,
+                            comercial: data.comercial || null,
+                            lead_type: data.leadType || null,
+                            fair: data.fair || null,
+                            country: data.country || null,
+                            autonomous_community: data.autonomousCommunity || null,
+                            city: data.city || null,
                         })
                         .eq('id', clientId);
+
+                    // Also save comercial to project
+                    if (lead?.id) {
+                        await supabase
+                            .from('projects')
+                            .update({ comercial: data.comercial || null })
+                            .eq('id', lead.id);
+                    }
 
                     // Also save billing data — use correct fields based on billingType
                     let bName: string, bEmail: string, bPhone: string, bAddress: string, bNif: string;
@@ -329,6 +433,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                         bName = data.clientBillingCompanyName || data.clientName;
                         bEmail = data.clientBillingCompanyEmail || data.clientEmail;
                         bPhone = data.clientBillingCompanyPhone || data.clientPhone;
+                        // Solo la dirección de calle, sin concatenar
                         bAddress = data.clientBillingCompanyAddress || data.clientAddress || '';
                         bNif = data.clientBillingCompanyCif || '';
                     } else if (data.billingType === 'other_person') {
@@ -338,10 +443,11 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                         bAddress = data.otherPersonAddress || data.clientAddress || '';
                         bNif = data.otherPersonDni || '';
                     } else {
-                        bName = data.clientBillingName || data.clientName;
-                        bEmail = data.clientBillingEmail || data.clientEmail;
-                        bPhone = data.clientBillingPhone || data.clientPhone;
-                        bAddress = data.clientBillingAddress || data.clientAddress || '';
+                        // personal — billing mirrors client data directly
+                        bName = data.clientName;
+                        bEmail = data.clientEmail;
+                        bPhone = data.clientPhone;
+                        bAddress = data.clientAddress || '';
                         bNif = data.clientDni || '';
                     }
                     const billingData = {
@@ -352,6 +458,31 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                         billing_address: bAddress,
                         nif: bNif,
                         type: data.billingType || 'personal',
+                        // Guardar campos individuales de dirección
+                        ...(data.billingType === 'company' ? {
+                            country: data.clientBillingCompanyCountry || '',
+                            autonomous_community: data.clientBillingCompanyAutonomousCommunity || '',
+                            city: data.clientBillingCompanyCity || '',
+                            address_street: data.clientBillingCompanyAddress || '',
+                            office_unit: data.clientBillingCompanyAddressNumber || '',
+                        } : data.billingType === 'other_person' ? {
+                            surname: data.otherPersonSurname || '',
+                            country: data.otherPersonCountry || '',
+                            autonomous_community: data.otherPersonAutonomousCommunity || '',
+                            city: data.otherPersonCity || '',
+                            address_street: data.otherPersonAddress || '',
+                            office_unit: data.otherPersonAddressNumber || '',
+                            birth_date: data.otherPersonBirthDate || null,
+                        } : {
+                            // personal — sync client address fields to billing
+                            surname: data.clientSurname || '',
+                            country: data.country || '',
+                            autonomous_community: data.autonomousCommunity || '',
+                            city: data.city || '',
+                            address_street: data.clientAddress || '',
+                            office_unit: data.addressNumber || '',
+                            birth_date: data.clientBirthDate || null,
+                        }),
                     };
 
                     const { data: existingBilling } = await supabase
@@ -375,16 +506,28 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                 }
             }
         }
+        // Reset contract form state when leaving Contratos tab
+        if (newTab !== 'contratos') {
+            setIsContractFormOpen(false);
+        }
         setActiveTab(newTab);
     };
 
     const onInvalid = (errors: any) => {
         console.warn('❌ Form validation failed:', errors);
 
-        const personalInfoFields = ['clientName', 'clientPhone', 'clientEmail', 'clientDni', 'clientBirthDate', 'clientAddress'];
+        // Build a human-readable list of invalid fields
+        const errorFieldNames = Object.keys(errors);
+        const errorMessages = errorFieldNames.map(field => {
+            const msg = errors[field]?.message || 'Campo inválido';
+            return `${field}: ${msg}`;
+        });
+        console.warn('❌ Invalid fields:', errorMessages);
+
+        const personalInfoFields = ['clientName', 'clientPhone', 'clientEmail', 'clientDni', 'clientBirthDate', 'clientAddress', 'leadType', 'fair', 'clientSurname', 'comercial', 'country', 'autonomousCommunity', 'city', 'addressNumber'];
         const billingFields = ['billingType', 'clientBillingName', 'clientBillingEmail', 'clientBillingPhone', 'clientBillingAddress'];
         const hasPersonalInfoErrors = personalInfoFields.some(field => errors[field]);
-        const hasBillingErrors = billingFields.some(field => errors[field]) || Object.keys(errors).some(field => field.startsWith('clientBilling') || field.startsWith('otherPerson'));
+        const hasBillingErrors = billingFields.some(field => errors[field]) || errorFieldNames.some(field => field.startsWith('clientBilling') || field.startsWith('otherPerson'));
 
         if (hasPersonalInfoErrors) {
             setActiveTab('cliente');
@@ -392,13 +535,15 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
         } else if (hasBillingErrors) {
             setActiveTab('cliente');
             setClientSubTab('facturacion');
-        } else if (Object.keys(errors).some(field => field.startsWith('discount') || field.startsWith('items'))) {
+        } else if (errorFieldNames.some(field => field.startsWith('discount') || field.startsWith('items'))) {
             setActiveTab('presupuesto');
         }
 
+        // Show which fields are failing
+        const fieldDescriptions = errorFieldNames.slice(0, 3).map(f => errors[f]?.message || f).join(', ');
         toast({
             title: "Información incompleta",
-            description: "Por favor, revisa todos los campos obligatorios marcados en rojo.",
+            description: fieldDescriptions || "Por favor, revisa todos los campos obligatorios marcados en rojo.",
             variant: "destructive",
         });
     };
@@ -509,12 +654,67 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                 <TabsContent value="cliente" className="mt-0 animate-fade-in-up">
                                     {clientSubTab === 'contacto' && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
+                                            {/* Tipo de lead */}
+                                            <FormField
+                                                control={form.control}
+                                                name="leadType"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Tipo de Lead *</FormLabel>
+                                                        <Select onValueChange={field.onChange} value={field.value}>
+                                                            <FormControl>
+                                                                <SelectTrigger className="rounded-xl border-border h-12 bg-background">
+                                                                    <SelectValue placeholder="Selecciona tipo" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="B2C">B2C</SelectItem>
+                                                                <SelectItem value="B2B">B2B</SelectItem>
+                                                                <SelectItem value="B2B2C">B2B2C</SelectItem>
+                                                                <SelectItem value="Rent Partner">Rent Partner</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Fira */}
+                                            <FormField
+                                                control={form.control}
+                                                name="fair"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Feria?</FormLabel>
+                                                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                                                            <FormControl>
+                                                                <SelectTrigger className="rounded-xl border-border h-12 bg-background">
+                                                                    <SelectValue placeholder="Selecciona fira (opcional)" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="Alacant">Alacant</SelectItem>
+                                                                <SelectItem value="Múrcia">Múrcia</SelectItem>
+                                                                <SelectItem value="Jerez">Jerez</SelectItem>
+                                                                <SelectItem value="Bilbao">Bilbao</SelectItem>
+                                                                <SelectItem value="Madrid">Madrid</SelectItem>
+                                                                <SelectItem value="Düsseldorf">Düsseldorf</SelectItem>
+                                                                <SelectItem value="Barcelona">Barcelona</SelectItem>
+                                                                <SelectItem value="Zamora">Zamora</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Nombre */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientName"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-foreground font-bold">Nombre Completo</FormLabel>
+                                                        <FormLabel className="text-foreground font-bold">Nombre *</FormLabel>
                                                         <FormControl>
                                                             <Input {...field} className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
                                                         </FormControl>
@@ -523,12 +723,28 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                                 )}
                                             />
 
+                                            {/* Apellidos */}
+                                            <FormField
+                                                control={form.control}
+                                                name="clientSurname"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Apellidos *</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Teléfono */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientPhone"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-foreground font-bold">Teléfono</FormLabel>
+                                                        <FormLabel className="text-foreground font-bold">Teléfono *</FormLabel>
                                                         <FormControl>
                                                             <div className="relative">
                                                                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -540,12 +756,13 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                                 )}
                                             />
 
+                                            {/* Email */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientEmail"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-foreground font-bold">Email</FormLabel>
+                                                        <FormLabel className="text-foreground font-bold">Email *</FormLabel>
                                                         <FormControl>
                                                             <div className="relative">
                                                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -557,6 +774,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                                 )}
                                             />
 
+                                            {/* DNI / CIF */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientDni"
@@ -571,12 +789,13 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                                 )}
                                             />
 
+                                            {/* Data de naixement */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientBirthDate"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-foreground font-bold">Fecha de Nacimiento</FormLabel>
+                                                        <FormLabel className="text-foreground font-bold">Data de Naixement</FormLabel>
                                                         <FormControl>
                                                             <div className="relative">
                                                                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -588,12 +807,13 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                                 )}
                                             />
 
+                                            {/* Comercial assignat */}
                                             <FormField
                                                 control={form.control}
                                                 name="comercial"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-foreground font-bold">Comercial Asignado</FormLabel>
+                                                        <FormLabel className="text-foreground font-bold">Comercial Assignat *</FormLabel>
                                                         <Select onValueChange={field.onChange} value={field.value}>
                                                             <FormControl>
                                                                 <SelectTrigger className="rounded-xl border-border h-12 bg-background">
@@ -613,14 +833,75 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                                 )}
                                             />
 
+                                            {/* País */}
+                                            <FormField
+                                                control={form.control}
+                                                name="country"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">País *</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="Ej: España" className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Comunidad autónoma */}
+                                            <FormField
+                                                control={form.control}
+                                                name="autonomousCommunity"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Comunidad Autónoma *</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="Ej: Catalunya" className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Ciudad */}
+                                            <FormField
+                                                control={form.control}
+                                                name="city"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Ciudad</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Dirección cliente */}
                                             <FormField
                                                 control={form.control}
                                                 name="clientAddress"
                                                 render={({ field }) => (
-                                                    <FormItem className="md:col-span-2">
-                                                        <FormLabel className="text-foreground font-bold">Dirección de Envío</FormLabel>
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Dirección Cliente</FormLabel>
                                                         <FormControl>
                                                             <Input {...field} className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            {/* Número (puerta/piso) */}
+                                            <FormField
+                                                control={form.control}
+                                                name="addressNumber"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-foreground font-bold">Número (puerta/piso)</FormLabel>
+                                                        <FormControl>
+                                                            <Input {...field} placeholder="Ej: 3-2ª" className="rounded-xl border-border h-12 focus:ring-primary/10 focus:border-primary bg-background" />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>

@@ -6,6 +6,7 @@
 export interface ProjectFormData {
     // Client info
     clientName: string;
+    clientSurname?: string;
     clientEmail: string;
     clientPhone: string;
     clientDni?: string;
@@ -13,6 +14,12 @@ export interface ProjectFormData {
     clientBirthdate?: string;
     clientBirthDate?: string;
     clientType?: string;
+    addressNumber?: string;
+    leadType?: string;
+    fair?: string;
+    country?: string;
+    autonomousCommunity?: string;
+    city?: string;
 
     // Project info
     projectCode?: string;

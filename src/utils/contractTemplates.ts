@@ -59,7 +59,7 @@ export interface ContractData {
 export const convertTextToHtml = (text: string): string => {
   if (!text) return '';
 
-  if(import.meta.env.DEV) console.log('🔄 Converting text to HTML with improved list detection');
+  if (import.meta.env.DEV) console.log('🔄 Converting text to HTML with improved list detection');
 
   // Split into paragraphs and process each one
   const paragraphs = text.split(/\n\s*\n/);
@@ -193,7 +193,7 @@ export const convertTextToHtml = (text: string): string => {
     </div>
   `;
 
-  if(import.meta.env.DEV) console.log('✅ Text converted to HTML with consistent formatting');
+  if (import.meta.env.DEV) console.log('✅ Text converted to HTML with consistent formatting');
   return finalHTML;
 };
 
@@ -491,13 +491,13 @@ export const contractTemplates: Record<string, ContractTemplate> = {
 export const generateContractData = async (project: UnifiedProject): Promise<ContractData> => {
   const currentDate = new Date().toLocaleDateString('es-ES');
 
-  if(import.meta.env.DEV) console.log('🔍 Generando datos del contrato para proyecto:', project.id);
-  if(import.meta.env.DEV) console.log('👤 Proyecto recibido (ID cliente):', project.client_id);
+  if (import.meta.env.DEV) console.log('🔍 Generando datos del contrato para proyecto:', project.id);
+  if (import.meta.env.DEV) console.log('👤 Proyecto recibido (ID cliente):', project.client_id);
 
   // Fetch client data from Supabase database
-  let clientData = null;
+  let clientData: any = null;
   if (project.client_id) {
-    if(import.meta.env.DEV) console.log('📡 Consultando cliente en base de datos:', project.client_id);
+    if (import.meta.env.DEV) console.log('📡 Consultando cliente en base de datos:', project.client_id);
 
     const { data, error } = await supabase
       .from('clients')
@@ -509,13 +509,32 @@ export const generateContractData = async (project: UnifiedProject): Promise<Con
       console.error('❌ Error fetching client:', error);
     } else {
       clientData = data;
-      if(import.meta.env.DEV) console.log('✅ Datos del cliente obtenidos de BD:', clientData);
+      if (import.meta.env.DEV) console.log('✅ Datos del cliente obtenidos de BD:', clientData);
+    }
+  }
+
+  // Fetch billing data for the client
+  let billingData: any = null;
+  if (project.client_id) {
+    const { data: billing, error: billingError } = await supabase
+      .from('billing')
+      .select('*')
+      .eq('client_id', project.client_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (billingError) {
+      console.error('❌ Error fetching billing:', billingError);
+    } else {
+      billingData = billing;
+      if (import.meta.env.DEV) console.log('✅ Datos de facturación obtenidos:', billingData);
     }
   }
 
   // Fetch primary budget for the project
-  let primaryBudgetData = null;
-  if(import.meta.env.DEV) console.log('💰 Consultando presupuesto primario para proyecto:', project.id);
+  let primaryBudgetData: any = null;
+  if (import.meta.env.DEV) console.log('💰 Consultando presupuesto primario para proyecto:', project.id);
 
   const { data: budgetData, error: budgetError } = await supabase
     .from('budget')
@@ -528,22 +547,90 @@ export const generateContractData = async (project: UnifiedProject): Promise<Con
     console.error('❌ Error fetching primary budget:', budgetError);
   } else {
     primaryBudgetData = budgetData;
-    if(import.meta.env.DEV) console.log('✅ Presupuesto primario obtenido:', primaryBudgetData);
+    if (import.meta.env.DEV) console.log('✅ Presupuesto primario obtenido:', primaryBudgetData);
   }
 
-  // Extract client data from database result
-  const clientName = clientData?.name || 'No especificado';
-  const clientDni = clientData?.dni || 'No especificado';
-  const clientPhone = clientData?.phone || 'No especificado';
-  const clientEmail = clientData?.email || 'No especificado';
-  const clientAddress = clientData?.address || 'No especificado';
+  // Determine billing type
+  const billingType = billingData?.type || 'personal';
+  if (import.meta.env.DEV) console.log('📋 Tipo de facturación:', billingType);
 
-  if(import.meta.env.DEV) console.log('📋 Datos del cliente extraídos:', {
-    nombre: clientName,
-    dni: clientDni,
-    telefono: clientPhone,
-    email: clientEmail,
-    direccion: clientAddress
+  // Build address concatenation helper
+  const buildFullAddress = (...parts: (string | null | undefined)[]) => {
+    return parts.filter(p => p && p.trim() && p !== 'No especificado').join(', ') || 'No especificado';
+  };
+
+  // Determine contract person data based on billing type
+  let contractName: string;
+  let contractDni: string;
+  let contractPhone: string;
+  let contractEmail: string;
+  let contractAddress: string;
+  let contractCiudad: string;
+  let contractCp: string;
+  let contractEmpresa: string;
+  let contractCif: string;
+
+  if (billingType === 'company') {
+    // Company billing — show all company info
+    contractName = clientData?.name || 'No especificado';
+    contractDni = clientData?.dni || 'No especificado';
+    contractPhone = clientData?.phone || 'No especificado';
+    contractEmail = clientData?.email || 'No especificado';
+    contractAddress = buildFullAddress(
+      billingData?.billing_address,
+      billingData?.city || clientData?.city,
+      billingData?.autonomous_community || clientData?.autonomous_community,
+      billingData?.country || clientData?.country
+    );
+    contractCiudad = billingData?.city || clientData?.city || 'No especificado';
+    contractCp = 'No especificado';
+    contractEmpresa = billingData?.name || 'No especificado';
+    contractCif = billingData?.nif || 'No especificado';
+  } else if (billingType === 'other_person') {
+    // Other person billing — use billing person data, no company info
+    contractName = billingData?.name || clientData?.name || 'No especificado';
+    contractDni = billingData?.nif || clientData?.dni || 'No especificado';
+    contractPhone = billingData?.phone || clientData?.phone || 'No especificado';
+    contractEmail = billingData?.email || clientData?.email || 'No especificado';
+    contractAddress = buildFullAddress(
+      billingData?.billing_address || clientData?.address,
+      clientData?.city,
+      clientData?.autonomous_community,
+      clientData?.country
+    );
+    contractCiudad = clientData?.city || 'No especificado';
+    contractCp = 'No especificado';
+    // No company info for other_person
+    contractEmpresa = '';
+    contractCif = '';
+  } else {
+    // Personal billing — use client data, no company info
+    contractName = clientData?.name || 'No especificado';
+    contractDni = clientData?.dni || 'No especificado';
+    contractPhone = clientData?.phone || 'No especificado';
+    contractEmail = clientData?.email || 'No especificado';
+    contractAddress = buildFullAddress(
+      clientData?.address,
+      clientData?.city,
+      clientData?.autonomous_community,
+      clientData?.country
+    );
+    contractCiudad = clientData?.city || 'No especificado';
+    contractCp = 'No especificado';
+    // No company info for personal
+    contractEmpresa = '';
+    contractCif = '';
+  }
+
+  if (import.meta.env.DEV) console.log('📋 Datos de facturación para contrato:', {
+    nombre: contractName,
+    dni: contractDni,
+    telefono: contractPhone,
+    email: contractEmail,
+    direccion: contractAddress,
+    empresa: contractEmpresa,
+    cif: contractCif,
+    billingType
   });
 
   // Extract project data
@@ -564,11 +651,11 @@ export const generateContractData = async (project: UnifiedProject): Promise<Con
 
   const contractData: ContractData = {
     // Basic fields (for old templates)
-    client_name: clientName,
-    client_dni: clientDni,
-    client_phone: clientPhone,
-    client_email: clientEmail,
-    client_address: clientAddress,
+    client_name: contractName,
+    client_dni: contractDni,
+    client_phone: contractPhone,
+    client_email: contractEmail,
+    client_address: contractAddress,
     model: projectModel,
     total_amount: totalAmount,
     power: projectPower,
@@ -579,55 +666,55 @@ export const generateContractData = async (project: UnifiedProject): Promise<Con
 
     // Specific fields for camperization (exact names from templates)
     fecha: currentDate,
-    nombre_cliente: clientName,
-    DNI: clientDni,
-    telefono: clientPhone,
-    email_cliente: clientEmail,
-    direccion_cliente: clientAddress,
-    ciudad_cliente: 'No especificado', // Field not available in current DB
-    cp_cliente: 'No especificado', // Field not available in current DB
-    cif_cliente: 'No especificado', // Field not available in current DB
-    empresa_cliente: 'No especificado', // Field not available in current DB
+    nombre_cliente: contractName,
+    DNI: contractDni,
+    telefono: contractPhone,
+    email_cliente: contractEmail,
+    direccion_cliente: contractAddress,
+    ciudad_cliente: contractCiudad,
+    cp_cliente: contractCp,
+    cif_cliente: contractCif || 'No especificado',
+    empresa_cliente: contractEmpresa || 'No especificado',
     marca_vehiculo: 'Fiat Ducato', // Default value
     modelo_vehiculo: projectModel,
     modelo_nomade: projectModel,
     motorizacion: projectPower,
-    numero_bastidor: 'No especificado', // Field not available in current DB
-    matricula: 'No especificado', // Field not available in current DB
+    numero_bastidor: 'No especificado',
+    matricula: 'No especificado',
     precio_total: totalAmount,
     pago_inicial: pagoInicial,
     pago_produccion: pagoProduccion,
     pago_final: pagoFinal,
-    plazo_entrega: 'No especificado', // Field not available in current DB
+    plazo_entrega: 'No especificado',
 
     // NEW: Direct database fields (without prefixes)
-    name: clientName,
-    phone: clientPhone,
-    email: clientEmail,
-    dni: clientDni,
-    address: clientAddress,
+    name: contractName,
+    phone: contractPhone,
+    email: contractEmail,
+    dni: contractDni,
+    address: contractAddress,
 
     // NEW: Object notation fields (clients.field)
-    'clients.name': clientName,
-    'clients.phone': clientPhone,
-    'clients.email': clientEmail,
-    'clients.dni': clientDni,
-    'clients.address': clientAddress,
+    'clients.name': contractName,
+    'clients.phone': contractPhone,
+    'clients.email': contractEmail,
+    'clients.dni': contractDni,
+    'clients.address': contractAddress,
   };
 
-  if(import.meta.env.DEV) console.log('✅ Datos del contrato generados correctamente con BD:', contractData);
+  if (import.meta.env.DEV) console.log('✅ Datos del contrato generados correctamente con BD:', contractData);
   return contractData;
 };
 
 export const processTemplate = (template: string, data: ContractData): string => {
   if (!template) {
-    if(import.meta.env.DEV) console.log('⚠️ processTemplate: Template is empty');
+    if (import.meta.env.DEV) console.log('⚠️ processTemplate: Template is empty');
     return '';
   }
 
-  if(import.meta.env.DEV) console.log('🔄 processTemplate: Processing template with data');
-  if(import.meta.env.DEV) console.log('📄 Template length:', template.length);
-  if(import.meta.env.DEV) console.log('🔍 Template original (primeros 200 chars):', template.substring(0, 200));
+  if (import.meta.env.DEV) console.log('🔄 processTemplate: Processing template with data');
+  if (import.meta.env.DEV) console.log('📄 Template length:', template.length);
+  if (import.meta.env.DEV) console.log('🔍 Template original (primeros 200 chars):', template.substring(0, 200));
 
   let processedTemplate = template;
 
@@ -644,7 +731,7 @@ export const processTemplate = (template: string, data: ContractData): string =>
     'clients.address': data.address || data.client_address || data.direccion_cliente,
   };
 
-  if(import.meta.env.DEV) console.log('🔍 Mapeo extendido creado:', {
+  if (import.meta.env.DEV) console.log('🔍 Mapeo extendido creado:', {
     'clients.name': extendedMapping['clients.name'],
     'teléfono': extendedMapping['teléfono'],
     'clients.phone': extendedMapping['clients.phone'],
@@ -663,37 +750,37 @@ export const processTemplate = (template: string, data: ContractData): string =>
       // Contar ocurrencias antes del reemplazo
       const beforeCount = (processedTemplate.match(regex) || []).length;
       if (beforeCount > 0) {
-        if(import.meta.env.DEV) console.log(`🔄 Reemplazando ${beforeCount} ocurrencias de {{${key}}} con: "${replacementValue}"`);
+        if (import.meta.env.DEV) console.log(`🔄 Reemplazando ${beforeCount} ocurrencias de {{${key}}} con: "${replacementValue}"`);
         processedTemplate = processedTemplate.replace(regex, replacementValue);
 
         // Verificar que el reemplazo funcionó
         const afterCount = (processedTemplate.match(regex) || []).length;
-        if(import.meta.env.DEV) console.log(`${afterCount === 0 ? '✅' : '⚠️'} Reemplazo ${afterCount === 0 ? 'completado' : 'parcial'}. Ocurrencias restantes: ${afterCount}`);
+        if (import.meta.env.DEV) console.log(`${afterCount === 0 ? '✅' : '⚠️'} Reemplazo ${afterCount === 0 ? 'completado' : 'parcial'}. Ocurrencias restantes: ${afterCount}`);
       }
     }
   });
 
-  if(import.meta.env.DEV) console.log('✅ processTemplate: Template processed successfully');
-  if(import.meta.env.DEV) console.log('📄 Processed template length:', processedTemplate.length);
+  if (import.meta.env.DEV) console.log('✅ processTemplate: Template processed successfully');
+  if (import.meta.env.DEV) console.log('📄 Processed template length:', processedTemplate.length);
 
   // ENHANCED: Buscar cualquier placeholder sin reemplazar
   const unreplacedPlaceholders = processedTemplate.match(/\{\{[^}]+\}\}/g);
   if (unreplacedPlaceholders) {
-    if(import.meta.env.DEV) console.log('⚠️ Placeholders sin reemplazar encontrados:', unreplacedPlaceholders);
-    if(import.meta.env.DEV) console.log('🔍 Verificando si estos placeholders tienen datos disponibles...');
+    if (import.meta.env.DEV) console.log('⚠️ Placeholders sin reemplazar encontrados:', unreplacedPlaceholders);
+    if (import.meta.env.DEV) console.log('🔍 Verificando si estos placeholders tienen datos disponibles...');
 
     unreplacedPlaceholders.forEach(placeholder => {
       const key = placeholder.replace(/[{}]/g, '');
       const hasData = extendedMapping[key] !== undefined && extendedMapping[key] !== null;
-      if(import.meta.env.DEV) console.log(`   - ${placeholder}: datos disponibles = ${hasData ? 'SÍ' : 'NO'} | valor = "${extendedMapping[key] || 'N/A'}"`);
+      if (import.meta.env.DEV) console.log(`   - ${placeholder}: datos disponibles = ${hasData ? 'SÍ' : 'NO'} | valor = "${extendedMapping[key] || 'N/A'}"`);
     });
   } else {
-    if(import.meta.env.DEV) console.log('✅ Todos los placeholders fueron reemplazados correctamente');
+    if (import.meta.env.DEV) console.log('✅ Todos los placeholders fueron reemplazados correctamente');
   }
 
   // ENHANCED: Mostrar una muestra del resultado para debugging
   const sampleLength = Math.min(500, processedTemplate.length);
-  if(import.meta.env.DEV) console.log('📄 Muestra del template procesado (primeros 500 chars):', processedTemplate.substring(0, sampleLength));
+  if (import.meta.env.DEV) console.log('📄 Muestra del template procesado (primeros 500 chars):', processedTemplate.substring(0, sampleLength));
 
   return processedTemplate;
 };

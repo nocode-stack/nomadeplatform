@@ -113,7 +113,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           discount_amount: number
+          discount_amount_label: string | null
           discount_percentage: number | null
+          discount_percentage_label: string | null
           electric_system_id: string | null
           electric_system_price: number
           engine_option_id: string | null
@@ -142,7 +144,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           discount_amount: number
+          discount_amount_label?: string | null
           discount_percentage?: number | null
+          discount_percentage_label?: string | null
           electric_system_id?: string | null
           electric_system_price?: number
           engine_option_id?: string | null
@@ -171,7 +175,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           discount_amount?: number
+          discount_amount_label?: string | null
           discount_percentage?: number | null
+          discount_percentage_label?: string | null
           electric_system_id?: string | null
           electric_system_price?: number
           engine_option_id?: string | null
@@ -464,50 +470,74 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          address_number: string | null
+          autonomous_community: string | null
           birthdate: string | null
+          city: string | null
           client_code: string | null
           client_status: string
           client_type: string | null
+          comercial: string | null
+          country: string | null
           created_at: string
           dni: string | null
           email: string | null
+          fair: string | null
           id: string
           is_active: boolean | null
           is_hot_lead: boolean | null
+          lead_type: string | null
           name: string | null
           phone: string | null
+          surname: string | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          address_number?: string | null
+          autonomous_community?: string | null
           birthdate?: string | null
+          city?: string | null
           client_code?: string | null
           client_status?: string
           client_type?: string | null
+          comercial?: string | null
+          country?: string | null
           created_at?: string
           dni?: string | null
           email?: string | null
+          fair?: string | null
           id?: string
           is_active?: boolean | null
           is_hot_lead?: boolean | null
+          lead_type?: string | null
           name?: string | null
           phone?: string | null
+          surname?: string | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          address_number?: string | null
+          autonomous_community?: string | null
           birthdate?: string | null
+          city?: string | null
           client_code?: string | null
           client_status?: string
           client_type?: string | null
+          comercial?: string | null
+          country?: string | null
           created_at?: string
           dni?: string | null
           email?: string | null
+          fair?: string | null
           id?: string
           is_active?: boolean | null
           is_hot_lead?: boolean | null
+          lead_type?: string | null
           name?: string | null
           phone?: string | null
+          surname?: string | null
           updated_at?: string | null
         }
         Relationships: []

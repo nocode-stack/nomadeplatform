@@ -17,7 +17,8 @@ import {
     Bookmark,
     FileCheck,
     FileText,
-    Loader2
+    Loader2,
+    UserX
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -39,6 +40,7 @@ const Contratos = () => {
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
     const [selectedModels, setSelectedModels] = useState<string[]>([]);
     const [onlyCurrent, setOnlyCurrent] = useState(false);
+    const [hideDeletedClients, setHideDeletedClients] = useState(true);
     const [localSearch, setLocalSearch] = useState(searchTerm);
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 20;
@@ -81,6 +83,7 @@ const Contratos = () => {
         type: mapContractType(c.contract_type),
         isPrimary: c.is_latest || false,
         isCurrent: c.is_latest,
+        clientDeleted: c.client?.is_active === false,
         model: c.vehicle_model || 'N/A'
     }));
 
@@ -144,6 +147,7 @@ const Contratos = () => {
         setSelectedStatuses([]);
         setSelectedModels([]);
         setOnlyCurrent(false);
+        setHideDeletedClients(true);
         setLocalSearch('');
         setCurrentPage(1);
     };
@@ -156,10 +160,11 @@ const Contratos = () => {
         const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(c.status);
         const matchesCurrent = !onlyCurrent || c.isCurrent;
         const matchesModel = selectedModels.length === 0 || selectedModels.includes(c.model);
-        return matchesSearch && matchesType && matchesStatus && matchesCurrent && matchesModel;
+        const matchesDeleted = !hideDeletedClients || !c.clientDeleted;
+        return matchesSearch && matchesType && matchesStatus && matchesCurrent && matchesModel && matchesDeleted;
     });
 
-    const isFiltered = selectedTypes.length > 0 || selectedStatuses.length > 0 || selectedModels.length > 0 || onlyCurrent || localSearch !== '';
+    const isFiltered = selectedTypes.length > 0 || selectedStatuses.length > 0 || selectedModels.length > 0 || onlyCurrent || !hideDeletedClients || localSearch !== '';
 
     const totalPages = Math.ceil(filteredContracts.length / pageSize);
     const startIndex = (currentPage - 1) * pageSize;
@@ -235,7 +240,7 @@ const Contratos = () => {
                                     <span>Filtros</span>
                                     {isFiltered && (
                                         <span className="ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] rounded-full font-bold">
-                                            {selectedTypes.length + selectedStatuses.length + selectedModels.length + (onlyCurrent ? 1 : 0)}
+                                            {selectedTypes.length + selectedStatuses.length + selectedModels.length + (onlyCurrent ? 1 : 0) + (!hideDeletedClients ? 1 : 0)}
                                         </span>
                                     )}
                                 </Button>
@@ -260,7 +265,7 @@ const Contratos = () => {
                                     </div>
 
                                     <div className="space-y-4">
-                                        <div className="pb-2 border-b border-border/50">
+                                        <div className="pb-2 border-b border-border/50 space-y-3">
                                             <div
                                                 className="flex items-center space-x-3 group cursor-pointer"
                                                 onClick={() => {
@@ -280,6 +285,28 @@ const Contratos = () => {
                                                         className="text-sm font-bold text-foreground group-hover:text-primary transition-colors cursor-pointer"
                                                     >
                                                         Solo actuales
+                                                    </Label>
+                                                </div>
+                                            </div>
+                                            <div
+                                                className="flex items-center space-x-3 group cursor-pointer"
+                                                onClick={() => {
+                                                    setHideDeletedClients(!hideDeletedClients);
+                                                    setCurrentPage(1);
+                                                }}
+                                            >
+                                                <Checkbox
+                                                    id="hide-deleted"
+                                                    checked={hideDeletedClients}
+                                                    className="rounded focus:ring-primary/20"
+                                                />
+                                                <div className="flex items-center gap-2">
+                                                    <UserX className={`w-4 h-4 ${hideDeletedClients ? 'text-destructive' : 'text-muted-foreground'}`} />
+                                                    <Label
+                                                        htmlFor="hide-deleted"
+                                                        className="text-sm font-bold text-foreground group-hover:text-primary transition-colors cursor-pointer"
+                                                    >
+                                                        Ocultar eliminados
                                                     </Label>
                                                 </div>
                                             </div>

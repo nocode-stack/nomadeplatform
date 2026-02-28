@@ -47,10 +47,18 @@ export const useProjects = () => {
                     .from('clients')
                     .update({
                         name: projectData.clientName,
+                        surname: projectData.clientSurname || existingClient.surname,
                         phone: projectData.clientPhone,
                         dni: projectData.clientDni || existingClient.dni,
                         address: projectData.clientAddress || existingClient.address,
+                        address_number: projectData.addressNumber || existingClient.address_number,
                         birthdate: projectData.clientBirthDate || existingClient.birthdate,
+                        comercial: projectData.comercial || existingClient.comercial || null,
+                        lead_type: projectData.leadType || existingClient.lead_type,
+                        fair: projectData.fair || existingClient.fair,
+                        country: projectData.country || existingClient.country,
+                        autonomous_community: projectData.autonomousCommunity || existingClient.autonomous_community,
+                        city: projectData.city || existingClient.city,
                         is_active: true
                     })
                     .eq('id', existingClient.id);
@@ -59,13 +67,21 @@ export const useProjects = () => {
                     .from('clients')
                     .insert({
                         name: projectData.clientName,
+                        surname: projectData.clientSurname || '',
                         email: projectData.clientEmail,
                         phone: projectData.clientPhone,
                         dni: projectData.clientDni || '',
                         address: projectData.clientAddress || '',
+                        address_number: projectData.addressNumber || '',
                         client_status: projectData.clientType || 'prospect',
                         birthdate: projectData.clientBirthDate || null,
                         client_type: 'individual',
+                        comercial: projectData.comercial || null,
+                        lead_type: projectData.leadType || null,
+                        fair: projectData.fair || null,
+                        country: projectData.country || null,
+                        autonomous_community: projectData.autonomousCommunity || null,
+                        city: projectData.city || null,
                         is_active: true
                     })
                     .select()

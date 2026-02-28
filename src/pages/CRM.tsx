@@ -15,7 +15,8 @@ import {
     Filter,
     X,
     Loader2,
-    Trash2
+    Trash2,
+    CalendarDays
 } from 'lucide-react';
 import AnimatedFlame from '../components/ui/AnimatedFlame';
 import { useNavigate } from 'react-router-dom';
@@ -57,6 +58,8 @@ const CRM = () => {
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
     const [selectedModels, setSelectedModels] = useState<string[]>([]);
     const [filterHotLead, setFilterHotLead] = useState(false);
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [leadToDelete, setLeadToDelete] = useState<any>(null);
 
@@ -89,6 +92,7 @@ const CRM = () => {
                 id: client.id,
                 client_id: client.id,
                 name: client.name || 'Sin nombre',
+                surname: client.surname || '',
                 company: billing?.name || 'Empresa no definida',
                 status: client.client_status || 'prospect',
                 email: client.email || '',
@@ -96,7 +100,13 @@ const CRM = () => {
                 dni: client.dni || '',
                 birthDate: client.birthdate || '',
                 address: client.address || '',
-                comercial: 'No asignado',
+                addressNumber: client.address_number || '',
+                comercial: client.comercial || '',
+                leadType: client.lead_type || '',
+                fair: client.fair || '',
+                country: client.country || '',
+                autonomousCommunity: client.autonomous_community || '',
+                city: client.city || '',
                 isHotLead: (client as any).is_hot_lead || false,
                 vehicleModel: primaryBudget?.model_option?.name || '',
                 motorization: primaryBudget?.engine_option?.name || '',
@@ -124,6 +134,7 @@ const CRM = () => {
                 clientBillingCompanyPhone: billing?.phone || '',
                 clientBillingCompanyEmail: billing?.email || '',
                 clientBillingCompanyAddress: billing?.billing_address || '',
+                createdAt: client.created_at || '',
                 _raw: client
             };
         } catch (e) {
@@ -162,7 +173,22 @@ const CRM = () => {
         setSelectedStatuses([]);
         setSelectedModels([]);
         setFilterHotLead(false);
+        setDateFrom('');
+        setDateTo('');
         setLocalSearch('');
+    };
+
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '-';
+        try {
+            const d = new Date(dateStr);
+            const day = d.getDate().toString().padStart(2, '0');
+            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        } catch {
+            return '-';
+        }
     };
 
     const filteredLeads = leads.filter(lead => {
@@ -173,10 +199,30 @@ const CRM = () => {
         const matchesStatus = selectedStatuses.length === 0 || (lead.status && selectedStatuses.includes(lead.status));
         const matchesModel = selectedModels.length === 0 || selectedModels.includes(lead.vehicleModel);
         const matchesHotLead = !filterHotLead || lead.isHotLead;
-        return matchesSearch && matchesComercial && matchesStatus && matchesModel && matchesHotLead;
+
+        let matchesDate = true;
+        if (dateFrom || dateTo) {
+            const leadDate = lead.createdAt ? new Date(lead.createdAt) : null;
+            if (!leadDate) {
+                matchesDate = false;
+            } else {
+                if (dateFrom) {
+                    const from = new Date(dateFrom);
+                    from.setHours(0, 0, 0, 0);
+                    if (leadDate < from) matchesDate = false;
+                }
+                if (dateTo) {
+                    const to = new Date(dateTo);
+                    to.setHours(23, 59, 59, 999);
+                    if (leadDate > to) matchesDate = false;
+                }
+            }
+        }
+
+        return matchesSearch && matchesComercial && matchesStatus && matchesModel && matchesHotLead && matchesDate;
     });
 
-    const isFiltered = selectedComerciales.length > 0 || selectedStatuses.length > 0 || selectedModels.length > 0 || filterHotLead || localSearch !== '';
+    const isFiltered = selectedComerciales.length > 0 || selectedStatuses.length > 0 || selectedModels.length > 0 || filterHotLead || localSearch !== '' || dateFrom !== '' || dateTo !== '';
 
     if (isLoading) {
         return (
@@ -221,109 +267,138 @@ const CRM = () => {
                                     <span>Filtros</span>
                                     {isFiltered && (
                                         <span className="ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] rounded-full font-bold">
-                                            {selectedComerciales.length + selectedStatuses.length + selectedModels.length + (filterHotLead ? 1 : 0)}
+                                            {selectedComerciales.length + selectedStatuses.length + selectedModels.length + (filterHotLead ? 1 : 0) + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
                                         </span>
                                     )}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 p-6 rounded-2xl border-border shadow-2xl bg-card" align="start">
-                                <div className="space-y-6">
-                                    <div className="flex items-center justify-between border-b border-border pb-3">
-                                        <h4 className="font-bold text-foreground flex items-center gap-2">
-                                            <Filter className="w-4 h-4" />
-                                            Filtros de CRM
-                                        </h4>
-                                        {isFiltered && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={resetFilters}
-                                                className="h-8 px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary"
-                                            >
-                                                Limpiar
-                                            </Button>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Comercial</p>
-                                            <div className="space-y-2">
-                                                {comerciales.map(name => (
-                                                    <div key={name} className="flex items-center space-x-3 group cursor-pointer" onClick={() => toggleComercial(name)}>
-                                                        <Checkbox
-                                                            id={`comercial-${name}`}
-                                                            checked={selectedComerciales.includes(name)}
-                                                            className="rounded focus:ring-primary/20"
-                                                        />
-                                                        <Label
-                                                            htmlFor={`comercial-${name}`}
-                                                            className="text-sm font-medium text-foreground group-hover:text-primary transition-colors cursor-pointer"
-                                                        >
-                                                            {name}
-                                                        </Label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-2">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Estado</p>
-                                            <div className="space-y-2">
-                                                {statuses.map(status => (
-                                                    <div key={status.id} className="flex items-center space-x-3 group cursor-pointer" onClick={() => toggleStatus(status.id)}>
-                                                        <Checkbox
-                                                            id={`status-${status.id}`}
-                                                            checked={selectedStatuses.includes(status.id)}
-                                                            className="rounded focus:ring-primary/20"
-                                                        />
-                                                        <Label
-                                                            htmlFor={`status-${status.id}`}
-                                                            className="text-sm font-medium text-foreground group-hover:text-primary transition-colors cursor-pointer"
-                                                        >
-                                                            {status.label}
-                                                        </Label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-2">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Modelo</p>
-                                            <div className="space-y-2">
-                                                {models.map(model => (
-                                                    <div key={model} className="flex items-center space-x-3 group cursor-pointer" onClick={() => toggleModel(model)}>
-                                                        <Checkbox
-                                                            id={`model-${model}`}
-                                                            checked={selectedModels.includes(model)}
-                                                            className="rounded focus:ring-primary/20"
-                                                        />
-                                                        <Label
-                                                            htmlFor={`model-${model}`}
-                                                            className="text-sm font-medium text-foreground group-hover:text-primary transition-colors cursor-pointer"
-                                                        >
-                                                            {model}
-                                                        </Label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-2">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Hot Lead</p>
-                                            <div className="flex items-center space-x-3 group cursor-pointer" onClick={() => setFilterHotLead(!filterHotLead)}>
-                                                <Checkbox
-                                                    id="filter-hot-lead"
-                                                    checked={filterHotLead}
-                                                    className="rounded focus:ring-primary/20"
-                                                />
-                                                <Label
-                                                    htmlFor="filter-hot-lead"
-                                                    className="text-sm font-medium text-foreground group-hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5"
+                            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 p-0 rounded-2xl border-border shadow-2xl bg-card" align="start">
+                                <div className="max-h-[70vh] overflow-y-auto p-6 custom-scrollbar">
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between border-b border-border pb-3">
+                                            <h4 className="font-bold text-foreground flex items-center gap-2">
+                                                <Filter className="w-4 h-4" />
+                                                Filtros de CRM
+                                            </h4>
+                                            {isFiltered && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={resetFilters}
+                                                    className="h-8 px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary"
                                                 >
-                                                    <AnimatedFlame size="sm" active={true} />
-                                                    Solo Hot Leads
-                                                </Label>
+                                                    Limpiar
+                                                </Button>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Comercial</p>
+                                                <div className="space-y-2">
+                                                    {comerciales.map(name => (
+                                                        <div key={name} className="flex items-center space-x-3 group cursor-pointer" onClick={() => toggleComercial(name)}>
+                                                            <Checkbox
+                                                                id={`comercial-${name}`}
+                                                                checked={selectedComerciales.includes(name)}
+                                                                className="rounded focus:ring-primary/20"
+                                                            />
+                                                            <Label
+                                                                htmlFor={`comercial-${name}`}
+                                                                className="text-sm font-medium text-foreground group-hover:text-primary transition-colors cursor-pointer"
+                                                            >
+                                                                {name}
+                                                            </Label>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2">
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Estado</p>
+                                                <div className="space-y-2">
+                                                    {statuses.map(status => (
+                                                        <div key={status.id} className="flex items-center space-x-3 group cursor-pointer" onClick={() => toggleStatus(status.id)}>
+                                                            <Checkbox
+                                                                id={`status-${status.id}`}
+                                                                checked={selectedStatuses.includes(status.id)}
+                                                                className="rounded focus:ring-primary/20"
+                                                            />
+                                                            <Label
+                                                                htmlFor={`status-${status.id}`}
+                                                                className="text-sm font-medium text-foreground group-hover:text-primary transition-colors cursor-pointer"
+                                                            >
+                                                                {status.label}
+                                                            </Label>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2">
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Modelo</p>
+                                                <div className="space-y-2">
+                                                    {models.map(model => (
+                                                        <div key={model} className="flex items-center space-x-3 group cursor-pointer" onClick={() => toggleModel(model)}>
+                                                            <Checkbox
+                                                                id={`model-${model}`}
+                                                                checked={selectedModels.includes(model)}
+                                                                className="rounded focus:ring-primary/20"
+                                                            />
+                                                            <Label
+                                                                htmlFor={`model-${model}`}
+                                                                className="text-sm font-medium text-foreground group-hover:text-primary transition-colors cursor-pointer"
+                                                            >
+                                                                {model}
+                                                            </Label>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2">
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Hot Lead</p>
+                                                <div className="flex items-center space-x-3 group cursor-pointer" onClick={() => setFilterHotLead(!filterHotLead)}>
+                                                    <Checkbox
+                                                        id="filter-hot-lead"
+                                                        checked={filterHotLead}
+                                                        className="rounded focus:ring-primary/20"
+                                                    />
+                                                    <Label
+                                                        htmlFor="filter-hot-lead"
+                                                        className="text-sm font-medium text-foreground group-hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5"
+                                                    >
+                                                        <AnimatedFlame size="sm" active={true} />
+                                                        Solo Hot Leads
+                                                    </Label>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2">
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                                    <CalendarDays className="w-3.5 h-3.5" />
+                                                    Fecha de Creación
+                                                </p>
+                                                <div className="space-y-3">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-xs font-medium text-muted-foreground">Desde</label>
+                                                        <input
+                                                            type="date"
+                                                            value={dateFrom}
+                                                            onChange={(e) => setDateFrom(e.target.value)}
+                                                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-xs font-medium text-muted-foreground">Hasta</label>
+                                                        <input
+                                                            type="date"
+                                                            value={dateTo}
+                                                            onChange={(e) => setDateTo(e.target.value)}
+                                                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -381,7 +456,14 @@ const CRM = () => {
                                             dni: matchingClient.dni || '',
                                             birthDate: matchingClient.birthdate || '',
                                             address: matchingClient.address || '',
-                                            comercial: 'No asignado',
+                                            addressNumber: matchingClient.address_number || '',
+                                            comercial: matchingClient.comercial || '',
+                                            leadType: matchingClient.lead_type || '',
+                                            fair: matchingClient.fair || '',
+                                            country: matchingClient.country || '',
+                                            autonomousCommunity: matchingClient.autonomous_community || '',
+                                            city: matchingClient.city || '',
+                                            surname: matchingClient.surname || '',
                                             isHotLead: matchingClient.is_hot_lead || false,
                                             vehicleModel: primaryBudget?.model_option?.name || '',
                                             motorization: primaryBudget?.engine_option?.name || '',
@@ -439,6 +521,7 @@ const CRM = () => {
                                 <tr className="bg-muted/30 border-b border-border backdrop-blur-md">
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30">Contacto</th>
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30">Comercial</th>
+                                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30">Fecha de Creación</th>
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30">Estado</th>
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30">Acciones Directas</th>
                                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground w-10 bg-muted/30"></th>
@@ -447,7 +530,7 @@ const CRM = () => {
                             <tbody className="divide-y divide-border/50">
                                 {filteredLeads.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-16 text-center">
+                                        <td colSpan={6} className="px-6 py-16 text-center">
                                             <div className="flex flex-col items-center gap-4">
                                                 <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
                                                     <Users className="w-8 h-8 text-muted-foreground/40" />
@@ -509,7 +592,13 @@ const CRM = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center text-sm text-foreground font-medium">
                                                 <div className="w-2 h-2 rounded-full bg-primary/40 mr-2" />
-                                                {lead.comercial}
+                                                {lead.comercial || 'No asignado'}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <CalendarDays className="w-3.5 h-3.5 text-muted-foreground/60" />
+                                                <span className="font-medium tabular-nums">{formatDate(lead.createdAt)}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

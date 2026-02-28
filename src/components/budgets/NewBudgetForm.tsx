@@ -312,7 +312,7 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
         : (selectedElectric.discount_price != null ? Number(selectedElectric.discount_price) : null);
 
       // Si el pack Ultimate está seleccionado y el sistema tiene discount_price, usarlo
-      if (selectedPackData?.name?.includes('Ultimate') && electricDiscountPrice != null) {
+      if ((selectedPackData?.name?.includes('Ultimate') || selectedPackData?.name?.includes('Adventure')) && electricDiscountPrice != null) {
         electricSystemPrice = electricDiscountPrice;
       } else {
         // Usar precio dinámico si está disponible, sino el precio base según localización
@@ -731,7 +731,7 @@ export const NewBudgetForm: React.FC<NewBudgetFormProps> = ({ project, budget, o
                     let discountReason: string | null = null;
 
                     // Si el pack Ultimate está seleccionado y el sistema tiene discount_price, usarlo directamente
-                    if (selectedPackData?.name?.includes('Ultimate') && discountPriceValue != null) {
+                    if ((selectedPackData?.name?.includes('Ultimate') || selectedPackData?.name?.includes('Adventure')) && discountPriceValue != null) {
                       dynamicPrice = discountPriceValue;
                       hasDiscount = discountPriceValue < basePrice;
                       isFree = discountPriceValue === 0;

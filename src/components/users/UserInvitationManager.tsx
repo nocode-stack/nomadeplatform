@@ -26,6 +26,7 @@ interface AuthorizedUser {
     email: string;
     name: string;
     department: string;
+    avatar_url?: string | null;
     status: 'pending' | 'active' | 'inactive';
     created_at: string;
 }
@@ -294,8 +295,12 @@ export const UserInvitationManager = () => {
                         <CardHeader className="pb-4 bg-muted/30">
                             <div className="flex items-start justify-between">
                                 <div className="flex items-center space-x-3">
-                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                        {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden">
+                                        {user.avatar_url ? (
+                                            <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            user.name ? user.name.charAt(0).toUpperCase() : '?'
+                                        )}
                                     </div>
                                     <div>
                                         <CardTitle className="text-base font-semibold">{user.name || 'Usuario'}</CardTitle>

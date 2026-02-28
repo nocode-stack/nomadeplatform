@@ -231,6 +231,8 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
     // Discount state (separate & cumulative)
     const [discountPercent, setDiscountPercent] = useState<number>(0);
     const [discountFixed, setDiscountFixed] = useState<number>(0);
+    const [discountPercentLabel, setDiscountPercentLabel] = useState<string>('');
+    const [discountFixedLabel, setDiscountFixedLabel] = useState<string>('');
 
     // Fuera de Carta search state
     const [outOfOfferSearch, setOutOfOfferSearch] = useState<string>('');
@@ -254,6 +256,8 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                 if (budget.budget_code) setBudgetCode(budget.budget_code);
                 if (budget.discount_percentage) setDiscountPercent(budget.discount_percentage * 100);
                 if (budget.discount_amount) setDiscountFixed(budget.discount_amount);
+                if (budget.discount_percentage_label) setDiscountPercentLabel(budget.discount_percentage_label);
+                if (budget.discount_amount_label) setDiscountFixedLabel(budget.discount_amount_label);
                 if (budget.location) setLocation(budget.location as Location);
                 if (budget.comunidad_autonoma) setComunidadAutonoma(budget.comunidad_autonoma);
             }
@@ -298,16 +302,32 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
         }
     }, [existingBudgetItems, extraPacks]);
 
-    // Toggle pack with hierarchy logic
+    // Auto-deselect Space Pack si se cambia a un modelo no-Space
+    useEffect(() => {
+        const selectedModelObj = models.find(m => m.id === selectedModel);
+        const isSpaceModel = selectedModelObj?.name?.toLowerCase().includes('space') || false;
+        if (!isSpaceModel) {
+            const spacePackId = extraPacks.find((ep: any) => ep.name?.toLowerCase().includes('space'))?.id;
+            if (spacePackId && selectedExtraPacks.has(spacePackId)) {
+                setSelectedExtraPacks(prev => {
+                    const next = new Set(prev);
+                    next.delete(spacePackId);
+                    return next;
+                });
+            }
+        }
+    }, [selectedModel, models, extraPacks]);
+
+    // Toggle pack — solo uno a la vez (Essentials, Adventure, Ultimate son mutuamente excluyentes)
     const togglePack = useCallback((packId: string, packName: string) => {
         setSelectedPacks(prev => {
-            const next = new Set(prev);
-            if (next.has(packId)) {
-                next.delete(packId);
+            if (prev.has(packId)) {
+                // Deseleccionar si ya está seleccionado
+                return new Set();
             } else {
-                next.add(packId);
+                // Seleccionar solo este pack (reemplaza cualquier selección anterior)
+                return new Set([packId]);
             }
-            return next;
         });
     }, []);
 
@@ -315,8 +335,8 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
     const getElectricDiscountPrice = useCallback((sys: any, loc: Location): number => {
         if (!sys) return 0;
         const selectedPackName = packs.find((p: any) => selectedPacks.has(p.id))?.name || '';
-        const isUltimate = selectedPackName.includes('Ultimate');
-        if (isUltimate) {
+        const isUltimateOrAdventure = selectedPackName.includes('Ultimate') || selectedPackName.includes('Adventure');
+        if (isUltimateOrAdventure) {
             if (loc === 'peninsula') {
                 return sys.discount_price != null ? Number(sys.discount_price) : (sys.price ?? 0);
             } else {
@@ -447,6 +467,8 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                 total: calculations.total,
                 discount_percentage: discountPercent / 100,
                 discount_amount: discountFixed,
+                discount_percentage_label: discountPercentLabel,
+                discount_amount_label: discountFixedLabel,
                 location: location,
                 comunidad_autonoma: location === 'peninsula' ? comunidadAutonoma : null,
                 iva_rate: calculations.ivaRate,
@@ -724,7 +746,9 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
             subtotal: calculations.pvpTotal,
             discountPercentage: discountPercent,
             discountPercentAmount: calculations.discountPercentAmount,
+            discountPercentLabel: discountPercentLabel,
             discountFixed: discountFixed,
+            discountFixedLabel: discountFixedLabel,
             ivaRate: calculations.ivaRate,
             ivaAmount: calculations.ivaAmount,
             total: calculations.total,
@@ -951,13 +975,20 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                         const epComponents = extraPackComponents
                                             .filter((c: any) => c.pack_extra_id === ep.id)
                                             .sort((a: any, b: any) => a.order_index - b.order_index);
+
+                                        // Space Pack solo disponible con modelos Space
+                                        const isSpacePack = ep.name?.toLowerCase().includes('space');
+                                        const selectedModelObj = models.find(m => m.id === selectedModel);
+                                        const isSpaceModel = selectedModelObj?.name?.toLowerCase().includes('space') || false;
+                                        const isDisabled = isSpacePack && !isSpaceModel;
+
                                         return (
-                                            <div key={ep.id} className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-3 shadow-sm">
+                                            <div key={ep.id} className={`bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-3 shadow-sm ${isDisabled ? 'opacity-50' : ''}`}>
                                                 <SectionHeader
-                                                    title={ep.name}
+                                                    title={isDisabled ? `${ep.name} (solo modelos Space)` : ep.name}
                                                     price={getPrice(ep, location)}
                                                     checked={selectedExtraPacks.has(ep.id)}
-                                                    onCheck={() => {
+                                                    onCheck={isDisabled ? undefined : () => {
                                                         setSelectedExtraPacks(prev => {
                                                             const next = new Set(prev);
                                                             next.has(ep.id) ? next.delete(ep.id) : next.add(ep.id);
@@ -1172,18 +1203,27 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                     <div className="px-3 py-1.5 bg-[#F8F9FA] border-b border-[#E5E7EB]">
                                         <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">Descuento (%)</p>
                                     </div>
-                                    <div className="flex items-center px-3 py-2">
+                                    <div className="px-3 py-2 space-y-2">
                                         <input
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            step="0.5"
-                                            value={discountPercent || ''}
-                                            onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                                            placeholder="0"
-                                            className="flex-1 text-sm font-bold text-right bg-transparent border-none outline-none tabular-nums placeholder:text-[#CBD5E1]"
+                                            type="text"
+                                            value={discountPercentLabel}
+                                            onChange={(e) => setDiscountPercentLabel(e.target.value)}
+                                            placeholder="Ej: Descuento feria"
+                                            className="w-full text-xs bg-transparent border-none outline-none placeholder:text-[#CBD5E1] text-[#6B7280]"
                                         />
-                                        <span className="text-sm font-bold text-[#E8734A] ml-1">%</span>
+                                        <div className="flex items-center">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="0.5"
+                                                value={discountPercent || ''}
+                                                onChange={(e) => setDiscountPercent(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                                                placeholder="0"
+                                                className="flex-1 text-sm font-bold text-right bg-transparent border-none outline-none tabular-nums placeholder:text-[#CBD5E1]"
+                                            />
+                                            <span className="text-sm font-bold text-[#E8734A] ml-1">%</span>
+                                        </div>
                                     </div>
                                     {discountPercent > 0 && (
                                         <div className="px-3 pb-2">
@@ -1197,17 +1237,26 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                     <div className="px-3 py-1.5 bg-[#F8F9FA] border-b border-[#E5E7EB]">
                                         <p className="text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">Descuento (€)</p>
                                     </div>
-                                    <div className="flex items-center px-3 py-2">
+                                    <div className="px-3 py-2 space-y-2">
                                         <input
-                                            type="number"
-                                            min="0"
-                                            step="50"
-                                            value={discountFixed || ''}
-                                            onChange={(e) => setDiscountFixed(Math.max(0, parseFloat(e.target.value) || 0))}
-                                            placeholder="0"
-                                            className="flex-1 text-sm font-bold text-right bg-transparent border-none outline-none tabular-nums placeholder:text-[#CBD5E1]"
+                                            type="text"
+                                            value={discountFixedLabel}
+                                            onChange={(e) => setDiscountFixedLabel(e.target.value)}
+                                            placeholder="Ej: Descuento feria"
+                                            className="w-full text-xs bg-transparent border-none outline-none placeholder:text-[#CBD5E1] text-[#6B7280]"
                                         />
-                                        <span className="text-sm font-bold text-[#E8734A] ml-1">€</span>
+                                        <div className="flex items-center">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="50"
+                                                value={discountFixed || ''}
+                                                onChange={(e) => setDiscountFixed(Math.max(0, parseFloat(e.target.value) || 0))}
+                                                placeholder="0"
+                                                className="flex-1 text-sm font-bold text-right bg-transparent border-none outline-none tabular-nums placeholder:text-[#CBD5E1]"
+                                            />
+                                            <span className="text-sm font-bold text-[#E8734A] ml-1">€</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1355,13 +1404,13 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                                 {/* Discount lines */}
                                 {discountPercent > 0 && (
                                     <div className="flex justify-between text-sm text-emerald-600 italic">
-                                        <span>Dto. {discountPercent}%</span>
+                                        <span>{discountPercentLabel ? `${discountPercentLabel} (${discountPercent}%)` : `Dto. ${discountPercent}%`}</span>
                                         <span className="font-bold tabular-nums">-{fmtDecimal(calculations.discountPercentAmount)} €</span>
                                     </div>
                                 )}
                                 {discountFixed > 0 && (
                                     <div className="flex justify-between text-sm text-emerald-600 italic">
-                                        <span>Dto. fijo</span>
+                                        <span>{discountFixedLabel || 'Dto. fijo'}</span>
                                         <span className="font-bold tabular-nums">-{fmtDecimal(discountFixed)} €</span>
                                     </div>
                                 )}

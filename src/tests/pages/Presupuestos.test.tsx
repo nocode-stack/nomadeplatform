@@ -119,6 +119,7 @@ vi.mock("lucide-react", () => ({
     Download: () => <div />,
     Send: () => <div />,
     Pencil: () => <div />,
+    UserX: () => <div />,
 }));
 
 // Mock BudgetPrintView

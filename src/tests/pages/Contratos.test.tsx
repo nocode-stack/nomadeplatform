@@ -69,6 +69,7 @@ vi.mock("lucide-react", () => ({
     FileCheck: () => <div />,
     FileText: () => <div />,
     Loader2: () => <div />,
+    UserX: () => <div />,
 }));
 
 // Mock useAllContracts to avoid needing real QueryClient data fetching

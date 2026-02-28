@@ -21,21 +21,15 @@ interface Project {
   clients?: {
     id?: string;
     name?: string;
+    surname?: string;
     email?: string;
     dni?: string;
     phone?: string;
     address?: string;
-  };
-  vehicles?: {
-    id?: string;
-    vehicle_code?: string;
-    numero_bastidor?: string;
-    matricula?: string;
-    engine?: string;
-    transmission_type?: string;
-    plazas?: string;
-    exterior_color?: string;
-    dimensions?: string;
+    address_number?: string;
+    city?: string;
+    autonomous_community?: string;
+    country?: string;
   };
   vehicles?: {
     id?: string;
@@ -67,9 +61,11 @@ interface ContractData {
   contract_type: string;
   contract_status: string;
   client_full_name: string;
+  client_surname: string;
   client_dni: string;
   client_email: string;
   client_phone: string;
+  client_address: string;
   billing_entity_name: string;
   billing_entity_nif: string;
   billing_address: string;
@@ -94,6 +90,8 @@ interface ContractData {
   payment_second_amount?: number;
   payment_third_percentage?: number;
   payment_third_amount?: number;
+  // Campo interno para saber el tipo de facturación
+  [key: string]: any;
 }
 
 const ContractForm: React.FC<ContractFormProps> = ({
@@ -117,9 +115,11 @@ const ContractForm: React.FC<ContractFormProps> = ({
     contract_type: contractType,
     contract_status: 'draft',
     client_full_name: '',
+    client_surname: '',
     client_dni: '',
     client_email: '',
     client_phone: '',
+    client_address: '',
     billing_entity_name: '',
     billing_entity_nif: '',
     billing_address: '',
@@ -269,7 +269,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
         billing: billingResult.data
       };
     },
-    enabled: !!project.clients?.id
+    enabled: !!project.clients?.id,
+    staleTime: 0,
   });
 
   // Real-time subscription para mantener el formulario actualizado
@@ -329,13 +330,40 @@ const ContractForm: React.FC<ContractFormProps> = ({
     };
   }, [project.id, contractType, queryClient, project.clients?.id]);
 
+  // Helper para construir dirección concatenada
+  const buildConcatenatedAddress = (parts: { address?: string; address_number?: string; city?: string; autonomous_community?: string; country?: string }) => {
+    const pieces = [
+      [parts.address, parts.address_number].filter(Boolean).join(' '),
+      parts.city,
+      parts.autonomous_community,
+      parts.country
+    ].filter(Boolean);
+    return pieces.join(', ');
+  };
+
+  // Extraer tipo de facturación de los datos de billing
+  const billingType = (clientBillingData?.billing as any)?.type === 'company' ? 'company' : 'personal';
+
   // Inicializar formulario con datos del contrato existente o datos base
   useEffect(() => {
     if (existingContract && !formData.id) {
       // Cargar contrato existente, rellenando campos vacíos desde contratos hermanos
       const sibling = siblingContract as any;
+      const ec = existingContract as any;
+      const isCompany = billingType === 'company';
+      const b = clientBillingData?.billing as any;
+      const cl = project.clients;
+
       setFormData({
-        ...existingContract,
+        ...ec,
+        // Para personal/other_person, datos del contrato vienen de billing
+        client_surname: ec.client_surname || (isCompany ? (cl?.surname || '') : (b?.surname || '')),
+        // Campos individuales de dirección
+        client_country: ec.client_country || (isCompany ? (cl?.country || '') : (b?.country || '')),
+        client_autonomous_community: ec.client_autonomous_community || (isCompany ? (cl?.autonomous_community || '') : (b?.autonomous_community || '')),
+        client_city: ec.client_city || (isCompany ? (cl?.city || '') : (b?.city || '')),
+        client_address_street: ec.client_address_street || (isCompany ? (cl?.address || '') : (b?.address_street || b?.billing_address || '')),
+        client_address_number: ec.client_address_number || (isCompany ? (cl?.address_number || '') : (b?.office_unit || '')),
         payment_reserve: existingContract.payment_reserve || 0,
         vehicle_engine: existingContract.vehicle_engine || sibling?.vehicle_engine || '',
         delivery_months: existingContract.delivery_months || 0,
@@ -349,6 +377,12 @@ const ContractForm: React.FC<ContractFormProps> = ({
         billing_entity_name: existingContract.billing_entity_name || sibling?.billing_entity_name || '',
         billing_entity_nif: existingContract.billing_entity_nif || sibling?.billing_entity_nif || '',
         billing_address: existingContract.billing_address || sibling?.billing_address || '',
+        // Campos individuales de dirección de facturación (empresa)
+        billing_country: ec.billing_country || (billingType === 'company' ? ((clientBillingData?.billing as any)?.country || '') : ''),
+        billing_autonomous_community: ec.billing_autonomous_community || (billingType === 'company' ? ((clientBillingData?.billing as any)?.autonomous_community || '') : ''),
+        billing_city: ec.billing_city || (billingType === 'company' ? ((clientBillingData?.billing as any)?.city || '') : ''),
+        billing_address_street: ec.billing_address_street || (billingType === 'company' ? ((clientBillingData?.billing as any)?.address_street || '') : ''),
+        billing_office_unit: ec.billing_office_unit || (billingType === 'company' ? ((clientBillingData?.billing as any)?.office_unit || '') : ''),
         vehicle_vin: existingContract.vehicle_vin || sibling?.vehicle_vin || '',
         vehicle_plate: existingContract.vehicle_plate || sibling?.vehicle_plate || '',
         vehicle_model: existingContract.vehicle_model || sibling?.vehicle_model || '',
@@ -357,22 +391,48 @@ const ContractForm: React.FC<ContractFormProps> = ({
     } else if (!isLoading && !existingContract && clientBillingData && !formData.id) {
       // Inicializar con datos del cliente y facturación si no hay contrato
       const { client, billing } = clientBillingData;
-
-      // Pre-fill shared fields from sibling contract (other contract type for same project)
       const sibling = siblingContract as any;
+      const b = billing as any;
+
+      // Para personal/other_person, los datos del contrato vienen de billing
+      // Para company, los datos del cliente vienen de clients y los de empresa de billing
+      const isCompany = billingType === 'company';
+      const srcName = isCompany ? (client?.name || '') : (billing?.name || client?.name || '');
+      const srcSurname = isCompany ? (client?.surname || project.clients?.surname || '') : (b?.surname || '');
+      const srcDni = isCompany ? (client?.dni || '') : (billing?.nif || client?.dni || '');
+      const srcEmail = isCompany ? (client?.email || '') : (billing?.email || client?.email || '');
+      const srcPhone = isCompany ? (client?.phone || '') : (billing?.phone || client?.phone || '');
+      const srcCountry = isCompany ? (client?.country || project.clients?.country || '') : (b?.country || '');
+      const srcAC = isCompany ? (client?.autonomous_community || project.clients?.autonomous_community || '') : (b?.autonomous_community || '');
+      const srcCity = isCompany ? (client?.city || project.clients?.city || '') : (b?.city || '');
+      const srcStreet = isCompany ? (client?.address || project.clients?.address || '') : (b?.address_street || billing?.billing_address || '');
+      const srcNumber = isCompany ? (client?.address_number || project.clients?.address_number || '') : (b?.office_unit || '');
 
       setFormData(prev => ({
         ...prev,
         project_id: project.id,
         client_id: client?.id || '',
         contract_type: contractType,
-        client_full_name: sibling?.client_full_name || client?.name || '',
-        client_dni: sibling?.client_dni || client?.dni || '',
-        client_email: sibling?.client_email || client?.email || '',
-        client_phone: sibling?.client_phone || client?.phone || '',
-        billing_entity_name: sibling?.billing_entity_name || (billing?.name !== client?.name ? (billing?.name || '') : ''),
+        client_full_name: sibling?.client_full_name || srcName,
+        client_surname: sibling?.client_surname || srcSurname,
+        client_dni: sibling?.client_dni || srcDni,
+        client_email: sibling?.client_email || srcEmail,
+        client_phone: sibling?.client_phone || srcPhone,
+        // Campos individuales de dirección
+        client_country: sibling?.client_country || srcCountry,
+        client_autonomous_community: sibling?.client_autonomous_community || srcAC,
+        client_city: sibling?.client_city || srcCity,
+        client_address_street: sibling?.client_address_street || srcStreet,
+        client_address_number: sibling?.client_address_number || srcNumber,
+        billing_entity_name: sibling?.billing_entity_name || (isCompany ? (billing?.name || '') : ''),
         billing_entity_nif: sibling?.billing_entity_nif || billing?.nif || '',
-        billing_address: sibling?.billing_address || billing?.billing_address || client?.address || '',
+        billing_address: sibling?.billing_address || (isCompany ? (b?.billing_address || '') : (billing?.billing_address || client?.address || '')),
+        // Campos individuales de dirección de facturación (empresa)
+        billing_country: sibling?.billing_country || (isCompany ? (b?.country || '') : ''),
+        billing_autonomous_community: sibling?.billing_autonomous_community || (isCompany ? (b?.autonomous_community || '') : ''),
+        billing_city: sibling?.billing_city || (isCompany ? (b?.city || '') : ''),
+        billing_address_street: sibling?.billing_address_street || (isCompany ? (b?.address_street || '') : ''),
+        billing_office_unit: sibling?.billing_office_unit || (isCompany ? (b?.office_unit || '') : ''),
         iban: sibling?.iban || 'ES80 0081 7011 1900 0384 8192',
         vehicle_vin: sibling?.vehicle_vin || prev.vehicle_vin,
         vehicle_plate: sibling?.vehicle_plate || prev.vehicle_plate,
@@ -386,16 +446,33 @@ const ContractForm: React.FC<ContractFormProps> = ({
   useEffect(() => {
     if (existingContract && clientBillingData && formData.id) {
       const { client, billing } = clientBillingData;
+      const b = billing as any;
+
+      // Para personal/other_person, datos del contrato vienen de billing
+      const isCompany = billingType === 'company';
+
       setFormData(prev => ({
         ...prev,
-        // Actualizar solo campos de cliente y facturación con datos frescos
-        client_full_name: client?.name || prev.client_full_name,
-        client_dni: client?.dni || prev.client_dni,
-        client_email: client?.email || prev.client_email,
-        client_phone: client?.phone || prev.client_phone,
-        billing_entity_name: billing?.name !== client?.name ? (billing?.name || prev.billing_entity_name) : prev.billing_entity_name,
+        client_full_name: isCompany ? (client?.name || prev.client_full_name) : (billing?.name || prev.client_full_name),
+        client_surname: isCompany ? (client?.surname || project.clients?.surname || prev.client_surname) : (b?.surname || prev.client_surname),
+        client_dni: isCompany ? (client?.dni || prev.client_dni) : (billing?.nif || prev.client_dni),
+        client_email: isCompany ? (client?.email || prev.client_email) : (billing?.email || prev.client_email),
+        client_phone: isCompany ? (client?.phone || prev.client_phone) : (billing?.phone || prev.client_phone),
+        // Campos individuales de dirección
+        client_country: isCompany ? (client?.country || project.clients?.country || prev.client_country) : (b?.country || prev.client_country),
+        client_autonomous_community: isCompany ? (client?.autonomous_community || project.clients?.autonomous_community || prev.client_autonomous_community) : (b?.autonomous_community || prev.client_autonomous_community),
+        client_city: isCompany ? (client?.city || project.clients?.city || prev.client_city) : (b?.city || prev.client_city),
+        client_address_street: isCompany ? (client?.address || project.clients?.address || prev.client_address_street) : (b?.address_street || billing?.billing_address || prev.client_address_street),
+        client_address_number: isCompany ? (client?.address_number || project.clients?.address_number || prev.client_address_number) : (b?.office_unit || prev.client_address_number),
+        billing_entity_name: isCompany ? (billing?.name || prev.billing_entity_name) : prev.billing_entity_name,
         billing_entity_nif: billing?.nif || prev.billing_entity_nif,
-        billing_address: billing?.billing_address || client?.address || prev.billing_address
+        billing_address: isCompany ? (b?.billing_address || prev.billing_address) : (billing?.billing_address || client?.address || prev.billing_address),
+        // Campos individuales de dirección de facturación (empresa)
+        billing_country: isCompany ? (b?.country || prev.billing_country) : prev.billing_country,
+        billing_autonomous_community: isCompany ? (b?.autonomous_community || prev.billing_autonomous_community) : prev.billing_autonomous_community,
+        billing_city: isCompany ? (b?.city || prev.billing_city) : prev.billing_city,
+        billing_address_street: isCompany ? (b?.address_street || prev.billing_address_street) : prev.billing_address_street,
+        billing_office_unit: isCompany ? (b?.office_unit || prev.billing_office_unit) : prev.billing_office_unit,
       }));
     }
   }, [clientBillingData, existingContract, formData.id]);
@@ -609,25 +686,35 @@ const ContractForm: React.FC<ContractFormProps> = ({
 
   // Calcular progreso de completitud basado en TODOS los campos
   const calculateProgress = () => {
-    // Definir TODOS los campos posibles según el tipo de contrato
-    let allFields: (keyof ContractData)[] = [
-      // Información del Cliente
-      'client_full_name',
-      'client_dni',
-      'client_email',
-      'client_phone',
-      // Información de Facturación
-      'billing_entity_name',
-      'billing_entity_nif',
-      'billing_address',
-      // Información del Vehículo
-      'vehicle_model',
-      'vehicle_engine',
-      'vehicle_vin',
-      'vehicle_plate'
-    ];
+    // Campos base según tipo de facturación
+    let allFields: string[] = [];
 
-    // Agregar campos específicos según el tipo de contrato
+    if (billingType === 'company') {
+      // Empresa: sin DNI en cliente, pero con datos empresa
+      allFields = [
+        'client_full_name', 'client_surname', 'client_email', 'client_phone',
+        'client_country', 'client_autonomous_community', 'client_city', 'client_address_street', 'client_address_number',
+        'billing_entity_name', 'billing_entity_nif',
+        'billing_country', 'billing_autonomous_community', 'billing_city', 'billing_address_street', 'billing_office_unit',
+        'iban',
+        'vehicle_model', 'vehicle_engine',
+      ];
+    } else {
+      // Personal / Otra persona: con DNI, sin datos empresa
+      allFields = [
+        'client_full_name', 'client_surname', 'client_dni', 'client_email', 'client_phone',
+        'client_country', 'client_autonomous_community', 'client_city', 'client_address_street', 'client_address_number',
+        'iban',
+        'vehicle_model', 'vehicle_engine',
+      ];
+    }
+
+    // Bastidor y matrícula solo para contratos que no son de reserva
+    if (contractType !== 'reservation') {
+      allFields.push('vehicle_vin', 'vehicle_plate');
+    }
+
+    // Campos específicos según tipo de contrato
     if (contractType === 'reservation') {
       allFields.push('payment_reserve');
     } else if (contractType === 'purchase_agreement') {
@@ -864,33 +951,48 @@ const ContractForm: React.FC<ContractFormProps> = ({
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Información del Cliente */}
+        {/* Información del Cliente (columna izquierda) */}
         <div className="space-y-4">
           <h4 className="font-semibold text-gray-900">Información del Cliente</h4>
 
           <div>
-            <Label htmlFor="client_full_name">Nombre Completo</Label>
+            <Label htmlFor="client_full_name">Nombre</Label>
             <Input
               id="client_full_name"
               value={formData.client_full_name || ''}
               onChange={(e) => handleInputChange('client_full_name', e.target.value)}
-              readOnly={isFieldReadOnly('client_full_name')}
+              readOnly={true}
               placeholder="Pendiente de rellenar"
-              className={getFieldStyle('client_full_name')}
+              className={`bg-muted ${isFieldEmpty('client_full_name') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
             />
           </div>
 
           <div>
-            <Label htmlFor="client_dni">DNI</Label>
+            <Label htmlFor="client_surname">Apellidos</Label>
             <Input
-              id="client_dni"
-              value={formData.client_dni || ''}
-              onChange={(e) => handleInputChange('client_dni', e.target.value)}
-              readOnly={isFieldReadOnly('client_dni')}
+              id="client_surname"
+              value={formData.client_surname || ''}
+              onChange={(e) => handleInputChange('client_surname', e.target.value)}
+              readOnly={true}
               placeholder="Pendiente de rellenar"
-              className={getFieldStyle('client_dni')}
+              className={`bg-muted ${isFieldEmpty('client_surname') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
             />
           </div>
+
+          {/* DNI solo para personal y other_person */}
+          {billingType !== 'company' && (
+            <div>
+              <Label htmlFor="client_dni">DNI</Label>
+              <Input
+                id="client_dni"
+                value={formData.client_dni || ''}
+                onChange={(e) => handleInputChange('client_dni', e.target.value)}
+                readOnly={true}
+                placeholder="Pendiente de rellenar"
+                className={`bg-muted ${isFieldEmpty('client_dni') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+              />
+            </div>
+          )}
 
           <div>
             <Label htmlFor="client_email">Email</Label>
@@ -899,9 +1001,9 @@ const ContractForm: React.FC<ContractFormProps> = ({
               type="email"
               value={formData.client_email || ''}
               onChange={(e) => handleInputChange('client_email', e.target.value)}
-              readOnly={isFieldReadOnly('client_email')}
+              readOnly={true}
               placeholder="Pendiente de rellenar"
-              className={getFieldStyle('client_email')}
+              className={`bg-muted ${isFieldEmpty('client_email') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
             />
           </div>
 
@@ -911,71 +1013,180 @@ const ContractForm: React.FC<ContractFormProps> = ({
               id="client_phone"
               value={formData.client_phone || ''}
               onChange={(e) => handleInputChange('client_phone', e.target.value)}
-              readOnly={isFieldReadOnly('client_phone')}
+              readOnly={true}
               placeholder="Pendiente de rellenar"
-              className={getFieldStyle('client_phone')}
+              className={`bg-muted ${isFieldEmpty('client_phone') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="client_country">País</Label>
+            <Input
+              id="client_country"
+              value={formData.client_country || ''}
+              onChange={(e) => handleInputChange('client_country', e.target.value)}
+              readOnly={true}
+              placeholder="Pendiente de rellenar"
+              className={`bg-muted ${isFieldEmpty('client_country') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="client_autonomous_community">Comunidad Autónoma</Label>
+            <Input
+              id="client_autonomous_community"
+              value={formData.client_autonomous_community || ''}
+              onChange={(e) => handleInputChange('client_autonomous_community', e.target.value)}
+              readOnly={true}
+              placeholder="Pendiente de rellenar"
+              className={`bg-muted ${isFieldEmpty('client_autonomous_community') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="client_city">Ciudad</Label>
+            <Input
+              id="client_city"
+              value={formData.client_city || ''}
+              onChange={(e) => handleInputChange('client_city', e.target.value)}
+              readOnly={true}
+              placeholder="Pendiente de rellenar"
+              className={`bg-muted ${isFieldEmpty('client_city') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="client_address_street">Dirección</Label>
+            <Input
+              id="client_address_street"
+              value={formData.client_address_street || ''}
+              onChange={(e) => handleInputChange('client_address_street', e.target.value)}
+              readOnly={true}
+              placeholder="Pendiente de rellenar"
+              className={`bg-muted ${isFieldEmpty('client_address_street') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="client_address_number">Número</Label>
+            <Input
+              id="client_address_number"
+              value={formData.client_address_number || ''}
+              onChange={(e) => handleInputChange('client_address_number', e.target.value)}
+              readOnly={true}
+              placeholder="Pendiente de rellenar"
+              className={`bg-muted ${isFieldEmpty('client_address_number') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
             />
           </div>
         </div>
 
-        {/* Información de Facturación */}
+        {/* Información de Facturación + Vehículo (columna derecha) */}
         <div className="space-y-4">
           <h4 className="font-semibold text-gray-900">Información de Facturación</h4>
 
-          <div>
-            <Label htmlFor="billing_entity_name">Entidad de Facturación</Label>
-            <Input
-              id="billing_entity_name"
-              value={formData.billing_entity_name || ''}
-              onChange={(e) => handleInputChange('billing_entity_name', e.target.value)}
-              readOnly={isFieldReadOnly('billing_entity_name')}
-              placeholder="Pendiente de rellenar"
-              className={getFieldStyle('billing_entity_name')}
-            />
-          </div>
+          {/* Campos de empresa solo si billingType === 'company' */}
+          {billingType === 'company' && (
+            <>
+              <div>
+                <Label htmlFor="billing_entity_name">Nombre de la Empresa</Label>
+                <Input
+                  id="billing_entity_name"
+                  value={formData.billing_entity_name || ''}
+                  onChange={(e) => handleInputChange('billing_entity_name', e.target.value)}
+                  readOnly={true}
+                  placeholder="Pendiente de rellenar"
+                  className={`bg-muted ${isFieldEmpty('billing_entity_name') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+                />
+              </div>
 
-          <div>
-            <Label htmlFor="billing_entity_nif">NIF Entidad</Label>
-            <Input
-              id="billing_entity_nif"
-              value={formData.billing_entity_nif || ''}
-              onChange={(e) => handleInputChange('billing_entity_nif', e.target.value)}
-              readOnly={isFieldReadOnly('billing_entity_nif')}
-              placeholder="Pendiente de rellenar"
-              className={getFieldStyle('billing_entity_nif')}
-            />
-          </div>
+              <div>
+                <Label htmlFor="billing_entity_nif">CIF</Label>
+                <Input
+                  id="billing_entity_nif"
+                  value={formData.billing_entity_nif || ''}
+                  onChange={(e) => handleInputChange('billing_entity_nif', e.target.value)}
+                  readOnly={true}
+                  placeholder="Pendiente de rellenar"
+                  className={`bg-muted ${isFieldEmpty('billing_entity_nif') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+                />
+              </div>
 
-          <div>
-            <Label htmlFor="billing_address">Dirección de Facturación</Label>
-            <Textarea
-              id="billing_address"
-              value={formData.billing_address || ''}
-              onChange={(e) => handleInputChange('billing_address', e.target.value)}
-              readOnly={isFieldReadOnly('billing_address')}
-              placeholder="Pendiente de rellenar"
-              className={getFieldStyle('billing_address')}
-            />
-          </div>
+              <div>
+                <Label htmlFor="billing_country">País</Label>
+                <Input
+                  id="billing_country"
+                  value={formData.billing_country || ''}
+                  onChange={(e) => handleInputChange('billing_country', e.target.value)}
+                  readOnly={true}
+                  placeholder="Pendiente de rellenar"
+                  className={`bg-muted ${isFieldEmpty('billing_country') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="billing_autonomous_community">Comunidad Autónoma</Label>
+                <Input
+                  id="billing_autonomous_community"
+                  value={formData.billing_autonomous_community || ''}
+                  onChange={(e) => handleInputChange('billing_autonomous_community', e.target.value)}
+                  readOnly={true}
+                  placeholder="Pendiente de rellenar"
+                  className={`bg-muted ${isFieldEmpty('billing_autonomous_community') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="billing_city">Ciudad</Label>
+                <Input
+                  id="billing_city"
+                  value={formData.billing_city || ''}
+                  onChange={(e) => handleInputChange('billing_city', e.target.value)}
+                  readOnly={true}
+                  placeholder="Pendiente de rellenar"
+                  className={`bg-muted ${isFieldEmpty('billing_city') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="billing_address_street">Dirección</Label>
+                <Input
+                  id="billing_address_street"
+                  value={formData.billing_address_street || ''}
+                  onChange={(e) => handleInputChange('billing_address_street', e.target.value)}
+                  readOnly={true}
+                  placeholder="Pendiente de rellenar"
+                  className={`bg-muted ${isFieldEmpty('billing_address_street') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="billing_office_unit">Número</Label>
+                <Input
+                  id="billing_office_unit"
+                  value={formData.billing_office_unit || ''}
+                  onChange={(e) => handleInputChange('billing_office_unit', e.target.value)}
+                  readOnly={true}
+                  placeholder="Pendiente de rellenar"
+                  className={`bg-muted ${isFieldEmpty('billing_office_unit') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <Label htmlFor="iban">IBAN</Label>
             <Input
               id="iban"
               value={formData.iban || 'ES80 0081 7011 1900 0384 8192'}
-              onChange={(e) => handleInputChange('iban', e.target.value)}
-              readOnly={isFieldReadOnly('iban')}
-              className={isFieldReadOnly('iban') ? "bg-muted" : ""}
+              readOnly={true}
+              className="bg-muted"
             />
           </div>
-        </div>
 
-        {/* Información del Vehículo */}
-        <div className="space-y-4">
-          <h4 className="font-semibold text-gray-900">Información del Vehículo</h4>
+          {/* Información del Vehículo */}
+          <h4 className="font-semibold text-gray-900 pt-2">Información del Vehículo</h4>
 
-          {/* Mostrar alerta de discrepancias si las hay */}
-          {vehicleSpecsComparison.hasDiscrepancies && (
+          {contractType === 'purchase_agreement' && vehicleSpecsComparison.hasDiscrepancies && (
             <VehicleSpecsAlert
               discrepancies={vehicleSpecsComparison.discrepancies}
               className="mb-4"
@@ -988,9 +1199,9 @@ const ContractForm: React.FC<ContractFormProps> = ({
               id="vehicle_model"
               value={formData.vehicle_model || ''}
               onChange={(e) => handleInputChange('vehicle_model', e.target.value)}
-              readOnly={isFieldReadOnly('vehicle_model')}
+              readOnly={true}
               placeholder="Pendiente — se rellenará desde el presupuesto"
-              className={getFieldStyle('vehicle_model')}
+              className={`bg-muted ${isFieldEmpty('vehicle_model') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
             />
           </div>
 
@@ -1000,217 +1211,221 @@ const ContractForm: React.FC<ContractFormProps> = ({
               id="vehicle_engine"
               value={formData.vehicle_engine || ''}
               onChange={(e) => handleInputChange('vehicle_engine', e.target.value)}
-              readOnly={isFieldReadOnly('vehicle_engine')}
+              readOnly={true}
               placeholder="Pendiente — se rellenará desde el presupuesto"
-              className={getFieldStyle('vehicle_engine')}
+              className={`bg-muted ${isFieldEmpty('vehicle_engine') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
             />
           </div>
 
-          <div>
-            <Label htmlFor="vehicle_vin">Número de Bastidor</Label>
-            <Input
-              id="vehicle_vin"
-              value={formData.vehicle_vin || ''}
-              onChange={(e) => handleInputChange('vehicle_vin', e.target.value)}
-              readOnly={isFieldReadOnly('vehicle_vin')}
-              placeholder="Pendiente de rellenar"
-              className={getFieldStyle('vehicle_vin')}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="vehicle_plate">Matrícula</Label>
-            <Input
-              id="vehicle_plate"
-              value={formData.vehicle_plate || ''}
-              onChange={(e) => handleInputChange('vehicle_plate', e.target.value)}
-              readOnly={isFieldReadOnly('vehicle_plate')}
-              placeholder="Pendiente de rellenar"
-              className={getFieldStyle('vehicle_plate')}
-            />
-          </div>
-        </div>
-
-        {/* Información Específica del Contrato */}
-        <div className="space-y-4">
-          <h4 className="font-semibold text-gray-900">Información del Contrato</h4>
-
-          {contractType === 'reservation' && (
-            <div>
-              <Label htmlFor="payment_reserve">Importe de Reserva</Label>
-              <div className="relative">
-                <NumericInput
-                  id="payment_reserve"
-                  value={formData.payment_reserve || 0}
-                  onChange={(displayValue, numericValue) => handleNumericInputChange('payment_reserve', displayValue)}
-                  readOnly={isFieldReadOnly('payment_reserve')}
-                  className={`pr-8 ${getFieldStyle('payment_reserve')}`}
-                  allowDecimals={true}
-                  min={0}
-                />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-              </div>
-            </div>
-          )}
-
-          {(contractType === 'purchase_agreement' || contractType === 'sale_contract') && (
-            <div>
-              <Label htmlFor="total_price">Precio Total (del Presupuesto Primario)</Label>
-              <div className="relative">
-                <Input
-                  id="total_price"
-                  type="number"
-                  step="0.01"
-                  value={formatInputValue(formData.total_price)}
-                  onChange={(e) => handleNumericInputChange('total_price', e.target.value)}
-                  readOnly={isFieldReadOnly('total_price')}
-                  className={`pr-8 ${isFieldReadOnly('total_price') ? "bg-muted" : ""}`}
-                />
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-              </div>
-            </div>
-          )}
-
-          {contractType === 'purchase_agreement' && (
+          {contractType !== 'reservation' && (
             <>
               <div>
-                <Label htmlFor="delivery_months">Entrega del Vehículo (meses)</Label>
-                <NumericInput
-                  id="delivery_months"
-                  value={formData.delivery_months || 0}
-                  onChange={(displayValue, numericValue) => handleNumericInputChange('delivery_months', displayValue)}
-                  readOnly={isFieldReadOnly('delivery_months')}
-                  className={getFieldStyle('delivery_months')}
-                  allowDecimals={false}
-                  min={0}
+                <Label htmlFor="vehicle_vin">Número de Bastidor</Label>
+                <Input
+                  id="vehicle_vin"
+                  value={formData.vehicle_vin || ''}
+                  onChange={(e) => handleInputChange('vehicle_vin', e.target.value)}
+                  readOnly={isFieldReadOnly('vehicle_vin')}
+                  placeholder="Pendiente de rellenar"
+                  className={getFieldStyle('vehicle_vin')}
                 />
               </div>
 
-              {/* Sistema de Pagos */}
-              <div className="space-y-4">
-                <h5 className="font-medium text-gray-800">Sistema de Pagos</h5>
+              <div>
+                <Label htmlFor="vehicle_plate">Matrícula</Label>
+                <Input
+                  id="vehicle_plate"
+                  value={formData.vehicle_plate || ''}
+                  onChange={(e) => handleInputChange('vehicle_plate', e.target.value)}
+                  readOnly={isFieldReadOnly('vehicle_plate')}
+                  placeholder="Pendiente de rellenar"
+                  className={getFieldStyle('vehicle_plate')}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
 
-                {/* Reserva */}
+      {/* Información Específica del Contrato */}
+      <div className="space-y-4">
+        <h4 className="font-semibold text-gray-900">Información del Contrato</h4>
+
+        {contractType === 'reservation' && (
+          <div>
+            <Label htmlFor="payment_reserve">Importe de Reserva</Label>
+            <div className="relative">
+              <NumericInput
+                id="payment_reserve"
+                value={formData.payment_reserve || 0}
+                onChange={(displayValue, numericValue) => handleNumericInputChange('payment_reserve', displayValue)}
+                className={`pr-8 ${isFieldEmpty('payment_reserve') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+                allowDecimals={true}
+                min={0}
+              />
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+            </div>
+          </div>
+        )}
+
+        {(contractType === 'purchase_agreement' || contractType === 'sale_contract') && (
+          <div>
+            <Label htmlFor="total_price">Precio Total (del Presupuesto Primario)</Label>
+            <div className="relative">
+              <Input
+                id="total_price"
+                type="number"
+                step="0.01"
+                value={formatInputValue(formData.total_price)}
+                onChange={(e) => handleNumericInputChange('total_price', e.target.value)}
+                readOnly={isFieldReadOnly('total_price')}
+                className={`pr-8 ${isFieldReadOnly('total_price') ? "bg-muted" : ""}`}
+              />
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+            </div>
+          </div>
+        )}
+
+        {contractType === 'purchase_agreement' && (
+          <>
+            <div>
+              <Label htmlFor="delivery_months">Entrega del Vehículo (meses)</Label>
+              <NumericInput
+                id="delivery_months"
+                value={formData.delivery_months || 0}
+                onChange={(displayValue, numericValue) => handleNumericInputChange('delivery_months', displayValue)}
+                readOnly={isFieldReadOnly('delivery_months')}
+                className={getFieldStyle('delivery_months')}
+                allowDecimals={false}
+                min={0}
+              />
+            </div>
+
+            {/* Sistema de Pagos */}
+            <div className="space-y-4">
+              <h5 className="font-medium text-gray-800">Sistema de Pagos</h5>
+
+              {/* Reserva */}
+              <div>
+                <Label>Reserva</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={reservationContract?.payment_reserve || 0}
+                    readOnly
+                    className="bg-muted pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                </div>
+              </div>
+
+              {/* Primer Pago */}
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label>Reserva</Label>
+                  <Label htmlFor="payment_first_percentage">Primer Pago</Label>
+                  <div className="relative">
+                    <NumericInput
+                      id="payment_first_percentage"
+                      value={formData.payment_first_percentage || 0}
+                      onChange={(displayValue, numericValue) => handlePaymentChange('first', 'percentage', displayValue)}
+                      readOnly={isFieldReadOnly('payment_first_percentage')}
+                      className={`pr-8 ${getFieldStyle('payment_first_percentage')}`}
+                      allowDecimals={true}
+                      min={0}
+                      max={100}
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="payment_first_amount">Primer Pago</Label>
+                  <div className="relative">
+                    <NumericInput
+                      id="payment_first_amount"
+                      value={formData.payment_first_amount || 0}
+                      onChange={(displayValue, numericValue) => handlePaymentChange('first', 'amount', displayValue)}
+                      readOnly={isFieldReadOnly('payment_first_amount')}
+                      className={`pr-8 ${getFieldStyle('payment_first_amount')}`}
+                      allowDecimals={true}
+                      min={0}
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Segundo Pago */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="payment_second_percentage">Segundo Pago</Label>
+                  <div className="relative">
+                    <NumericInput
+                      id="payment_second_percentage"
+                      value={formData.payment_second_percentage || 0}
+                      onChange={(displayValue, numericValue) => handlePaymentChange('second', 'percentage', displayValue)}
+                      readOnly={isFieldReadOnly('payment_second_percentage')}
+                      className={`pr-8 ${getFieldStyle('payment_second_percentage')}`}
+                      allowDecimals={true}
+                      min={0}
+                      max={100}
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="payment_second_amount">Segundo Pago</Label>
+                  <div className="relative">
+                    <NumericInput
+                      id="payment_second_amount"
+                      value={formData.payment_second_amount || 0}
+                      onChange={(displayValue, numericValue) => handlePaymentChange('second', 'amount', displayValue)}
+                      readOnly={isFieldReadOnly('payment_second_amount')}
+                      className={`pr-8 ${getFieldStyle('payment_second_amount')}`}
+                      allowDecimals={true}
+                      min={0}
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tercer Pago - Calculado automáticamente */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="payment_third_percentage">Tercer Pago - Automático</Label>
                   <div className="relative">
                     <Input
+                      id="payment_third_percentage"
                       type="number"
                       step="0.01"
-                      value={reservationContract?.payment_reserve || 0}
+                      value={thirdPayment.percentage.toFixed(2)}
+                      readOnly
+                      className="bg-muted pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="payment_third_amount">Tercer Pago - Automático</Label>
+                  <div className="relative">
+                    <Input
+                      id="payment_third_amount"
+                      type="number"
+                      step="0.01"
+                      value={thirdPayment.amount.toFixed(2)}
                       readOnly
                       className="bg-muted pr-8"
                     />
                     <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
                   </div>
                 </div>
-
-                {/* Primer Pago */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="payment_first_percentage">Primer Pago</Label>
-                    <div className="relative">
-                      <NumericInput
-                        id="payment_first_percentage"
-                        value={formData.payment_first_percentage || 0}
-                        onChange={(displayValue, numericValue) => handlePaymentChange('first', 'percentage', displayValue)}
-                        readOnly={isFieldReadOnly('payment_first_percentage')}
-                        className={`pr-8 ${getFieldStyle('payment_first_percentage')}`}
-                        allowDecimals={true}
-                        min={0}
-                        max={100}
-                      />
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="payment_first_amount">Primer Pago</Label>
-                    <div className="relative">
-                      <NumericInput
-                        id="payment_first_amount"
-                        value={formData.payment_first_amount || 0}
-                        onChange={(displayValue, numericValue) => handlePaymentChange('first', 'amount', displayValue)}
-                        readOnly={isFieldReadOnly('payment_first_amount')}
-                        className={`pr-8 ${getFieldStyle('payment_first_amount')}`}
-                        allowDecimals={true}
-                        min={0}
-                      />
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Segundo Pago */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="payment_second_percentage">Segundo Pago</Label>
-                    <div className="relative">
-                      <NumericInput
-                        id="payment_second_percentage"
-                        value={formData.payment_second_percentage || 0}
-                        onChange={(displayValue, numericValue) => handlePaymentChange('second', 'percentage', displayValue)}
-                        readOnly={isFieldReadOnly('payment_second_percentage')}
-                        className={`pr-8 ${getFieldStyle('payment_second_percentage')}`}
-                        allowDecimals={true}
-                        min={0}
-                        max={100}
-                      />
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="payment_second_amount">Segundo Pago</Label>
-                    <div className="relative">
-                      <NumericInput
-                        id="payment_second_amount"
-                        value={formData.payment_second_amount || 0}
-                        onChange={(displayValue, numericValue) => handlePaymentChange('second', 'amount', displayValue)}
-                        readOnly={isFieldReadOnly('payment_second_amount')}
-                        className={`pr-8 ${getFieldStyle('payment_second_amount')}`}
-                        allowDecimals={true}
-                        min={0}
-                      />
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tercer Pago - Calculado automáticamente */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="payment_third_percentage">Tercer Pago - Automático</Label>
-                    <div className="relative">
-                      <Input
-                        id="payment_third_percentage"
-                        type="number"
-                        step="0.01"
-                        value={thirdPayment.percentage.toFixed(2)}
-                        readOnly
-                        className="bg-muted pr-8"
-                      />
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="payment_third_amount">Tercer Pago - Automático</Label>
-                    <div className="relative">
-                      <Input
-                        id="payment_third_amount"
-                        type="number"
-                        step="0.01"
-                        value={thirdPayment.amount.toFixed(2)}
-                        readOnly
-                        className="bg-muted pr-8"
-                      />
-                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                    </div>
-                  </div>
-                </div>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
+
 
     </div>
   );

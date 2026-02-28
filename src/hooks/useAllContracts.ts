@@ -35,7 +35,7 @@ export const useAllContracts = () => {
                 .from('contracts')
                 .select(`
                     *,
-                    client:clients(name),
+                    client:clients(name, is_active),
                     budget:budget(budget_code, is_primary)
                 `)
                 .order('created_at', { ascending: false });

@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Search, Bell, LogOut, Menu } from 'lucide-react';
+import { Bell, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserProfile } from '../../hooks/useUserProfile';
 
@@ -93,15 +93,7 @@ const Header = ({ title, subtitle, isDashboard = false, currentPhase }: HeaderPr
         </div>
 
         <div className="flex items-center space-x-1.5 md:space-x-3 shrink-0">
-          {/* Search */}
-          <div className="relative group hidden 2xl:block">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-white/50 group-focus-within:text-white transition-colors" />
-            <input
-              type="text"
-              placeholder="Buscar..."
-              className="pl-9 pr-3 py-1.5 bg-white/10 backdrop-blur-md text-white placeholder:text-white/40 rounded-xl border border-white/20 focus:border-primary focus:ring-2 focus:ring-primary/5 w-36 2xl:w-48 text-sm transition-all outline-none"
-            />
-          </div>
+
 
           <button className="p-1.5 text-white/70 hover:text-white transition-colors relative">
             <Bell className="h-4 w-4 md:h-5 md:w-5" />

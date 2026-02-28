@@ -149,7 +149,7 @@ const buildPrintDataFromBudget = (
         clientPhone: client?.phone || '',
         modelName: budget.model_option?.name || '–',
         engineName: budget.engine_option?.name || '–',
-        interiorColorName: '–',
+        interiorColorName: (budget as any).interior_color?.name || '–',
         packName: budget.pack?.name || '–',
         lineItems,
         subtotal,
