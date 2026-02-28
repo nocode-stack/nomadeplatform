@@ -215,7 +215,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const resendPayload = {
-      from: `${senderName} via Nomade <onboarding@resend.dev>`,
+      from: `${senderName} via Nomade <presupuestos@nomade-nation.com>`,
       to: [clientEmail],
       reply_to: senderEmail,
       subject: `Presupuesto ${budgetCode} — Nomade Nation`,
