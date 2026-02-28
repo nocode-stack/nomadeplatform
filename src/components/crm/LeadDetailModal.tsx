@@ -685,7 +685,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                                 name="fair"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="text-foreground font-bold">Feria?</FormLabel>
+                                                        <FormLabel className="text-foreground font-bold">Feria</FormLabel>
                                                         <Select onValueChange={field.onChange} value={field.value || ''}>
                                                             <FormControl>
                                                                 <SelectTrigger className="rounded-xl border-border h-12 bg-background">
