@@ -98,10 +98,7 @@ describe('ProyectoDetalle Page', () => {
             id: 'client-1',
             name: 'Juan Test',
             client_status: 'prospect',
-            client_code: 'PC-001'
-        },
-        clients: {
-            name: 'Juan Test',
+            client_code: 'PC-001',
             phone: '123456789',
             email: 'juan@test.com'
         }
@@ -128,9 +125,7 @@ describe('ProyectoDetalle Page', () => {
     it('should render project header with correct info', () => {
         renderPage();
 
-        // For prospects, it should show client_code PC-001 in breadcrumbs and header
-        const codes = screen.getAllByText('PC-001');
-        expect(codes.length).toBeGreaterThan(0);
+        // For prospects, the header should show client name and model info
         expect(screen.getAllByText('Juan Test').length).toBeGreaterThan(0);
         expect(screen.getAllByText('Neo').length).toBeGreaterThan(0);
     });

@@ -57,6 +57,11 @@ vi.mock('../../hooks/useNewBudgets', () => ({
     useNewBudgetItems: () => ({
         data: [],
         isLoading: false
+    }),
+    useSetPrimaryBudget: () => ({
+        mutate: vi.fn(),
+        mutateAsync: vi.fn(),
+        isPending: false
     })
 }));
 
@@ -174,7 +179,8 @@ describe('Componente Presupuestos - Filtros', () => {
 
     it('debería filtrar por "Solo Actuales"', () => {
         renderPresupuestos();
-        const primarySwitch = screen.getByRole('switch');
+        const switches = screen.getAllByRole('switch');
+        const primarySwitch = switches[0];
 
         fireEvent.click(primarySwitch);
 

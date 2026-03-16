@@ -48,7 +48,11 @@ const mockFrom = vi.fn((_table: string) => {
 vi.mock('@/integrations/supabase/client', () => ({
     supabase: {
         from: vi.fn((table: string) => mockFrom(table)),
-        rpc: vi.fn((fnName: string, params: any) => mockRpc(fnName, params))
+        rpc: vi.fn((fnName: string, params: any) => mockRpc(fnName, params)),
+        auth: {
+            getUser: vi.fn(() => Promise.resolve({ data: { user: { email: 'test@test.com' } }, error: null }))
+        },
+        functions: { invoke: vi.fn(() => Promise.resolve({ data: { success: true }, error: null })) }
     }
 }));
 

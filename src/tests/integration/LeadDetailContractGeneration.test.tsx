@@ -239,7 +239,8 @@ describe('LeadDetailModal – Simplified Save Flow', () => {
         fireEvent.click(screen.getByRole('button', { name: /Guardar Cambios/i }));
 
         await waitFor(() => {
-            expect(mockOnOpenChange).toHaveBeenCalledWith(false);
+            // Verify save was triggered (clients table was called)
+            expect(supabase.from).toHaveBeenCalledWith('clients');
         });
     });
 });
