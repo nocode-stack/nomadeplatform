@@ -4,14 +4,14 @@ import { toast } from '@/hooks/use-toast';
 export interface AppError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
   userMessage?: string;
 }
 
 export class ErrorHandler {
   static handle(error: unknown, context?: string): AppError {
     const appError = this.parseError(error);
-    
+
     // Log the error
     logger.error(
       `Error in ${context || 'unknown context'}: ${appError.message}`,
@@ -36,11 +36,12 @@ export class ErrorHandler {
     if (error instanceof Error) {
       // Supabase errors
       if ('code' in error && 'details' in error) {
+        const supaError = error as Error & { code?: string; details?: unknown };
         return {
-          code: (error as any).code || 'SUPABASE_ERROR',
+          code: supaError.code || 'SUPABASE_ERROR',
           message: error.message,
-          details: (error as any).details,
-          userMessage: this.getSupabaseUserMessage((error as any).code)
+          details: supaError.details,
+          userMessage: this.getSupabaseUserMessage(supaError.code || '')
         };
       }
 

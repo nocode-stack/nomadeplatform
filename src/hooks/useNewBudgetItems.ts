@@ -26,11 +26,11 @@ export const useCatalogItems = () => {
   return useQuery({
     queryKey: ['catalog-items'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('additional_items')
         .select('*')
         .eq('is_active', true)
-        .eq('is_general' as any, true)
+        .eq('is_general', true)
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -51,7 +51,7 @@ export const useCreateAdditionalItem = () => {
         .insert({
           name: itemData.name,
           price: itemData.price,
-          is_general: itemData.is_general as any,
+          is_general: itemData.is_general,
           category: itemData.category || 'Personalizado',
           is_active: true
         })

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContractData {
@@ -32,6 +33,7 @@ interface ContractData {
   payment_second_amount?: number;
   payment_third_percentage?: number;
   payment_third_amount?: number;
+  payment_last_manual?: number;
 }
 
 export const useContractVersioning = (projectId: string) => {
@@ -74,7 +76,7 @@ export const useContractVersioning = (projectId: string) => {
       }
 
       // Obtener datos de facturación
-      let billingData: any = null;
+      let billingData: Tables<'billing'> | null = null;
       if (contractData.client_id || activeProjectId) {
         try {
           const { data: bData } = await supabase
@@ -91,11 +93,11 @@ export const useContractVersioning = (projectId: string) => {
       }
 
       // Preparar datos combinados con información correcta del modelo
-      const primaryBudget = projectData?.budgets?.find((b: any) => b.is_primary) || projectData?.budgets?.[0];
+      const primaryBudget = projectData?.budgets?.find((b: { is_primary?: boolean | null }) => b.is_primary) || projectData?.budgets?.[0];
 
       const vehicleModel = contractData.vehicle_model ||
         primaryBudget?.model_option?.name ||
-        (projectData?.vehicles?.[0] as any)?.model ||
+        (projectData?.vehicles?.[0] as { model?: string } | undefined)?.model ||
         'Modelo pendiente';
 
       // Construir el objeto de datos que se enviará al RPC
@@ -124,7 +126,8 @@ export const useContractVersioning = (projectId: string) => {
         payment_second_percentage: contractData.payment_second_percentage || 0,
         payment_second_amount: contractData.payment_second_amount || 0,
         payment_third_percentage: contractData.payment_third_percentage || 0,
-        payment_third_amount: contractData.payment_third_amount || 0
+        payment_third_amount: contractData.payment_third_amount || 0,
+        payment_last_manual: contractData.payment_last_manual || 0
       };
 
       // Validar datos mínimos obligatorios
@@ -219,7 +222,7 @@ export const useContractVersioning = (projectId: string) => {
       // Verificar qué contrato se va a actualizar
       const { data: contractToUpdate } = await supabase
         .from('contracts')
-        .select('id, version, estado_visual')
+        .select('id, version, estado_visual, budget_id')
         .eq('project_id', projectId)
         .eq('contract_type', contractType)
         .eq('is_latest', true)
@@ -232,14 +235,41 @@ export const useContractVersioning = (projectId: string) => {
         throw new Error('No contract found to send');
       }
 
+      // Get logged-in user's email for reply-to in the contract email
+      const { data: { user } } = await supabase.auth.getUser();
+      const senderEmail = user?.email || '';
+
+      // For encargo contracts: generate and upload budget PDF
+      let budgetPdfUrl: string | null = null;
+      if (contractType === 'encargo' && contractToUpdate.budget_id) {
+        console.log('[SendContract] Generating budget PDF for encargo, budgetId:', contractToUpdate.budget_id);
+        const { generateAndUploadBudgetPdf } = await import('./useBudgetPdfUpload');
+        budgetPdfUrl = await generateAndUploadBudgetPdf(
+          contractToUpdate.budget_id,
+          projectId
+        );
+        console.log('[SendContract] Budget PDF URL:', budgetPdfUrl);
+        if (!budgetPdfUrl) {
+          console.warn('[SendContract] Could not generate budget PDF, continuing without it');
+        }
+      } else {
+        console.log('[SendContract] Skipping PDF gen. type:', contractType, 'budgetId:', contractToUpdate.budget_id);
+      }
+
       // Solo hacer UPDATE del estado, nunca INSERT
+      const updateData: Record<string, unknown> = {
+        estado_visual: 'sent',
+        contract_status: 'sent',
+        sender_email: senderEmail,
+      };
+      if (budgetPdfUrl) {
+        updateData.budget_pdf_url = budgetPdfUrl;
+      }
+
       const { error } = await supabase
         .from('contracts')
-        .update({
-          estado_visual: 'sent',
-          contract_status: 'sent' // Explicit para evitar confusión con trigger
-        })
-        .eq('id', contractToUpdate.id); // Usar ID específico, no filtros múltiples
+        .update(updateData)
+        .eq('id', contractToUpdate.id);
 
       // removed debug log
 
@@ -301,6 +331,9 @@ export const useContractVersioning = (projectId: string) => {
       }
       if (contractData.payment_third_amount !== undefined && contractData.payment_third_amount >= 0) {
         updateData.payment_third_amount = contractData.payment_third_amount;
+      }
+      if (contractData.payment_last_manual !== undefined && contractData.payment_last_manual >= 0) {
+        updateData.payment_last_manual = contractData.payment_last_manual;
       }
 
       // Solo hacer update si hay campos para actualizar

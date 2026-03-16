@@ -60,7 +60,7 @@ describe('useToggleContractPrimary', () => {
         await result.current.mutateAsync({
             contractId: 'contract-1',
             projectId: 'proj-1',
-            contractType: 'reservation',
+            contractType: 'reserva',
             isPrimary: true,
         });
 
@@ -75,7 +75,7 @@ describe('useToggleContractPrimary', () => {
         await result.current.mutateAsync({
             contractId: 'contract-1',
             projectId: 'proj-1',
-            contractType: 'reservation',
+            contractType: 'reserva',
             isPrimary: true,
         });
 
@@ -91,7 +91,7 @@ describe('useToggleContractPrimary', () => {
         await result.current.mutateAsync({
             contractId: 'contract-1',
             projectId: 'proj-1',
-            contractType: 'reservation',
+            contractType: 'reserva',
             isPrimary: false,
         });
 

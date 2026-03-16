@@ -52,7 +52,7 @@ const PlanificacionProduccion = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showVehicleDialog, setShowVehicleDialog] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<ProductionSlot | null>(null);
-  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<Record<string, unknown> | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -221,7 +221,7 @@ const PlanificacionProduccion = () => {
     navigate(`/proyectos/${projectId}`);
   };
 
-  const handleVehicleClick = (vehicleInfo: any, projectInfo?: any) => {
+  const handleVehicleClick = (vehicleInfo: Record<string, unknown>, projectInfo?: Record<string, unknown>) => {
     setSelectedVehicle({
       ...vehicleInfo,
       motorizacion: vehicleInfo.motorizacion || '140cv manual',

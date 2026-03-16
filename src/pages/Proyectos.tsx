@@ -62,12 +62,12 @@ const Proyectos = () => {
 
       // Filtro por estado - Updated to use new status enum
       if (filters.status && filters.status.length > 0) {
-        if (!filters.status.includes(project.status as any)) return false;
+        if (!filters.status.includes(project.status as string)) return false;
       }
 
       // Filtro por prioridad
       if (filters.priority && filters.priority.length > 0) {
-        if (!filters.priority.includes(project.priority as any)) return false;
+        if (!filters.priority.includes(project.priority as string)) return false;
       }
       return true;
     });
@@ -110,7 +110,7 @@ const Proyectos = () => {
     navigate(`/proyectos/${projectId}`);
   };
 
-  const handleNewProject = async (projectData: any) => {
+  const handleNewProject = async (projectData: Record<string, unknown>) => {
     if (import.meta.env.DEV) console.log('Nuevo proyecto creado:', projectData);
     // Force refresh after creating new project
     setTimeout(() => {

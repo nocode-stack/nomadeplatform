@@ -89,7 +89,7 @@ export const formatDate = (dateString?: string | null): string => {
 };
 
 // Simplified helper to enhance project with computed properties
-export const enhanceProjectWithComputedProps = (project: any): UnifiedProject => {
+export const enhanceProjectWithComputedProps = (project: Partial<UnifiedProject>): UnifiedProject => {
   const enhanced = project as UnifiedProject;
   // Status and progress now come from database, just set priority
   enhanced.status = enhanced.status || 'creacion_cliente';

@@ -204,7 +204,7 @@ const Vehiculos = () => {
                 <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Asignación</label>
                 <Select
                   value={filters.assigned}
-                  onValueChange={(value) => setFilters({ ...filters, assigned: value as any })}
+                  onValueChange={(value) => setFilters({ ...filters, assigned: value as string })}
                 >
                   <SelectTrigger>
                     <SelectValue />

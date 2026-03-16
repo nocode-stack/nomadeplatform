@@ -80,7 +80,7 @@ describe('Contract Fields Fill & Save Flow', () => {
         const contractData = {
             project_id: projectId,
             client_id: 'client-123',
-            contract_type: 'reservation',
+            contract_type: 'reserva',
             client_full_name: 'Juan Pérez',
             client_dni: '12345678A',
             client_email: 'juan@test.com',
@@ -105,12 +105,12 @@ describe('Contract Fields Fill & Save Flow', () => {
 
         await result.current.generateContract.mutateAsync({
             contractData: contractData as any,
-            contractType: 'reservation',
+            contractType: 'reserva',
         });
 
         expect(mockRpc).toHaveBeenCalledWith('generate_contract_version', expect.objectContaining({
             p_project_id: projectId,
-            p_contract_type: 'reservation',
+            p_contract_type: 'reserva',
         }));
     });
 
@@ -161,7 +161,7 @@ describe('Contract Send Flow', () => {
             wrapper: createWrapper()
         });
 
-        await result.current.sendContract.mutateAsync('reservation');
+        await result.current.sendContract.mutateAsync('reserva');
 
         expect(mockFrom).toHaveBeenCalledWith('contracts');
         expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
@@ -186,7 +186,7 @@ describe('Contract Auto-Save Flow', () => {
         const contractData = {
             project_id: projectId,
             client_id: 'client-123',
-            contract_type: 'reservation',
+            contract_type: 'reserva',
             client_full_name: 'Updated Name',
             client_dni: '12345678A',
             client_email: 'updated@test.com',
@@ -224,7 +224,7 @@ describe('Contract Auto-Save Flow', () => {
         const contractData = {
             project_id: projectId,
             client_id: 'client-123',
-            contract_type: 'reservation',
+            contract_type: 'reserva',
             client_full_name: '',
             client_dni: '',
             client_email: '',

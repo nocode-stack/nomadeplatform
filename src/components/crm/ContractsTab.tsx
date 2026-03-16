@@ -11,9 +11,9 @@ import ContractForm from '../contracts/ContractForm';
 
 // The 3 contract types that every project must have
 const CONTRACT_TYPES = [
-    { key: 'reservation', label: 'Contrato de Reserva', icon: Bookmark, colors: 'bg-blue-100/50 text-blue-600', disabledColors: 'bg-slate-50 text-slate-300' },
-    { key: 'purchase_agreement', label: 'Acuerdo de Compraventa', icon: Handshake, colors: 'bg-amber-100/50 text-amber-600', disabledColors: 'bg-slate-50 text-slate-300' },
-    { key: 'sale_contract', label: 'Contrato de Compraventa', icon: FileCheck, colors: 'bg-emerald-100/50 text-emerald-600', disabledColors: 'bg-slate-50 text-slate-300' },
+    { key: 'reserva', label: 'Contrato de Reserva', icon: Bookmark, colors: 'bg-blue-100/50 text-blue-600', disabledColors: 'bg-slate-50 text-slate-300' },
+    { key: 'encargo', label: 'Contrato de Encargo', icon: Handshake, colors: 'bg-amber-100/50 text-amber-600', disabledColors: 'bg-slate-50 text-slate-300' },
+    { key: 'compraventa_final', label: 'Contrato Final / Compraventa', icon: FileCheck, colors: 'bg-emerald-100/50 text-emerald-600', disabledColors: 'bg-slate-50 text-slate-300' },
 ];
 
 const getStatusDetails = (status: string) => {
@@ -35,9 +35,9 @@ const getStatusDetails = (status: string) => {
 
 const getContractTitle = (type: string) => {
     switch (type) {
-        case 'reservation': return 'Contrato de Reserva';
-        case 'purchase_agreement': return 'Acuerdo de Compraventa';
-        case 'sale_contract': return 'Contrato de Compraventa';
+        case 'reserva': return 'Contrato de Reserva';
+        case 'encargo': return 'Contrato de Encargo';
+        case 'compraventa_final': return 'Contrato Final / Compraventa';
         default: return 'Contrato';
     }
 };
@@ -126,7 +126,8 @@ const ContractsTab = ({ projectId, onContractFormOpen }: ContractsTabProps) => {
 
     // Open the inline form
     const openForm = async (contractType: string) => {
-        if (noBudget) {
+        // Reserva does NOT need a budget; encargo/compraventa_final do
+        if (noBudget && contractType !== 'reserva') {
             toast({ title: 'Sin presupuesto', description: 'Debes crear un presupuesto antes de generar un contrato.', variant: 'destructive' });
             return;
         }
@@ -156,7 +157,7 @@ const ContractsTab = ({ projectId, onContractFormOpen }: ContractsTabProps) => {
     // Save contract
     const handleSave = async () => {
         if (!formData || !activeForm) return;
-        if (noBudget) {
+        if (noBudget && activeForm.contractType !== 'reserva') {
             toast({ title: 'Sin presupuesto', description: 'No se puede guardar un contrato sin presupuesto asociado.', variant: 'destructive' });
             return;
         }
@@ -185,7 +186,7 @@ const ContractsTab = ({ projectId, onContractFormOpen }: ContractsTabProps) => {
     // Send contract
     const handleSend = async () => {
         if (!activeForm) return;
-        if (noBudget) {
+        if (noBudget && activeForm.contractType !== 'reserva') {
             toast({ title: 'Sin presupuesto', description: 'No se puede enviar un contrato sin presupuesto asociado.', variant: 'destructive' });
             return;
         }
@@ -391,9 +392,9 @@ const ContractsTab = ({ projectId, onContractFormOpen }: ContractsTabProps) => {
                                         <button
                                             type="button"
                                             onClick={() => openForm(type.key)}
-                                            disabled={isCreating || !projectId || noBudget}
+                                            disabled={isCreating || !projectId || (noBudget && type.key !== 'reserva')}
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                            title={noBudget ? 'Crea un presupuesto primero' : undefined}
+                                            title={(noBudget && type.key !== 'reserva') ? 'Crea un presupuesto primero' : undefined}
                                         >
                                             {isCreating ? (
                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

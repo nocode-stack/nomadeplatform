@@ -24,7 +24,7 @@ import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
-import { JoinedNewBudget } from '@/types/budgets';
+import { JoinedNewBudget, NewBudgetItem } from '@/types/budgets';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -55,7 +55,7 @@ const getPackComponents = (packName: string): string[] => {
 // ── Helper to build BudgetPrintData from JoinedNewBudget ──
 const buildPrintDataFromBudget = (
     budget: JoinedNewBudget,
-    budgetItems: any[],
+    budgetItems: NewBudgetItem[],
     regionalConfigs?: RegionalConfig[]
 ): BudgetPrintData => {
     const client = budget.client;
@@ -109,7 +109,7 @@ const buildPrintDataFromBudget = (
     }
 
     // Additional items from budget_items
-    budgetItems.forEach((item: any) => {
+    budgetItems.forEach((item: NewBudgetItem) => {
         lineItems.push({
             name: item.name || 'Ítem',
             quantity: item.quantity || 1,
@@ -157,7 +157,7 @@ const buildPrintDataFromBudget = (
         clientPhone: client?.phone || '',
         modelName: budget.model_option?.name || '–',
         engineName: budget.engine_option?.name || '–',
-        interiorColorName: (budget as any).interior_color?.name || '–',
+        interiorColorName: (budget as unknown as Record<string, { name?: string } | null>).interior_color?.name || '–',
         packName: budget.pack?.name || '–',
         lineItems,
         subtotal,
@@ -242,11 +242,12 @@ const Presupuestos = () => {
                 title: 'Presupuesto actualizado',
                 description: `${budget.budget_code || 'Presupuesto'} es ahora el principal.`,
             });
-        } catch (error: any) {
-            if (error?.message !== 'CONFIRMATION_REQUIRED') {
+        } catch (error: unknown) {
+            const errMsg = error instanceof Error ? error.message : String(error);
+            if (errMsg !== 'CONFIRMATION_REQUIRED') {
                 toast({
                     title: 'Error',
-                    description: error.message || 'No se pudo actualizar el presupuesto.',
+                    description: errMsg || 'No se pudo actualizar el presupuesto.',
                     variant: 'destructive',
                 });
             }

@@ -63,7 +63,7 @@ const Produccion = () => {
   };
 
   const getAssignedTasks = (operator: Operator) => {
-    const tasks: any[] = [];
+    const tasks: Record<string, unknown>[] = [];
     projects.forEach(project => {
       project.phases.forEach(projectPhase => {
         if (projectPhase.operatorId === operator.id ||

@@ -46,7 +46,7 @@ export const useRegionalConfig = () => {
 // For items with price (packs, electric, additionals):
 //   peninsula → price
 //   canarias/internacional → price_export
-export const getPrice = (item: any, location: Location): number => {
+export const getPrice = (item: { price_modifier?: number; price?: number | null; price_export?: number } | null, location: Location): number => {
     if (!item) return 0;
 
     if (location === 'peninsula') {

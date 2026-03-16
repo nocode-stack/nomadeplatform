@@ -17,9 +17,9 @@ interface ContractDetailDialogProps {
 
 const getContractTitle = (type: string) => {
     switch (type) {
-        case 'reservation': return 'Contrato de Reserva';
-        case 'purchase_agreement': return 'Acuerdo de Compraventa';
-        case 'sale_contract': return 'Contrato de Compraventa';
+        case 'reserva': return 'Contrato de Reserva';
+        case 'encargo': return 'Contrato de Encargo';
+        case 'compraventa_final': return 'Contrato Final / Compraventa';
         default: return 'Contrato';
     }
 };

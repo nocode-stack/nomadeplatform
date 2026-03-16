@@ -172,7 +172,7 @@ const ProyectoDetalle = () => {
       queryClient.invalidateQueries({ queryKey: ['unified-projects'] });
       queryClient.invalidateQueries({ queryKey: ['new-projects-list'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "No se pudo convertir el prospect a cliente",
@@ -208,23 +208,23 @@ const ProyectoDetalle = () => {
   // Obtener la fase actual del proyecto desde las fases del nuevo sistema
   const getCurrentPhaseFromNewSystem = () => {
     if (newProject?.project_phase_progress && newProject.project_phase_progress.length > 0) {
-      const inProgress = newProject.project_phase_progress.find((p: any) => p.status === 'in_progress');
+      const inProgress = newProject.project_phase_progress.find((p: { status?: string | null }) => p.status === 'in_progress');
       if (inProgress) {
         return inProgress.project_phase_template?.group || statusText;
       }
 
-      const completed = newProject.project_phase_progress.filter((p: any) => p.status === 'completed');
-      const pending = newProject.project_phase_progress.filter((p: any) => p.status === 'pending');
+      const completed = newProject.project_phase_progress.filter((p: { status?: string | null }) => p.status === 'completed');
+      const pending = newProject.project_phase_progress.filter((p: { status?: string | null }) => p.status === 'pending');
 
       if (pending.length > 0) {
-        const nextPending = pending.sort((a: any, b: any) =>
+        const nextPending = pending.sort((a: { created_at?: string | null }, b: { created_at?: string | null }) =>
           (a.project_phase_template?.phase_order || 0) - (b.project_phase_template?.phase_order || 0)
         )[0];
         return nextPending.project_phase_template?.group || statusText;
       }
 
       if (completed.length > 0) {
-        const lastCompleted = completed.sort((a: any, b: any) =>
+        const lastCompleted = completed.sort((a: { completed_at?: string | null }, b: { completed_at?: string | null }) =>
           (b.project_phase_template?.phase_order || 0) - (a.project_phase_template?.phase_order || 0)
         )[0];
         return lastCompleted.project_phase_template?.group || statusText;
@@ -379,7 +379,7 @@ const ProyectoDetalle = () => {
                 project={{
                   ...project,
                   project_phase_progress: newProject?.project_phase_progress || []
-                } as any}
+                } as Record<string, unknown>}
                 incidents={incidents}
               />
             )}

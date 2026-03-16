@@ -1,3 +1,5 @@
+import type { Json } from '@/integrations/supabase/types';
+
 export interface BudgetConcept {
   id: string;
   category: 'base' | 'modelo' | 'color_interior' | 'opcionales' | 'sistema_electrico' | 'otros';
@@ -63,7 +65,7 @@ export interface ElectricSystem {
   discount_price?: number;
   discount_price_export?: number;
   required_packs?: string[];
-  pack_pricing_rules?: any; // JSONB field for dynamic pricing rules
+  pack_pricing_rules?: Json; // JSONB field for dynamic pricing rules
   is_standalone: boolean;
   is_active: boolean;
   created_at: string;
@@ -120,7 +122,7 @@ export interface BudgetItem {
   order_index: number;
   pack_id?: string;
   is_custom?: boolean;
-  removed_components?: any; // Changed from string[] to any to match Json type
+  removed_components?: Json; // JSONB field matching Supabase Json type
   is_discount_item?: boolean;
   created_at: string;
 }
@@ -171,7 +173,7 @@ export interface JoinedNewBudget extends NewBudget {
     phone?: string | null;
     address?: string | null;
     client_code?: string | null;
-    [key: string]: any; // Allow additional fields from full client row
+    [key: string]: unknown; // Allow additional fields from full client row (including boolean/number fields)
   } | null;
   engine_option?: { name: string } | null;
   model_option?: { name: string } | null;
@@ -225,8 +227,8 @@ export interface NewBudgetHistory {
   changed_by?: string;
   change_type: string;
   change_description?: string;
-  old_value?: any;
-  new_value?: any;
+  old_value?: unknown;
+  new_value?: unknown;
   created_at: string;
 }
 

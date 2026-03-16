@@ -1,5 +1,6 @@
 import { UnifiedProject } from '../types/database';
 import { supabase } from '../integrations/supabase/client';
+import type { Tables } from '../integrations/supabase/types';
 
 export interface ContractTemplate {
   name: string;
@@ -495,7 +496,7 @@ export const generateContractData = async (project: UnifiedProject): Promise<Con
   if (import.meta.env.DEV) console.log('👤 Proyecto recibido (ID cliente):', project.client_id);
 
   // Fetch client data from Supabase database
-  let clientData: any = null;
+  let clientData: Tables<'clients'> | null = null;
   if (project.client_id) {
     if (import.meta.env.DEV) console.log('📡 Consultando cliente en base de datos:', project.client_id);
 
@@ -514,7 +515,7 @@ export const generateContractData = async (project: UnifiedProject): Promise<Con
   }
 
   // Fetch billing data for the client
-  let billingData: any = null;
+  let billingData: Tables<'billing'> | null = null;
   if (project.client_id) {
     const { data: billing, error: billingError } = await supabase
       .from('billing')
@@ -533,7 +534,7 @@ export const generateContractData = async (project: UnifiedProject): Promise<Con
   }
 
   // Fetch primary budget for the project
-  let primaryBudgetData: any = null;
+  let primaryBudgetData: Tables<'budget'> | null = null;
   if (import.meta.env.DEV) console.log('💰 Consultando presupuesto primario para proyecto:', project.id);
 
   const { data: budgetData, error: budgetError } = await supabase

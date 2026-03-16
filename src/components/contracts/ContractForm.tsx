@@ -90,6 +90,8 @@ interface ContractData {
   payment_second_amount?: number;
   payment_third_percentage?: number;
   payment_third_amount?: number;
+  // Contrato final: último pago manual
+  payment_last_manual?: number;
   // Campo interno para saber el tipo de facturación
   [key: string]: any;
 }
@@ -150,6 +152,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
         .from('budget')
         .select(`
           total,
+          total_with_iedmt,
           model_option_id,
           model_options(name),
           engine_option:engine_options(name)
@@ -173,7 +176,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
   // Datos del vehículo desde las props del proyecto
   const vehicleData = project.vehicles || project.vehicles || null;
 
-  // Cargar contrato de reserva si es purchase_agreement
+  // Cargar contrato de reserva para encargo y compraventa_final
   const { data: reservationContract } = useQuery({
     queryKey: ['reservationContract', project.id],
     queryFn: async () => {
@@ -181,7 +184,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
         .from('contracts')
         .select('payment_reserve')
         .eq('project_id', project.id)
-        .eq('contract_type', 'reservation')
+        .eq('contract_type', 'reserva')
         .eq('is_latest', true)
         .limit(1)
         .maybeSingle();
@@ -193,7 +196,30 @@ const ContractForm: React.FC<ContractFormProps> = ({
 
       return data;
     },
-    enabled: contractType === 'purchase_agreement'
+    enabled: contractType === 'encargo' || contractType === 'compraventa_final'
+  });
+
+  // Cargar contrato de encargo para compraventa_final (pago de encargo = payment_first_amount)
+  const { data: encargoContract } = useQuery({
+    queryKey: ['encargoContract', project.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('payment_first_amount')
+        .eq('project_id', project.id)
+        .eq('contract_type', 'encargo')
+        .eq('is_latest', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching encargo contract:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: contractType === 'compraventa_final'
   });
 
   // Cargar contrato activo existente - ÚNICA FUENTE DE VERDAD
@@ -494,11 +520,14 @@ const ContractForm: React.FC<ContractFormProps> = ({
     model_option: primaryBudget?.model_options as any
   });
 
-  // Actualizar precio total desde presupuesto primario
+  // Actualizar precio total desde presupuesto primario (usa total_with_iedmt que incluye IEDMT)
   useEffect(() => {
-    if (primaryBudget && primaryBudget.total && (contractType === 'purchase_agreement' || contractType === 'sale_contract')) {
-      // Redondear a 2 decimales para evitar problemas de precisión
-      const roundedTotal = Math.round(primaryBudget.total * 100) / 100;
+    if (primaryBudget && (contractType === 'encargo' || contractType === 'compraventa_final')) {
+      // Prefer total_with_iedmt (includes IEDMT), fallback to total
+      const realTotal = primaryBudget.total_with_iedmt && Number(primaryBudget.total_with_iedmt) > 0
+        ? Number(primaryBudget.total_with_iedmt)
+        : Number(primaryBudget.total || 0);
+      const roundedTotal = Math.round(realTotal * 100) / 100;
       setFormData(prev => ({
         ...prev,
         total_price: roundedTotal
@@ -589,15 +618,24 @@ const ContractForm: React.FC<ContractFormProps> = ({
     if (!formData.client_full_name?.trim()) missing.push('client_full_name');
     if (!formData.client_email?.trim()) missing.push('client_email');
     if (!formData.billing_address?.trim()) missing.push('billing_address');
-    if (!formData.vehicle_model?.trim()) missing.push('vehicle_model');
+    // Vehicle model only required for compraventa_final
+    if (contractType === 'compraventa_final' && !formData.vehicle_model?.trim()) missing.push('vehicle_model');
 
     // Campos específicos por tipo de contrato
-    if (contractType === 'reservation' && (!formData.payment_reserve || formData.payment_reserve <= 0)) {
+    if (contractType === 'reserva' && (!formData.payment_reserve || formData.payment_reserve <= 0)) {
       missing.push('payment_reserve');
     }
 
-    if ((contractType === 'purchase_agreement' || contractType === 'sale_contract') && (!formData.total_price || formData.total_price <= 0)) {
+    if (contractType === 'encargo' && (!formData.total_price || formData.total_price <= 0)) {
       missing.push('total_price');
+    }
+    if (contractType === 'encargo' && (!formData.payment_first_amount || formData.payment_first_amount <= 0)) {
+      missing.push('payment_first_amount');
+    }
+
+    if (contractType === 'compraventa_final') {
+      if (!formData.total_price || formData.total_price <= 0) missing.push('total_price');
+      if (!formData.payment_last_manual || formData.payment_last_manual <= 0) missing.push('payment_last_manual');
     }
 
     setMissingFields(missing);
@@ -697,37 +735,39 @@ const ContractForm: React.FC<ContractFormProps> = ({
         'billing_entity_name', 'billing_entity_nif',
         'billing_country', 'billing_autonomous_community', 'billing_city', 'billing_address_street', 'billing_office_unit',
         'iban',
-        'vehicle_model', 'vehicle_engine',
       ];
+      // Vehicle fields only for compraventa_final
+      if (contractType === 'compraventa_final') {
+        allFields.push('vehicle_model', 'vehicle_engine');
+      }
     } else {
       // Personal / Otra persona: con DNI, sin datos empresa
       allFields = [
         'client_full_name', 'client_surname', 'client_dni', 'client_email', 'client_phone',
         'client_country', 'client_autonomous_community', 'client_city', 'client_address_street', 'client_address_number',
         'iban',
-        'vehicle_model', 'vehicle_engine',
       ];
+      // Vehicle fields only for compraventa_final
+      if (contractType === 'compraventa_final') {
+        allFields.push('vehicle_model', 'vehicle_engine');
+      }
     }
 
-    // Bastidor y matrícula solo para contratos que no son de reserva
-    if (contractType !== 'reservation') {
+    // Bastidor y matrícula solo para compraventa_final
+    if (contractType === 'compraventa_final') {
       allFields.push('vehicle_vin', 'vehicle_plate');
     }
 
     // Campos específicos según tipo de contrato
-    if (contractType === 'reservation') {
+    if (contractType === 'reserva') {
       allFields.push('payment_reserve');
-    } else if (contractType === 'purchase_agreement') {
+    } else if (contractType === 'encargo') {
       allFields.push(
         'total_price',
-        'delivery_months',
-        'payment_first_percentage',
-        'payment_first_amount',
-        'payment_second_percentage',
-        'payment_second_amount'
+        'payment_first_amount' // = pago de encargo
       );
-    } else if (contractType === 'sale_contract') {
-      allFields.push('total_price');
+    } else if (contractType === 'compraventa_final') {
+      allFields.push('total_price', 'payment_last_manual');
     }
 
     // Contar campos completados
@@ -936,7 +976,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
       </div>
 
       {/* Alert de discrepancias de especificaciones - solo para acuerdo de compraventa */}
-      {contractType === 'purchase_agreement' && vehicleSpecsComparison.hasDiscrepancies && (
+      {contractType === 'encargo' && vehicleSpecsComparison.hasDiscrepancies && (
         <VehicleSpecsAlert discrepancies={vehicleSpecsComparison.discrepancies} className="mb-4" />
       )}
 
@@ -1183,65 +1223,69 @@ const ContractForm: React.FC<ContractFormProps> = ({
             />
           </div>
 
-          {/* Información del Vehículo */}
-          <h4 className="font-semibold text-gray-900 pt-2">Información del Vehículo</h4>
-
-          {contractType === 'purchase_agreement' && vehicleSpecsComparison.hasDiscrepancies && (
-            <VehicleSpecsAlert
-              discrepancies={vehicleSpecsComparison.discrepancies}
-              className="mb-4"
-            />
-          )}
-
-          <div>
-            <Label htmlFor="vehicle_model">Modelo Nomade</Label>
-            <Input
-              id="vehicle_model"
-              value={formData.vehicle_model || ''}
-              onChange={(e) => handleInputChange('vehicle_model', e.target.value)}
-              readOnly={true}
-              placeholder="Pendiente — se rellenará desde el presupuesto"
-              className={`bg-muted ${isFieldEmpty('vehicle_model') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="vehicle_engine">Motorización</Label>
-            <Input
-              id="vehicle_engine"
-              value={formData.vehicle_engine || ''}
-              onChange={(e) => handleInputChange('vehicle_engine', e.target.value)}
-              readOnly={true}
-              placeholder="Pendiente — se rellenará desde el presupuesto"
-              className={`bg-muted ${isFieldEmpty('vehicle_engine') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
-            />
-          </div>
-
-          {contractType !== 'reservation' && (
+          {/* Información del Vehículo — solo para Compraventa Final */}
+          {contractType === 'compraventa_final' && (
             <>
+              <h4 className="font-semibold text-gray-900 pt-2">Información del Vehículo</h4>
+
+              {vehicleSpecsComparison.hasDiscrepancies && (
+                <VehicleSpecsAlert
+                  discrepancies={vehicleSpecsComparison.discrepancies}
+                  className="mb-4"
+                />
+              )}
+
               <div>
-                <Label htmlFor="vehicle_vin">Número de Bastidor</Label>
+                <Label htmlFor="vehicle_model">Modelo Nomade</Label>
                 <Input
-                  id="vehicle_vin"
-                  value={formData.vehicle_vin || ''}
-                  onChange={(e) => handleInputChange('vehicle_vin', e.target.value)}
-                  readOnly={isFieldReadOnly('vehicle_vin')}
-                  placeholder="Pendiente de rellenar"
-                  className={getFieldStyle('vehicle_vin')}
+                  id="vehicle_model"
+                  value={formData.vehicle_model || ''}
+                  onChange={(e) => handleInputChange('vehicle_model', e.target.value)}
+                  readOnly={true}
+                  placeholder="Pendiente — se rellenará desde el presupuesto"
+                  className={`bg-muted ${isFieldEmpty('vehicle_model') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
                 />
               </div>
 
               <div>
-                <Label htmlFor="vehicle_plate">Matrícula</Label>
+                <Label htmlFor="vehicle_engine">Motorización</Label>
                 <Input
-                  id="vehicle_plate"
-                  value={formData.vehicle_plate || ''}
-                  onChange={(e) => handleInputChange('vehicle_plate', e.target.value)}
-                  readOnly={isFieldReadOnly('vehicle_plate')}
-                  placeholder="Pendiente de rellenar"
-                  className={getFieldStyle('vehicle_plate')}
+                  id="vehicle_engine"
+                  value={formData.vehicle_engine || ''}
+                  onChange={(e) => handleInputChange('vehicle_engine', e.target.value)}
+                  readOnly={true}
+                  placeholder="Pendiente — se rellenará desde el presupuesto"
+                  className={`bg-muted ${isFieldEmpty('vehicle_engine') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
                 />
               </div>
+
+              {contractType === 'compraventa_final' && (
+                <>
+                  <div>
+                    <Label htmlFor="vehicle_vin">Número de Bastidor</Label>
+                    <Input
+                      id="vehicle_vin"
+                      value={formData.vehicle_vin || ''}
+                      onChange={(e) => handleInputChange('vehicle_vin', e.target.value)}
+                      readOnly={isFieldReadOnly('vehicle_vin')}
+                      placeholder="Pendiente de rellenar"
+                      className={getFieldStyle('vehicle_vin')}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="vehicle_plate">Matrícula</Label>
+                    <Input
+                      id="vehicle_plate"
+                      value={formData.vehicle_plate || ''}
+                      onChange={(e) => handleInputChange('vehicle_plate', e.target.value)}
+                      readOnly={isFieldReadOnly('vehicle_plate')}
+                      placeholder="Pendiente de rellenar"
+                      className={getFieldStyle('vehicle_plate')}
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -1251,7 +1295,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
       <div className="space-y-4">
         <h4 className="font-semibold text-gray-900">Información del Contrato</h4>
 
-        {contractType === 'reservation' && (
+        {contractType === 'reserva' && (
           <div>
             <Label htmlFor="payment_reserve">Importe de Reserva</Label>
             <div className="relative">
@@ -1268,7 +1312,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
           </div>
         )}
 
-        {(contractType === 'purchase_agreement' || contractType === 'sale_contract') && (
+        {(contractType === 'encargo' || contractType === 'compraventa_final') && (
           <div>
             <Label htmlFor="total_price">Precio Total (del Presupuesto Primario)</Label>
             <div className="relative">
@@ -1286,28 +1330,15 @@ const ContractForm: React.FC<ContractFormProps> = ({
           </div>
         )}
 
-        {contractType === 'purchase_agreement' && (
+        {contractType === 'encargo' && (
           <>
-            <div>
-              <Label htmlFor="delivery_months">Entrega del Vehículo (meses)</Label>
-              <NumericInput
-                id="delivery_months"
-                value={formData.delivery_months || 0}
-                onChange={(displayValue, numericValue) => handleNumericInputChange('delivery_months', displayValue)}
-                readOnly={isFieldReadOnly('delivery_months')}
-                className={getFieldStyle('delivery_months')}
-                allowDecimals={false}
-                min={0}
-              />
-            </div>
-
-            {/* Sistema de Pagos */}
+            {/* Sistema de Pagos Simplificado para Encargo */}
             <div className="space-y-4">
-              <h5 className="font-medium text-gray-800">Sistema de Pagos</h5>
+              <h5 className="font-medium text-gray-800">Pagos</h5>
 
-              {/* Reserva */}
+              {/* Reserva — read-only, desde contrato de reserva */}
               <div>
-                <Label>Reserva</Label>
+                <Label>Reserva (del contrato de reserva)</Label>
                 <div className="relative">
                   <Input
                     type="number"
@@ -1318,107 +1349,114 @@ const ContractForm: React.FC<ContractFormProps> = ({
                   />
                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
                 </div>
+                {!reservationContract?.payment_reserve && (
+                  <p className="text-xs text-amber-600 mt-1">No se encontró contrato de reserva.</p>
+                )}
               </div>
 
-              {/* Primer Pago */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="payment_first_percentage">Primer Pago</Label>
-                  <div className="relative">
-                    <NumericInput
-                      id="payment_first_percentage"
-                      value={formData.payment_first_percentage || 0}
-                      onChange={(displayValue, numericValue) => handlePaymentChange('first', 'percentage', displayValue)}
-                      readOnly={isFieldReadOnly('payment_first_percentage')}
-                      className={`pr-8 ${getFieldStyle('payment_first_percentage')}`}
-                      allowDecimals={true}
-                      min={0}
-                      max={100}
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                  </div>
+              {/* Pago de Encargo — editable (se guarda en payment_first_amount) */}
+              <div>
+                <Label htmlFor="payment_first_amount">Pago de Encargo</Label>
+                <div className="relative">
+                  <NumericInput
+                    id="payment_first_amount"
+                    value={formData.payment_first_amount || 0}
+                    onChange={(displayValue, numericValue) => handleNumericInputChange('payment_first_amount', displayValue)}
+                    className={`pr-8 ${isFieldEmpty('payment_first_amount') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+                    allowDecimals={true}
+                    min={0}
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
                 </div>
-                <div>
-                  <Label htmlFor="payment_first_amount">Primer Pago</Label>
-                  <div className="relative">
-                    <NumericInput
-                      id="payment_first_amount"
-                      value={formData.payment_first_amount || 0}
-                      onChange={(displayValue, numericValue) => handlePaymentChange('first', 'amount', displayValue)}
-                      readOnly={isFieldReadOnly('payment_first_amount')}
-                      className={`pr-8 ${getFieldStyle('payment_first_amount')}`}
-                      allowDecimals={true}
-                      min={0}
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                  </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {contractType === 'compraventa_final' && (
+          <>
+            {/* Desglose del Contrato Final */}
+            <div className="space-y-4">
+              <h5 className="font-medium text-gray-800">Desglose de Pagos</h5>
+
+              {/* Reserva — read-only, auto-fetched */}
+              <div>
+                <Label>Reserva (del contrato de reserva)</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={reservationContract?.payment_reserve || 0}
+                    readOnly
+                    className="bg-muted pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                </div>
+                {!reservationContract?.payment_reserve && (
+                  <p className="text-xs text-amber-600 mt-1">No se encontró contrato de reserva.</p>
+                )}
+              </div>
+
+              {/* Pago de Encargo — read-only, auto-fetched */}
+              <div>
+                <Label>Pago de Encargo (del contrato de encargo)</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={encargoContract?.payment_first_amount || 0}
+                    readOnly
+                    className="bg-muted pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                </div>
+                {!encargoContract?.payment_first_amount && (
+                  <p className="text-xs text-amber-600 mt-1">No se encontró contrato de encargo.</p>
+                )}
+              </div>
+
+              {/* Último Pago — manual, editable */}
+              <div>
+                <Label htmlFor="payment_last_manual">Último Pago (real)</Label>
+                <div className="relative">
+                  <NumericInput
+                    id="payment_last_manual"
+                    value={formData.payment_last_manual || 0}
+                    onChange={(displayValue, numericValue) => handleNumericInputChange('payment_last_manual', displayValue)}
+                    className={`pr-8 ${isFieldEmpty('payment_last_manual') ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-200' : ''}`}
+                    allowDecimals={true}
+                    min={0}
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
                 </div>
               </div>
 
-              {/* Segundo Pago */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="payment_second_percentage">Segundo Pago</Label>
-                  <div className="relative">
-                    <NumericInput
-                      id="payment_second_percentage"
-                      value={formData.payment_second_percentage || 0}
-                      onChange={(displayValue, numericValue) => handlePaymentChange('second', 'percentage', displayValue)}
-                      readOnly={isFieldReadOnly('payment_second_percentage')}
-                      className={`pr-8 ${getFieldStyle('payment_second_percentage')}`}
-                      allowDecimals={true}
-                      min={0}
-                      max={100}
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="payment_second_amount">Segundo Pago</Label>
-                  <div className="relative">
-                    <NumericInput
-                      id="payment_second_amount"
-                      value={formData.payment_second_amount || 0}
-                      onChange={(displayValue, numericValue) => handlePaymentChange('second', 'amount', displayValue)}
-                      readOnly={isFieldReadOnly('payment_second_amount')}
-                      className={`pr-8 ${getFieldStyle('payment_second_amount')}`}
-                      allowDecimals={true}
-                      min={0}
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                  </div>
-                </div>
-              </div>
+              {/* Desglose automático — read-only summary */}
+              <div className="bg-muted/30 rounded-lg p-4 border border-border space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Resumen de Pagos</p>
+                <div className="grid grid-cols-2 gap-y-1 text-sm">
+                  <span className="text-muted-foreground">Precio total:</span>
+                  <span className="text-right font-medium">{(formData.total_price || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</span>
 
-              {/* Tercer Pago - Calculado automáticamente */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="payment_third_percentage">Tercer Pago - Automático</Label>
-                  <div className="relative">
-                    <Input
-                      id="payment_third_percentage"
-                      type="number"
-                      step="0.01"
-                      value={thirdPayment.percentage.toFixed(2)}
-                      readOnly
-                      className="bg-muted pr-8"
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="payment_third_amount">Tercer Pago - Automático</Label>
-                  <div className="relative">
-                    <Input
-                      id="payment_third_amount"
-                      type="number"
-                      step="0.01"
-                      value={thirdPayment.amount.toFixed(2)}
-                      readOnly
-                      className="bg-muted pr-8"
-                    />
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
-                  </div>
+                  <span className="text-muted-foreground">Reserva:</span>
+                  <span className="text-right">-{(reservationContract?.payment_reserve || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</span>
+
+                  <span className="text-muted-foreground">Pago de encargo:</span>
+                  <span className="text-right">-{(encargoContract?.payment_first_amount || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</span>
+
+                  <span className="text-muted-foreground">Último pago:</span>
+                  <span className="text-right">-{(formData.payment_last_manual || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</span>
+
+                  <span className="border-t border-border pt-1 text-muted-foreground font-semibold">Pendiente:</span>
+                  <span className={`border-t border-border pt-1 text-right font-bold ${
+                    ((formData.total_price || 0) - (reservationContract?.payment_reserve || 0) - (encargoContract?.payment_first_amount || 0) - (formData.payment_last_manual || 0)) === 0
+                      ? 'text-green-600'
+                      : ((formData.total_price || 0) - (reservationContract?.payment_reserve || 0) - (encargoContract?.payment_first_amount || 0) - (formData.payment_last_manual || 0)) < 0
+                        ? 'text-red-600'
+                        : 'text-amber-600'
+                  }`}>
+                    {((formData.total_price || 0) - (reservationContract?.payment_reserve || 0) - (encargoContract?.payment_first_amount || 0) - (formData.payment_last_manual || 0)).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
+                  </span>
                 </div>
               </div>
             </div>

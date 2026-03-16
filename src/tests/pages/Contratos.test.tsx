@@ -94,7 +94,7 @@ const mockContracts = [
     {
         id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
         client_full_name: 'Nomad Life',
-        contract_type: 'reservation',
+        contract_type: 'reserva',
         estado_visual: 'signed',
         is_latest: true,
         vehicle_model: 'Neo',
@@ -109,7 +109,7 @@ const mockContracts = [
     {
         id: 'ffffffff-1111-2222-3333-444444444444',
         client_full_name: 'Camping Sol',
-        contract_type: 'purchase_agreement',
+        contract_type: 'encargo',
         estado_visual: 'editing',
         is_latest: false,
         vehicle_model: 'Neo XL',
@@ -124,7 +124,7 @@ const mockContracts = [
     {
         id: '99999999-8888-7777-6666-555555555555',
         client_full_name: 'Pedro Lopez',
-        contract_type: 'sale_contract',
+        contract_type: 'compraventa_final',
         estado_visual: 'sent',
         is_latest: true,
         vehicle_model: 'Neo',
@@ -184,7 +184,7 @@ describe('Componente Contratos - Filtros', () => {
         const filterButton = screen.getByRole('button', { name: /Filtros/i });
         fireEvent.click(filterButton);
 
-        const typeCheckbox = screen.getByLabelText('Acuerdo Compraventa');
+        const typeCheckbox = screen.getByLabelText('Contrato Encargo');
         fireEvent.click(typeCheckbox);
 
         expect(screen.getByText('Camping Sol')).toBeInTheDocument();

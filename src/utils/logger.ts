@@ -3,7 +3,7 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 interface LogContext {
   component?: string;
   action?: string;
-  data?: any;
+  data?: Record<string, unknown> | unknown;
 }
 
 class Logger {
@@ -52,15 +52,15 @@ class Logger {
 
   // Business-specific loggers
   budget = {
-    create: (data: any) => this.info('Creating budget', { component: 'Budget', action: 'create', data }),
-    update: (id: string, data: any) => this.info('Updating budget', { component: 'Budget', action: 'update', data: { id, ...data } }),
+    create: (data: Record<string, unknown>) => this.info('Creating budget', { component: 'Budget', action: 'create', data }),
+    update: (id: string, data: Record<string, unknown>) => this.info('Updating budget', { component: 'Budget', action: 'update', data: { id, ...data } }),
     delete: (id: string) => this.info('Deleting budget', { component: 'Budget', action: 'delete', data: { id } }),
-    calculate: (calculations: any) => this.debug('Budget calculations', { component: 'Budget', action: 'calculate', data: calculations }),
+    calculate: (calculations: Record<string, unknown>) => this.debug('Budget calculations', { component: 'Budget', action: 'calculate', data: calculations }),
   };
 
   project = {
-    create: (data: any) => this.info('Creating project', { component: 'Project', action: 'create', data }),
-    update: (id: string, data: any) => this.info('Updating project', { component: 'Project', action: 'update', data: { id, ...data } }),
+    create: (data: Record<string, unknown>) => this.info('Creating project', { component: 'Project', action: 'create', data }),
+    update: (id: string, data: Record<string, unknown>) => this.info('Updating project', { component: 'Project', action: 'update', data: { id, ...data } }),
     statusChange: (id: string, newStatus: string) => this.info('Project status changed', { component: 'Project', action: 'statusChange', data: { id, newStatus } }),
     phaseComplete: (projectId: string, phase: string) => this.info('Project phase completed', { component: 'Project', action: 'phaseComplete', data: { projectId, phase } }),
   };
@@ -68,23 +68,23 @@ class Logger {
   contract = {
     generate: (type: string, projectId: string) => this.info('Generating contract', { component: 'Contract', action: 'generate', data: { type, projectId } }),
     sign: (contractId: string) => this.info('Contract signed', { component: 'Contract', action: 'sign', data: { contractId } }),
-    update: (contractId: string, data: any) => this.info('Updating contract', { component: 'Contract', action: 'update', data: { contractId, ...data } }),
+    update: (contractId: string, data: Record<string, unknown>) => this.info('Updating contract', { component: 'Contract', action: 'update', data: { contractId, ...data } }),
   };
 
   incident = {
-    create: (data: any) => this.info('Creating incident', { component: 'Incident', action: 'create', data }),
-    update: (id: string, data: any) => this.info('Updating incident', { component: 'Incident', action: 'update', data: { id, ...data } }),
+    create: (data: Record<string, unknown>) => this.info('Creating incident', { component: 'Incident', action: 'create', data }),
+    update: (id: string, data: Record<string, unknown>) => this.info('Updating incident', { component: 'Incident', action: 'update', data: { id, ...data } }),
     statusChange: (id: string, newStatus: string) => this.info('Incident status changed', { component: 'Incident', action: 'statusChange', data: { id, newStatus } }),
   };
 
   production = {
-    slotCreate: (data: any) => this.info('Creating production slot', { component: 'Production', action: 'slotCreate', data }),
-    slotUpdate: (id: string, data: any) => this.info('Updating production slot', { component: 'Production', action: 'slotUpdate', data: { id, ...data } }),
-    settingsUpdate: (data: any) => this.info('Updating production settings', { component: 'Production', action: 'settingsUpdate', data }),
+    slotCreate: (data: Record<string, unknown>) => this.info('Creating production slot', { component: 'Production', action: 'slotCreate', data }),
+    slotUpdate: (id: string, data: Record<string, unknown>) => this.info('Updating production slot', { component: 'Production', action: 'slotUpdate', data: { id, ...data } }),
+    settingsUpdate: (data: Record<string, unknown>) => this.info('Updating production settings', { component: 'Production', action: 'settingsUpdate', data }),
   };
 
   vehicle = {
-    create: (data: any) => this.info('Creating vehicle', { component: 'Vehicle', action: 'create', data }),
+    create: (data: Record<string, unknown>) => this.info('Creating vehicle', { component: 'Vehicle', action: 'create', data }),
     assign: (vehicleId: string, projectId: string) => this.info('Assigning vehicle to project', { component: 'Vehicle', action: 'assign', data: { vehicleId, projectId } }),
     unassign: (vehicleId: string) => this.info('Unassigning vehicle', { component: 'Vehicle', action: 'unassign', data: { vehicleId } }),
   };

@@ -24,6 +24,7 @@ export type Database = {
           is_general: boolean | null
           name: string
           order_index: number
+          out_of_offer: boolean
           price: number
           price_export: number
           updated_at: string
@@ -37,6 +38,7 @@ export type Database = {
           is_general?: boolean | null
           name: string
           order_index?: number
+          out_of_offer?: boolean
           price?: number
           price_export?: number
           updated_at?: string
@@ -50,6 +52,7 @@ export type Database = {
           is_general?: boolean | null
           name?: string
           order_index?: number
+          out_of_offer?: boolean
           price?: number
           price_export?: number
           updated_at?: string
@@ -58,38 +61,59 @@ export type Database = {
       }
       billing: {
         Row: {
+          address_street: string | null
+          autonomous_community: string | null
           billing_address: string | null
+          birth_date: string | null
+          city: string | null
           client_id: string | null
+          country: string | null
           created_at: string
           email: string | null
           id: string
           name: string | null
           nif: string | null
+          office_unit: string | null
           phone: string | null
+          surname: string | null
           type: string | null
           updated_at: string | null
         }
         Insert: {
+          address_street?: string | null
+          autonomous_community?: string | null
           billing_address?: string | null
+          birth_date?: string | null
+          city?: string | null
           client_id?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           id?: string
           name?: string | null
           nif?: string | null
+          office_unit?: string | null
           phone?: string | null
+          surname?: string | null
           type?: string | null
           updated_at?: string | null
         }
         Update: {
+          address_street?: string | null
+          autonomous_community?: string | null
           billing_address?: string | null
+          birth_date?: string | null
+          city?: string | null
           client_id?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           id?: string
           name?: string | null
           nif?: string | null
+          office_unit?: string | null
           phone?: string | null
+          surname?: string | null
           type?: string | null
           updated_at?: string | null
         }
@@ -129,10 +153,12 @@ export type Database = {
           notes: string | null
           pack_id: string | null
           pack_price: number
+          project_id: string | null
           reservation_amount: number | null
           status: string
           subtotal: number
           total: number
+          total_with_iedmt: number | null
           updated_at: string
         }
         Insert: {
@@ -160,10 +186,12 @@ export type Database = {
           notes?: string | null
           pack_id?: string | null
           pack_price?: number
+          project_id?: string | null
           reservation_amount?: number | null
           status?: string
           subtotal?: number
           total?: number
+          total_with_iedmt?: number | null
           updated_at?: string
         }
         Update: {
@@ -191,10 +219,12 @@ export type Database = {
           notes?: string | null
           pack_id?: string | null
           pack_price?: number
+          project_id?: string | null
           reservation_amount?: number | null
           status?: string
           subtotal?: number
           total?: number
+          total_with_iedmt?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -238,6 +268,13 @@ export type Database = {
             columns: ["pack_id"]
             isOneToOne: false
             referencedRelation: "budget_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -542,6 +579,44 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          project_id: string | null
+          updated_at: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          project_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          project_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           billing_address: string
@@ -811,8 +886,10 @@ export type Database = {
           is_active: boolean
           name: string
           order_index: number
+          power: string | null
           price_export: number
           price_modifier: number
+          transmission: string | null
           updated_at: string
         }
         Insert: {
@@ -822,8 +899,10 @@ export type Database = {
           is_active?: boolean
           name: string
           order_index?: number
+          power?: string | null
           price_export?: number
           price_modifier?: number
+          transmission?: string | null
           updated_at?: string
         }
         Update: {
@@ -833,11 +912,135 @@ export type Database = {
           is_active?: boolean
           name?: string
           order_index?: number
+          power?: string | null
           price_export?: number
           price_modifier?: number
+          transmission?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      incident_items: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          incident_id: string | null
+          quantity: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          incident_id?: string | null
+          quantity?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          incident_id?: string | null
+          quantity?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_items_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incident_status: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          order_index: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          order_index?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          order_index?: number | null
+        }
+        Relationships: []
+      }
+      incidents: {
+        Row: {
+          assigned_to: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          priority: string | null
+          project_id: string | null
+          resolution: string | null
+          resolved_at: string | null
+          status_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          project_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          status_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          project_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          status_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "incident_status"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       interior_color_options: {
         Row: {
@@ -950,6 +1153,143 @@ export type Database = {
         }
         Relationships: []
       }
+      production_schedule: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          end_date: string | null
+          estimated_duration_days: number | null
+          id: string
+          name: string | null
+          notes: string | null
+          production_code: string | null
+          project_id: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          estimated_duration_days?: number | null
+          id?: string
+          name?: string | null
+          notes?: string | null
+          production_code?: string | null
+          project_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          estimated_duration_days?: number | null
+          id?: string
+          name?: string | null
+          notes?: string | null
+          production_code?: string | null
+          project_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_schedule_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_value: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_value?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      project_phase_progress: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          end_date: string | null
+          id: string
+          is_completed: boolean | null
+          notes: string | null
+          phase_template_id: string | null
+          project_id: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          phase_template_id?: string | null
+          project_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          phase_template_id?: string | null
+          project_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_phase_progress_phase_template_id_fkey"
+            columns: ["phase_template_id"]
+            isOneToOne: false
+            referencedRelation: "project_phase_template"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_phase_progress_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_phase_template: {
         Row: {
           created_at: string
@@ -979,6 +1319,78 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      projects: {
+        Row: {
+          client_id: string | null
+          client_name: string | null
+          comercial: string | null
+          created_at: string | null
+          delivery_date: string | null
+          id: string
+          manual_status_control: boolean | null
+          priority: string | null
+          production_code_id: string | null
+          progress: number | null
+          project_code: string | null
+          slot_id: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          client_name?: string | null
+          comercial?: string | null
+          created_at?: string | null
+          delivery_date?: string | null
+          id?: string
+          manual_status_control?: boolean | null
+          priority?: string | null
+          production_code_id?: string | null
+          progress?: number | null
+          project_code?: string | null
+          slot_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          client_name?: string | null
+          comercial?: string | null
+          created_at?: string | null
+          delivery_date?: string | null
+          id?: string
+          manual_status_control?: boolean | null
+          priority?: string | null
+          production_code_id?: string | null
+          progress?: number | null
+          project_code?: string | null
+          slot_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       regional_config: {
         Row: {
@@ -1084,6 +1496,74 @@ export type Database = {
           },
         ]
       }
+      vehicles: {
+        Row: {
+          created_at: string | null
+          dimensions: string | null
+          engine: string | null
+          estado_pago: string | null
+          exterior_color: string | null
+          fecha_pago: string | null
+          id: string
+          location: string | null
+          matricula: string | null
+          numero_bastidor: string | null
+          plazas: string | null
+          project_id: string | null
+          proveedor: string | null
+          transmission_type: string | null
+          updated_at: string | null
+          vehicle_code: string
+          warranty_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dimensions?: string | null
+          engine?: string | null
+          estado_pago?: string | null
+          exterior_color?: string | null
+          fecha_pago?: string | null
+          id?: string
+          location?: string | null
+          matricula?: string | null
+          numero_bastidor?: string | null
+          plazas?: string | null
+          project_id?: string | null
+          proveedor?: string | null
+          transmission_type?: string | null
+          updated_at?: string | null
+          vehicle_code?: string
+          warranty_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dimensions?: string | null
+          engine?: string | null
+          estado_pago?: string | null
+          exterior_color?: string | null
+          fecha_pago?: string | null
+          id?: string
+          location?: string | null
+          matricula?: string | null
+          numero_bastidor?: string | null
+          plazas?: string | null
+          project_id?: string | null
+          proveedor?: string | null
+          transmission_type?: string | null
+          updated_at?: string | null
+          vehicle_code?: string
+          warranty_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1163,8 +1643,8 @@ export type Database = {
       sync_all_project_assignments: {
         Args: never
         Returns: {
-          action_type: string
-          details: string
+          action: string
+          id: string
           project_code: string
         }[]
       }
@@ -1172,10 +1652,10 @@ export type Database = {
         Args: never
         Returns: {
           action: string
+          id: string
           new_status: string
           old_status: string
           project_code: string
-          project_id: string
         }[]
       }
     }
@@ -1183,13 +1663,13 @@ export type Database = {
       project_code_status: "available" | "assigned" | "completed" | "cancelled"
       project_priority: "low" | "medium" | "high" | "critical"
       project_status:
-      | "prospect"
-      | "pre_production"
-      | "production"
-      | "reworks"
-      | "pre_delivery"
-      | "delivered"
-      | "repair"
+        | "prospect"
+        | "pre_production"
+        | "production"
+        | "reworks"
+        | "pre_delivery"
+        | "delivered"
+        | "repair"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1203,116 +1683,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
@@ -1331,3 +1811,4 @@ export const Constants = {
     },
   },
 } as const
+

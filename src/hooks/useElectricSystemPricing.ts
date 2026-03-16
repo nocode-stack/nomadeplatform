@@ -31,8 +31,8 @@ export const useElectricSystemPricing = (
         'calculate_electric_system_price_for_pack',
         {
           system_id: systemId,
-          pack_id: packId || null,
-          pack_name: packName || null,
+          pack_id: packId ?? undefined,
+          pack_name: packName ?? undefined,
         }
       );
 
@@ -61,7 +61,7 @@ export const useElectricSystemPricing = (
 // Helper function para calcular precios de forma síncrona cuando ya tienes los datos
 export const calculateElectricSystemPrice = (
   systemPrice: number,
-  packPricingRules: any,
+  packPricingRules: Record<string, { type: string; amount?: number; reason?: string }> | null,
   packId?: string,
   packName?: string
 ): ElectricSystemPricing => {
@@ -73,7 +73,7 @@ export const calculateElectricSystemPrice = (
 
   if (packPricingRules) {
     // Buscar regla por pack_id primero, luego por pack_name
-    let packRule = null;
+    let packRule: { type: string; amount?: number; reason?: string } | null = null;
 
     if (packId && packPricingRules[packId]) {
       packRule = packPricingRules[packId];

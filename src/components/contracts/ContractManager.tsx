@@ -194,8 +194,8 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
         client_email: project.clients?.email || '',
         billing_address: project.clients?.address || '',
         vehicle_model: 'Modelo pendiente de especificar', // Valor por defecto
-        payment_reserve: contractType === 'reservation' ? 1000 : 0, // Valor por defecto
-        total_price: contractType !== 'reservation' ? 10000 : 0 // Valor por defecto
+        payment_reserve: contractType === 'reserva' ? 1000 : 0, // Valor por defecto
+        total_price: contractType !== 'reserva' ? 10000 : 0 // Valor por defecto
       };
 
       // Validar solo campos críticos
@@ -217,7 +217,7 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
     if (!data.vehicle_engine?.trim()) missing.push('vehicle_engine');
 
     // Campos específicos por tipo de contrato
-    if (contractType === 'reservation') {
+    if (contractType === 'reserva') {
       if (!data.payment_reserve || data.payment_reserve <= 0) {
         missing.push('payment_reserve');
       }
@@ -259,16 +259,16 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
         vehicle_model: 'Modelo pendiente de especificar',
         vehicle_vin: project.vehicles?.numero_bastidor || '',
         vehicle_plate: project.vehicles?.matricula || '',
-        total_price: contractType === 'reservation' ? 0 : 25000,
-        payment_reserve: contractType === 'reservation' ? 2000 : 0,
+        total_price: contractType === 'reserva' ? 0 : 25000,
+        payment_reserve: contractType === 'reserva' ? 2000 : 0,
         payment_conditions: 'Condiciones estándar de pago',
         iban: 'ES80 0081 7011 1900 0384 8192',
         vehicle_engine: '',
         delivery_months: 6,
         payment_first_percentage: 30,
-        payment_first_amount: contractType !== 'reservation' ? 7500 : 0,
+        payment_first_amount: contractType !== 'reserva' ? 7500 : 0,
         payment_second_percentage: 70,
-        payment_second_amount: contractType !== 'reservation' ? 17500 : 0,
+        payment_second_amount: contractType !== 'reserva' ? 17500 : 0,
         payment_third_percentage: 0,
         payment_third_amount: 0
       };
@@ -460,21 +460,21 @@ const ContractManager: React.FC<ContractManagerProps> = ({ project }) => {
       label: 'Contrato de Reserva',
       description: 'Documento de reserva del vehículo con pago inicial',
       icon: Calendar,
-      contractType: 'reservation'
+      contractType: 'reserva'
     },
     {
       id: 'acuerdo',
-      label: 'Acuerdo de Compraventa',
+      label: 'Contrato de Encargo',
       description: 'Acuerdo previo a la compraventa definitiva',
       icon: FileText,
-      contractType: 'purchase_agreement'
+      contractType: 'encargo'
     },
     {
       id: 'compraventa',
-      label: 'Contrato de Compraventa',
+      label: 'Contrato Final / Compraventa',
       description: 'Contrato definitivo de compraventa del vehículo',
       icon: User,
-      contractType: 'sale_contract'
+      contractType: 'compraventa_final'
     }
   ];
 

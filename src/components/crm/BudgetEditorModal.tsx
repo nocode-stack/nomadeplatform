@@ -465,6 +465,7 @@ const BudgetEditorModal = ({ open, onOpenChange, budgetId, projectId, clientName
                 electric_system_price: calculations.electricPrice,
                 subtotal: calculations.pvpTotal,
                 total: calculations.total,
+                total_with_iedmt: calculations.totalWithIedmt,
                 discount_percentage: discountPercent / 100,
                 discount_amount: discountFixed,
                 discount_percentage_label: discountPercentLabel,

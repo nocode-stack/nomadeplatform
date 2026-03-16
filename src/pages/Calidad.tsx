@@ -140,7 +140,7 @@ const Calidad = () => {
         </div>
 
         {/* Tabs principales */}
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as string)}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="inspections">Inspecciones</TabsTrigger>

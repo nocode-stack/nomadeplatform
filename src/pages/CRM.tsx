@@ -47,12 +47,62 @@ import { Checkbox } from "../components/ui/checkbox";
 import { Label } from "../components/ui/label";
 import { useClients, useDeleteLead, useToggleHotLead } from '../hooks/useClients';
 
+interface CRMLead {
+    id: string;
+    client_id: string;
+    name: string;
+    surname: string;
+    company: string;
+    status: string;
+    email: string;
+    phone: string;
+    dni: string;
+    birthDate: string;
+    address: string;
+    addressNumber: string;
+    comercial: string;
+    leadType: string;
+    fair: string;
+    country: string;
+    autonomousCommunity: string;
+    city: string;
+    isHotLead: boolean;
+    vehicleModel: string;
+    motorization: string;
+    furnitureColor: string;
+    exteriorColor: string;
+    productionSlot: string;
+    electricalSystem: string;
+    extraPacks: string;
+    projectNotes: string;
+    budgetNotes: string;
+    discount: string;
+    discountAmount: string;
+    reservationAmount: string;
+    items: unknown[];
+    budgetId?: string;
+    hasBudgets: boolean;
+    hasContracts: boolean;
+    billingType: string;
+    clientBillingName: string;
+    clientBillingEmail: string;
+    clientBillingPhone: string;
+    clientBillingAddress: string;
+    clientBillingCompanyName: string;
+    clientBillingCompanyCif: string;
+    clientBillingCompanyPhone: string;
+    clientBillingCompanyEmail: string;
+    clientBillingCompanyAddress: string;
+    createdAt: string;
+    _raw: unknown;
+}
+
 const CRM = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-    const [selectedLead, setSelectedLead] = useState<any>(null);
+    const [selectedLead, setSelectedLead] = useState<CRMLead | null>(null);
     const [localSearch, setLocalSearch] = useState('');
     const [selectedComerciales, setSelectedComerciales] = useState<string[]>([]);
     const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
@@ -61,12 +111,12 @@ const CRM = () => {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [leadToDelete, setLeadToDelete] = useState<any>(null);
+    const [leadToDelete, setLeadToDelete] = useState<CRMLead | null>(null);
 
     const { data: clientsData, isLoading, error } = useClients();
     const deleteLeadMutation = useDeleteLead();
 
-    const handleDeleteClick = (e: React.MouseEvent, lead: any) => {
+    const handleDeleteClick = (e: React.MouseEvent, lead: CRMLead) => {
         e.stopPropagation();
         setLeadToDelete(lead);
         setIsDeleteDialogOpen(true);
@@ -83,9 +133,9 @@ const CRM = () => {
     // Map Supabase data to the structure the CRM expects
     const leads = (clientsData || []).map(client => {
         try {
-            const budgets = (client as any).budget || [];
-            const contracts = (client as any).contracts || [];
-            const primaryBudget = budgets.find((b: any) => b.is_primary) || budgets[0];
+            const budgets = (client as Record<string, unknown>).budget as Record<string, unknown>[] || [];
+            const contracts = (client as Record<string, unknown>).contracts as Record<string, unknown>[] || [];
+            const primaryBudget = budgets.find((b: Record<string, unknown>) => b.is_primary) || budgets[0] as Record<string, unknown> | undefined;
             const billing = client.billing?.[0];
 
             return {
@@ -107,20 +157,20 @@ const CRM = () => {
                 country: client.country || '',
                 autonomousCommunity: client.autonomous_community || '',
                 city: client.city || '',
-                isHotLead: (client as any).is_hot_lead || false,
-                vehicleModel: primaryBudget?.model_option?.name || '',
-                motorization: primaryBudget?.engine_option?.name || '',
-                furnitureColor: primaryBudget?.interior_color_option?.name || '',
+                isHotLead: (client as Record<string, unknown>).is_hot_lead as boolean || false,
+                vehicleModel: (primaryBudget as Record<string, unknown> | undefined)?.model_option ? ((primaryBudget as Record<string, unknown>).model_option as Record<string, unknown>)?.name as string || '' : '',
+                motorization: (primaryBudget as Record<string, unknown> | undefined)?.engine_option ? ((primaryBudget as Record<string, unknown>).engine_option as Record<string, unknown>)?.name as string || '' : '',
+                furnitureColor: (primaryBudget as Record<string, unknown> | undefined)?.interior_color_option ? ((primaryBudget as Record<string, unknown>).interior_color_option as Record<string, unknown>)?.name as string || '' : '',
                 exteriorColor: '',
                 productionSlot: 'Por asignar',
-                electricalSystem: primaryBudget?.electric_system?.name || '',
-                extraPacks: (primaryBudget as any)?.pack?.name || '',
-                projectNotes: (primaryBudget as any)?.comments || (primaryBudget as any)?.notes || '',
-                budgetNotes: (primaryBudget as any)?.comments || (primaryBudget as any)?.notes || '',
-                discount: ((primaryBudget as any)?.discount_percentage * 100)?.toString() || '0',
-                discountAmount: (primaryBudget as any)?.discount_amount?.toString() || '0',
-                reservationAmount: (primaryBudget as any)?.reservation_amount?.toString() || (primaryBudget as any)?.reservation_price?.toString() || '1500',
-                items: (primaryBudget as any)?.budget_items || [],
+                electricalSystem: (primaryBudget as Record<string, unknown> | undefined)?.electric_system ? ((primaryBudget as Record<string, unknown>).electric_system as Record<string, unknown>)?.name as string || '' : '',
+                extraPacks: (primaryBudget as Record<string, unknown> | undefined)?.pack ? ((primaryBudget as Record<string, unknown>).pack as Record<string, unknown>)?.name as string || '' : '',
+                projectNotes: (primaryBudget as Record<string, unknown> | undefined)?.comments as string || (primaryBudget as Record<string, unknown> | undefined)?.notes as string || '',
+                budgetNotes: (primaryBudget as Record<string, unknown> | undefined)?.comments as string || (primaryBudget as Record<string, unknown> | undefined)?.notes as string || '',
+                discount: ((primaryBudget as Record<string, unknown> | undefined)?.discount_percentage as number * 100)?.toString() || '0',
+                discountAmount: ((primaryBudget as Record<string, unknown> | undefined)?.discount_amount as number)?.toString() || '0',
+                reservationAmount: ((primaryBudget as Record<string, unknown> | undefined)?.reservation_amount as number)?.toString() || ((primaryBudget as Record<string, unknown> | undefined)?.reservation_price as number)?.toString() || '1500',
+                items: (primaryBudget as Record<string, unknown> | undefined)?.budget_items as unknown[] || [],
                 budgetId: primaryBudget?.id,
                 hasBudgets: budgets.length > 0,
                 hasContracts: contracts.length > 0,
@@ -141,7 +191,7 @@ const CRM = () => {
             console.error('❌ Error mapping client in CRM:', client, e);
             return null;
         }
-    }).filter(Boolean) as any[];
+    }).filter(Boolean) as CRMLead[];
 
     const comerciales = Array.from(new Set(leads.map(l => l.comercial).filter(Boolean)));
     const models = Array.from(new Set(leads.map(l => l.vehicleModel).filter(Boolean)));
@@ -438,12 +488,12 @@ const CRM = () => {
                                 const freshLeads = queryClient.getQueryData<any[]>(['common-clients-list']);
                                 if (freshLeads) {
                                     const newClientId = newLeadData?.client_id;
-                                    const matchingClient = freshLeads.find((c: any) => c.id === newClientId);
+                                    const matchingClient = freshLeads.find((c: Record<string, unknown>) => c.id === newClientId);
                                     if (matchingClient) {
                                         // Build the lead object just like the leads mapping does
                                         const budgets = matchingClient.budget || [];
                                         const contracts = matchingClient.contracts || [];
-                                        const primaryBudget = budgets.find((b: any) => b.is_primary) || budgets[0];
+                                        const primaryBudget = budgets.find((b: Record<string, unknown>) => b.is_primary) || budgets[0];
                                         const billing = matchingClient.billing?.[0];
                                         const leadObj = {
                                             id: matchingClient.id,

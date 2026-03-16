@@ -49,9 +49,9 @@ const Contratos = () => {
 
     const mapContractType = (type: string) => {
         switch (type) {
-            case 'reservation': return 'Contrato Reserva';
-            case 'purchase_agreement': return 'Acuerdo Compraventa';
-            case 'sale_contract': return 'Contrato Compraventa';
+            case 'reserva': return 'Contrato Reserva';
+            case 'encargo': return 'Contrato Encargo';
+            case 'compraventa_final': return 'Contrato Final';
             default: return type;
         }
     };
@@ -64,14 +64,18 @@ const Contratos = () => {
                 return 'pending_send';
             case 'sent':
                 return 'awaiting_signature';
+            case 'opened':
+                return 'viewed';
             case 'signed':
                 return 'completed';
+            case 'declined':
+                return 'declined';
             default:
                 return status;
         }
     };
 
-    const allContracts = (rawContracts || []).map((c: any) => ({
+    const allContracts = (rawContracts || []).map((c) => ({
         id: c.id.substring(0, 8).toUpperCase(),
         realId: c.id,
         projectId: c.client_id, // Usar client_id ahora para acciones
@@ -87,21 +91,23 @@ const Contratos = () => {
         model: c.vehicle_model || 'N/A'
     }));
 
-    const types = ['Contrato Reserva', 'Acuerdo Compraventa', 'Contrato Compraventa'];
+    const types = ['Contrato Reserva', 'Contrato Encargo', 'Contrato Final'];
     const models = Array.from(new Set(allContracts.map(c => c.model))).filter(Boolean);
     const statuses = [
         { id: 'pending_send', label: 'Pendiente de envío' },
         { id: 'awaiting_signature', label: 'Pendiente de firma' },
-        { id: 'completed', label: 'Firmado' }
+        { id: 'viewed', label: 'Visto por cliente' },
+        { id: 'completed', label: 'Firmado' },
+        { id: 'declined', label: 'Rechazado' }
     ];
 
     const getTypeIcon = (type: string) => {
         switch (type) {
             case 'Contrato Reserva':
                 return <Bookmark className="w-5 h-5" />;
-            case 'Acuerdo Compraventa':
+            case 'Contrato Encargo':
                 return <Handshake className="w-5 h-5" />;
-            case 'Contrato Compraventa':
+            case 'Contrato Final':
                 return <FileCheck className="w-5 h-5" />;
             default:
                 return <FileText className="w-5 h-5" />;
@@ -112,9 +118,9 @@ const Contratos = () => {
         switch (type) {
             case 'Contrato Reserva':
                 return 'bg-blue-100/50 text-blue-600';
-            case 'Acuerdo Compraventa':
+            case 'Contrato Encargo':
                 return 'bg-amber-100/50 text-amber-600';
-            case 'Contrato Compraventa':
+            case 'Contrato Final':
                 return 'bg-emerald-100/50 text-emerald-600';
             default:
                 return 'bg-slate-100 text-slate-600';
@@ -430,10 +436,14 @@ const Contratos = () => {
                                         <div className="flex items-center space-x-4">
                                             <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${c.status === 'completed' ? 'bg-success/10 text-success border-success/20' :
                                                 c.status === 'pending_send' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                c.status === 'viewed' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                                c.status === 'declined' ? 'bg-red-50 text-red-700 border-red-200' :
                                                     'bg-warning/10 text-warning border-warning/20'
                                                 }`}>
                                                 {c.status === 'completed' ? 'FIRMADO' :
                                                     c.status === 'pending_send' ? 'PENDIENTE ENVÍO' :
+                                                    c.status === 'viewed' ? 'VISTO' :
+                                                    c.status === 'declined' ? 'RECHAZADO' :
                                                         'ESPERANDO FIRMA'}
                                             </span>
                                             <button

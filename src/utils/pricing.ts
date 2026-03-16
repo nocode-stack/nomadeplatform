@@ -38,10 +38,10 @@ export const calculateBudgetTotal = (data: {
         interior?: number;
     };
 }) => {
-    const modelPrice = Number(data.prices?.model ?? ((BASE_PRICES.vehicleModel as any)[data.vehicleModel || ''] || 0));
-    const motorPrice = Number(data.prices?.engine ?? ((BASE_PRICES.motorization as any)[data.motorization || ''] || 0));
-    const electricalPrice = Number(data.prices?.electric ?? ((BASE_PRICES.electricalSystem as any)[data.electricalSystem || ''] || 0));
-    const packPrice = Number(data.prices?.pack ?? ((BASE_PRICES.extraPacks as any)[data.extraPacks || ''] || 0));
+    const modelPrice = Number(data.prices?.model ?? ((BASE_PRICES.vehicleModel as Record<string, number>)[data.vehicleModel || ''] || 0));
+    const motorPrice = Number(data.prices?.engine ?? ((BASE_PRICES.motorization as Record<string, number>)[data.motorization || ''] || 0));
+    const electricalPrice = Number(data.prices?.electric ?? ((BASE_PRICES.electricalSystem as Record<string, number>)[data.electricalSystem || ''] || 0));
+    const packPrice = Number(data.prices?.pack ?? ((BASE_PRICES.extraPacks as Record<string, number>)[data.extraPacks || ''] || 0));
     const exteriorPrice = Number(data.prices?.exterior ?? 0);
     const interiorPrice = Number(data.prices?.interior ?? 0);
     const itemsTotal = (data.items || []).reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0), 0);
@@ -56,7 +56,7 @@ export const calculateBudgetTotal = (data: {
     const totalAfterDiscounts = subtotal - discountAmount;
 
     // Calcular IVA
-    const ivaRate = typeof (data as any).ivaRate === 'number' ? (data as any).ivaRate : 21;
+    const ivaRate = typeof (data as Record<string, unknown>).ivaRate === 'number' ? (data as Record<string, unknown>).ivaRate as number : 21;
     const totalWithIva = totalAfterDiscounts * (1 + ivaRate / 100);
 
     const result = {

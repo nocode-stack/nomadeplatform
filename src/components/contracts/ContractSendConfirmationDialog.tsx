@@ -44,9 +44,9 @@ const fieldLabels: Record<string, string> = {
 };
 
 const contractTypeLabels: Record<string, string> = {
-  reservation: 'Contrato de Reserva',
-  purchase_agreement: 'Acuerdo de Compraventa',
-  sale_contract: 'Contrato de Compraventa',
+  reserva: 'Contrato de Reserva',
+  encargo: 'Contrato de Encargo',
+  compraventa_final: 'Contrato Final / Compraventa',
 };
 
 const ContractSendConfirmationDialog: React.FC<ContractSendConfirmationDialogProps> = ({

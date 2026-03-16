@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nomade Nation</title>
+  <style>
+    :root {
+      --navy: #063b52;
+      --navy-2: #0a4964;
+      --teal: #20c7b7;
+      --teal-soft: #e8fbf8;
+      --orange: #f29b56;
+      --orange-soft: #fff2e7;
+      --text: #1e3542;
+      --muted: #617885;
+      --line: #dfe7eb;
+      --bg: #f6f7f8;
+      --card: #ffffff;
+      --shadow: 0 8px 30px rgba(6, 59, 82, 0.06);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+      color: white;
+      padding: 42px 44px 34px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      right: -120px;
+      top: -40px;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .eyebrow {
+      display: inline-block;
+      background: rgba(32, 199, 183, 0.2);
+      color: #8df1e7;
+      border: 1px solid rgba(141, 241, 231, 0.25);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 52px;
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      font-size: 22px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.82);
+    }
+
+    .brand {
+      text-align: right;
+      min-width: 220px;
+      padding-top: 12px;
+    }
+
+    .brand .name {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .brand .to {
+      margin-top: 8px;
+      color: #7adfd4;
+      font-size: 15px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .content {
+      padding: 28px 38px 42px;
+    }
+
+    .chips {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 26px;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border: 1px solid transparent;
+    }
+
+    .chip.teal {
+      background: var(--teal-soft);
+      color: #0d7f74;
+      border-color: #bdeee8;
+    }
+
+    .chip.gray {
+      background: #eef3f5;
+      color: #536a76;
+      border-color: #dde7ec;
+    }
+
+    .chip.orange {
+      background: var(--orange-soft);
+      color: #c26e29;
+      border-color: #ffd9ba;
+    }
+
+    .section {
+      margin-top: 28px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      color: var(--navy);
+    }
+
+    .section-title::before {
+      content: "";
+      width: 6px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--teal);
+      display: inline-block;
+    }
+
+    p {
+      margin: 0 0 12px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .lead {
+      font-size: 15px;
+    }
+
+    .highlight-box {
+      background: #f7fbfc;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px 24px 18px;
+      box-shadow: var(--shadow);
+      margin-top: 18px;
+    }
+
+    .box-title {
+      margin: 0 0 12px;
+      color: var(--navy);
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 12px;
+    }
+
+    li {
+      position: relative;
+      padding-left: 30px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    li::before {
+      content: "●";
+      position: absolute;
+      left: 0;
+      top: -1px;
+      color: var(--teal);
+      font-size: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .hours {
+      color: var(--teal);
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 14px;
+      line-height: 1;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .old-price {
+      color: #98a8b2;
+      text-decoration: line-through;
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .new-price {
+      color: var(--navy);
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      line-height: 1;
+    }
+
+    .per {
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .badge-save {
+      display: none;
+    }
+
+    .recommended {
+      border-color: #a8ebe4;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 34px rgba(32, 199, 183, 0.12);
+    }
+
+    .note {
+      background: #fff7ef;
+      border-left: 6px solid var(--orange);
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-top: 24px;
+      color: #6e4a2e;
+    }
+
+    .dark-summary {
+      margin-top: 28px;
+      background: linear-gradient(180deg, var(--navy) 0%, #0a4861 100%);
+      border-radius: 22px;
+      color: white;
+      padding: 26px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dark-summary::after {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      right: -90px;
+      top: -30px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .dark-summary h3 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      letter-spacing: -0.03em;
+    }
+
+    .dark-summary p {
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 10px;
+    }
+
+    .footer-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .mini-card {
+      background: #fbfbfc;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .mini-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--navy);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .mini-card span {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .signature {
+      margin-top: 30px;
+      font-size: 17px;
+      color: var(--text);
+    }
+
+    .signature strong {
+      color: var(--navy);
+    }
+
+    .page-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #81939d;
+      padding: 18px 4px 0;
+    }
+
+    @media (max-width: 860px) {
+      .hero-top,
+      .grid,
+      .footer-cards {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+
+      .hero-top {
+        gap: 16px;
+      }
+
+      .brand {
+        text-align: left;
+        min-width: auto;
+        padding-top: 0;
+      }
+
+      h1 { font-size: 40px; }
+      .subtitle { font-size: 18px; }
+      .content { padding: 24px 20px 34px; }
+      .hero { padding: 30px 20px 26px; }
+      .recommended::after {
+        position: static;
+        display: inline-block;
+        margin-top: 10px;
+      }
+    }
+
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+
+      body {
+        background: var(--bg) !important;
+      }
+
+      .page {
+        max-width: 100%;
+      }
+
+      .hero {
+        background: linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%) !important;
+        color: white !important;
+      }
+
+      .dark-summary {
+        background: linear-gradient(180deg, var(--navy) 0%, #0a4861 100%) !important;
+        color: white !important;
+      }
+
+      .eyebrow {
+        background: rgba(32, 199, 183, 0.2) !important;
+        border: 1px solid rgba(141, 241, 231, 0.25) !important;
+      }
+
+      .chip.teal {
+        background: var(--teal-soft) !important;
+        border-color: #bdeee8 !important;
+      }
+
+      .chip.gray {
+        background: #eef3f5 !important;
+        border-color: #dde7ec !important;
+      }
+
+      .chip.orange {
+        background: var(--orange-soft) !important;
+        border-color: #ffd9ba !important;
+      }
+
+      .highlight-box {
+        background: #f7fbfc !important;
+        border: 1px solid var(--line) !important;
+      }
+
+      .note {
+        background: #fff7ef !important;
+        border-left: 6px solid var(--orange) !important;
+      }
+
+      .card {
+        background: var(--card) !important;
+        border: 1px solid var(--line) !important;
+        box-shadow: none !important;
+      }
+
+      .recommended {
+        border-color: #a8ebe4 !important;
+      }
+
+      .mini-card {
+        background: #fbfbfc !important;
+        border: 1px solid var(--line) !important;
+      }
+
+      .page-footer {
+        page-break-inside: avoid;
+      }
+
+      .section,
+      .highlight-box,
+      .dark-summary,
+      .card,
+      .mini-card,
+      .note,
+      .footer-cards,
+      .grid {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .footer-cards {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+      }
+
+      .grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="eyebrow">Proposta de col·laboració</div>
+      <div class="hero-top">
+        <div>
+          <h1>Nomade Nation</h1>
+          <div class="subtitle">Proposta de continuïtat, consolidació i evolució de la plataforma interna</div>
+        </div>
+        <div class="brand">
+          <div class="name">STUDIO NOCODE</div>
+
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="chips">
+        <span class="chip teal">Continuïtat del projecte</span>
+        <span class="chip gray">Seguiment mensual</span>
+        <span class="chip orange">Tarifa amb descompte</span>
+      </div>
+
+      <section class="section">
+        <div class="section-title">01. Context i objectiu de la proposta</div>
+        <p class="lead">Aquesta proposta neix amb l'objectiu de donar continuïtat a la feina ja iniciada i convertir-la en una base de treball realment útil, sòlida i escalable per a Nomade Nation.</p>
+        <p>La voluntat és consolidar una plataforma interna capaç de centralitzar i connectar tot el procés operatiu al voltant d'una furgoneta, integrant en un mateix entorn la part comercial, compres, producció, qualitat i gestió interna.</p>
+        <p>Més enllà del desenvolupament de funcionalitats concretes, aquesta fase s'enfoca a estructurar una eina que us permeti treballar amb més ordre, més traçabilitat i més capacitat de coordinació entre àrees, reduint friccions operatives i facilitant la presa de decisions.</p>
+        <p>L'objectiu final és que la plataforma no sigui només un suport puntual, sinó una peça central del vostre funcionament diari i una base sòlida sobre la qual seguir construint noves capes de valor a mesura que el projecte evolucioni.</p>
+      </section>
+
+      <section class="section">
+        <div class="highlight-box">
+          <h2 class="box-title">Què us hauria d'aportar aquesta fase</h2>
+          <ul>
+            <li>Una base sòlida per ordenar el flux comercial, operatiu i intern en un únic entorn.</li>
+            <li>Més traçabilitat i menys fricció entre equips, processos i eines.</li>
+            <li>Capacitat per seguir ampliant la plataforma amb criteri segons les necessitats reals del negoci.</li>
+            <li>Continuïtat sobre el que ja s'ha fet, sense perdre context ni reprendre des de zero.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">02. Com plantegem la col·laboració</div>
+        <p>Per treballar-ho bé i amb continuïtat, habitualment ho plantegem amb una <strong>bossa d'hores mensual</strong>. Això ens permet definir prioritats a inici de cada mes, avançar amb focus i adaptar-nos al que el negoci necessiti en cada moment.</p>
+        <p>A partir d'aquesta base, podem seguir evolucionant la plataforma amb nous mòduls, automatitzacions, integracions amb altres eines o hardware, creació de app etc...</p>
+      </section>
+
+      <section class="section">
+        <div class="section-title">03. Opcions de dedicació mensual</div>
+        <p>Per al vostre cas, us plantegem aquestes tres opcions. En totes elles us apliquem una <strong>tarifa especial per sota del nostre preu habitual</strong> per donar continuïtat al projecte amb una base estable.</p>
+
+        <div class="grid">
+          <article class="card">
+            <div class="hours">30 h/mes</div>
+
+            <div class="price-row">
+              <span class="old-price">85 €/h</span>
+              <span class="new-price">75 €/h</span>
+
+            </div>
+            <p>Un format adequat si voleu avançar de manera progressiva, mantenint el projecte viu i resolent prioritats concretes cada mes.</p>
+          </article>
+
+          <article class="card">
+            <div class="hours">45 h/mes</div>
+
+            <div class="price-row">
+              <span class="old-price">80 €/h</span>
+              <span class="new-price">70 €/h</span>
+
+            </div>
+            <p>Una opció intermèdia per guanyar ritme, combinar evolució de producte amb ajustos operatius i mantenir més marge d'execució.</p>
+          </article>
+
+          <article class="card recommended">
+            <div class="hours">60 h/mes</div>
+
+            <div class="price-row">
+              <span class="old-price">70 €/h</span>
+              <span class="new-price">60 €/h</span>
+
+            </div>
+            <p>El format que permet avançar amb més continuïtat, consolidar millor la plataforma i disposar de més capacitat d'execució durant cada mes.</p>
+            <span class="badge-save">Descompte de 10 €/h</span>
+          </article>
+        </div>
+
+        <div class="note">
+          El primer pagament es faria a l'inici de la col·laboració i, a partir d'aquí, amb periodicitat mensual. Si en algun mes quedessin hores disponibles, aquestes es podrien acumular i consumir durant el mes següent. Si puntualment calguessin més hores, també es podrien facturar al preu/hora pactat del model escollit.
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">04. Horitzó de treball i següent pas</div>
+        <p>Perquè aquesta fase tingui sentit i la plataforma quedi ben assentada, proposem un <strong>horitzó inicial de 6 mesos</strong>. És el temps que ens hauria de permetre no només construir eines, sinó també implantar-les bé, ajustar-les amb ús real i assegurar que aportin valor a tota la cadena operativa.</p>
+      </section>
+
+      <section class="dark-summary">
+        <h3>Proper pas</h3>
+        <p>La proposta queda oberta perquè la pugueu revisar internament i valoreu quin format de dedicació encaixa millor amb les prioritats i el ritme del projecte.</p>
+        <p>Un cop ho tingueu definit, podrem reprendre el desenvolupament pendent amb una base clara de treball i amb continuïtat sobre tot el que ja s'ha construït fins ara.</p>
+      </section>
+
+      <div class="footer-cards">
+        <div class="mini-card">
+          <strong>Objectiu</strong>
+          <span>Centralitzar i ordenar el procés complet al voltant d'una furgoneta.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Model</strong>
+          <span>Bossa d'hores mensual amb prioritats definides i seguiment periòdic.</span>
+        </div>
+        <div class="mini-card">
+          <strong>Continuïtat</strong>
+          <span>Reprendre el pendent amb el format que decidiu i una base estable de treball.</span>
+        </div>
+      </div>
+
+      
+
+      <div class="page-footer">
+        <span>Studio NoCode © 2026</span>
+        <span>Proposta Nomade Nation</span>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

@@ -257,7 +257,7 @@ export const useSetPrimaryBudget = () => {
       const previousBudgets = queryClient.getQueryData(['project-budgets', clientId]);
 
       // Actualización optimista de la caché local
-      queryClient.setQueryData(['project-budgets', clientId], (old: any[] | undefined) => {
+      queryClient.setQueryData(['project-budgets', clientId], (old: NewBudget[] | undefined) => {
         if (!old) return old;
         return old.map(b => ({
           ...b,
@@ -268,7 +268,7 @@ export const useSetPrimaryBudget = () => {
 
       return { previousBudgets };
     },
-    onError: (error: any, { clientId }, context: any) => {
+    onError: (error: Error, { clientId }, context: { previousBudgets?: unknown } | undefined) => {
       // Si la mutación falla, restaurar la caché al estado anterior
       if (context?.previousBudgets) {
         queryClient.setQueryData(['project-budgets', clientId], context.previousBudgets);
@@ -351,7 +351,7 @@ export const useExteriorColorOptions = () => {
   return useQuery({
     queryKey: ['exterior-color-options'],
     queryFn: async () => {
-      return [] as any[];
+      return [] as unknown[];
     },
   });
 };
