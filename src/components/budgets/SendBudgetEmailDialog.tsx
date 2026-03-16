@@ -76,6 +76,7 @@ const SendBudgetEmailDialog = ({
                 throw new Error('No se pudo generar el PDF');
             }
 
+            // eslint-disable-next-line no-console
             console.log('PDF generated, base64 length:', pdfBase64.length, 'approx KB:', Math.round(pdfBase64.length / 1024));
 
             setStatus('sending');

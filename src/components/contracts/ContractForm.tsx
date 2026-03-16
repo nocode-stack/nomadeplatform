@@ -4,7 +4,7 @@ import { supabase } from '../../integrations/supabase/client';
 import { Input } from '../ui/input';
 import { NumericInput } from '../ui/numeric-input';
 import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
+// Textarea removed (unused)
 import { Alert, AlertDescription } from '../ui/alert';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
@@ -93,6 +93,7 @@ interface ContractData {
   // Contrato final: último pago manual
   payment_last_manual?: number;
   // Campo interno para saber el tipo de facturación
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -357,7 +358,7 @@ const ContractForm: React.FC<ContractFormProps> = ({
   }, [project.id, contractType, queryClient, project.clients?.id]);
 
   // Helper para construir dirección concatenada
-  const buildConcatenatedAddress = (parts: { address?: string; address_number?: string; city?: string; autonomous_community?: string; country?: string }) => {
+  const _buildConcatenatedAddress = (parts: { address?: string; address_number?: string; city?: string; autonomous_community?: string; country?: string }) => {
     const pieces = [
       [parts.address, parts.address_number].filter(Boolean).join(' '),
       parts.city,

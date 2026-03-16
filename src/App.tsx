@@ -15,8 +15,8 @@ import ForcePasswordChangeModal from "./components/auth/ForcePasswordChangeModal
 const Login = lazy(() => import("./pages/Login"));
 const IntroVideo = lazy(() => import("./pages/IntroVideo"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Proyectos = lazy(() => import("./pages/Proyectos"));
-const ProyectoDetalle = lazy(() => import("./pages/ProyectoDetalle"));
+const _Proyectos = lazy(() => import("./pages/Proyectos"));
+const _ProyectoDetalle = lazy(() => import("./pages/ProyectoDetalle"));
 const Vehiculos = lazy(() => import("./pages/Vehiculos"));
 const Produccion = lazy(() => import("./pages/Produccion"));
 const PlanificacionProduccion = lazy(() => import("./pages/PlanificacionProduccion"));

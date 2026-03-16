@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -109,6 +109,7 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
             clientPhone: budget.project?.clients?.phone || '',
             modelName: budget.model_option?.name || '-',
             engineName: budget.engine_option?.name || '-',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             interiorColorName: (budget as any).interior_color?.name || '',
             packName: budget.pack?.name || '-',
             lineItems,
@@ -290,6 +291,7 @@ const BudgetDetailModal = ({ open, onOpenChange, budget }: BudgetDetailModalProp
                                         <p><span className="text-[#94a3b8] uppercase text-[11px] mr-3">Modelo:</span> <strong>{budget.model_option?.name || '-'}</strong></p>
                                         <p><span className="text-[#94a3b8] uppercase text-[11px] mr-3">Motor:</span> <strong>{budget.engine_option?.name || '-'}</strong></p>
                                         <p><span className="text-[#94a3b8] uppercase text-[11px] mr-3">Pack:</span> <strong>{budget.pack?.name || '-'}</strong></p>
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                         <p><span className="text-[#94a3b8] uppercase text-[11px] mr-3">Interior:</span> <strong>{(budget as any).interior_color?.name || '-'}</strong></p>
                                     </div>
                                 </div>
