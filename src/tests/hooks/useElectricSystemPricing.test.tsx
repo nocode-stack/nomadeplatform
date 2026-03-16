@@ -1,4 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// Mock supabase client to prevent env var crash in CI
+vi.mock('@/integrations/supabase/client', () => ({
+    supabase: {
+        from: vi.fn(() => ({
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        })),
+    },
+}));
+
 import { calculateElectricSystemPrice } from '../../hooks/useElectricSystemPricing';
 
 describe('calculateElectricSystemPrice', () => {

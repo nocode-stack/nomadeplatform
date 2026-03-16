@@ -1,6 +1,20 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+
+// Mock supabase client to prevent env var crash in CI
+vi.mock('@/integrations/supabase/client', () => ({
+    supabase: {
+        from: vi.fn(() => ({
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        })),
+        functions: { invoke: vi.fn().mockResolvedValue({ data: null, error: null }) },
+    },
+}));
+
 import BudgetPrintView from '../../components/crm/BudgetPrintView';
 import type { BudgetPrintData } from '../../components/crm/BudgetPrintView';
 
