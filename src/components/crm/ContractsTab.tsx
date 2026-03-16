@@ -24,8 +24,13 @@ const getStatusDetails = (status: string) => {
         case 'pending_signature':
         case 'sent':
             return { label: 'ESPERANDO FIRMA', color: 'bg-warning/10 text-warning border-warning/20' };
+        case 'opened':
+            return { label: 'VISTO POR CLIENTE', color: 'bg-purple-50 text-purple-700 border-purple-200' };
         case 'signed':
+        case 'completed':
             return { label: 'FIRMADO', color: 'bg-success/10 text-success border-success/20' };
+        case 'declined':
+            return { label: 'RECHAZADO', color: 'bg-destructive/10 text-destructive border-destructive/20' };
         case 'editing':
             return { label: 'EN EDICIÓN', color: 'bg-orange-50 text-orange-700 border-orange-200' };
         default:
