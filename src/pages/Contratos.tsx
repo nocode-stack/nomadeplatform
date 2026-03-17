@@ -139,7 +139,8 @@ const Contratos = () => {
         isPrimary: c.is_latest || false,
         isCurrent: c.is_latest,
         clientDeleted: c.client?.is_active === false,
-        model: c.vehicle_model || 'N/A'
+        model: c.vehicle_model || 'N/A',
+        signedPdfUrl: c.signed_pdf_url || ''
     }));
 
     const types = ['Contrato Reserva', 'Contrato Encargo', 'Contrato Final'];
@@ -497,12 +498,22 @@ const Contratos = () => {
                                                     c.status === 'declined' ? 'RECHAZADO' :
                                                         'ESPERANDO FIRMA'}
                                             </span>
-                                            <button
-                                                disabled
-                                                className="p-2.5 rounded-xl border border-border text-muted-foreground/40 cursor-not-allowed opacity-50 shadow-sm"
-                                            >
-                                                <ExternalLink className="w-4 h-4" />
-                                            </button>
+                                            {c.status === 'completed' && c.signedPdfUrl ? (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); window.open(c.signedPdfUrl, '_blank'); }}
+                                                    className="p-2.5 rounded-xl border border-success/30 text-success hover:bg-success/10 transition-all shadow-sm"
+                                                    title="Ver PDF firmado"
+                                                >
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    disabled
+                                                    className="p-2.5 rounded-xl border border-border text-muted-foreground/40 cursor-not-allowed opacity-50 shadow-sm"
+                                                >
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
