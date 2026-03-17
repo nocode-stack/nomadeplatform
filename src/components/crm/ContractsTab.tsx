@@ -33,6 +33,8 @@ const getStatusDetails = (status: string) => {
             return { label: 'RECHAZADO', color: 'bg-destructive/10 text-destructive border-destructive/20' };
         case 'editing':
             return { label: 'EN EDICIÓN', color: 'bg-orange-50 text-orange-700 border-orange-200' };
+        case 'outdated':
+            return { label: 'DATOS ACTUALIZADOS', color: 'bg-amber-50 text-amber-700 border-amber-300' };
         default:
             return { label: 'NO CREADO', color: 'bg-muted text-muted-foreground border-border' };
     }

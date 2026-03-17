@@ -256,7 +256,16 @@ export const useContractVersioning = (projectId: string) => {
         console.log('[SendContract] Skipping PDF gen. type:', contractType, 'budgetId:', contractToUpdate.budget_id);
       }
 
-      // Solo hacer UPDATE del estado, nunca INSERT
+      // Si el contrato ya estaba en 'sent' o 'outdated', primero resetear a 'sending'
+      // para que el trigger de BD detecte el cambio a 'sent' y dispare el webhook
+      if (contractToUpdate.estado_visual === 'sent' || contractToUpdate.estado_visual === 'outdated') {
+        await supabase
+          .from('contracts')
+          .update({ estado_visual: 'sending' })
+          .eq('id', contractToUpdate.id);
+      }
+
+      // Ahora actualizar a 'sent' — el trigger detectará el cambio
       const updateData: Record<string, unknown> = {
         estado_visual: 'sent',
         contract_status: 'sent',
@@ -270,8 +279,6 @@ export const useContractVersioning = (projectId: string) => {
         .from('contracts')
         .update(updateData)
         .eq('id', contractToUpdate.id);
-
-      // removed debug log
 
       if (error) throw error;
     },
