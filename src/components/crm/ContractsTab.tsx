@@ -51,9 +51,10 @@ interface ContractsTabProps {
     projectId?: string;
     leadStatus?: string;
     onContractFormOpen?: (isOpen: boolean) => void;
+    initialContractType?: string;
 }
 
-const ContractsTab = ({ projectId, onContractFormOpen }: ContractsTabProps) => {
+const ContractsTab = ({ projectId, onContractFormOpen, initialContractType }: ContractsTabProps) => {
     // Get budgets to find the primary one
     const { data: budgets, isLoading: isLoadingBudgets } = useProjectBudgets(projectId || '');
     const primaryBudget = budgets?.find(b => b.is_primary) || budgets?.[0];
@@ -84,6 +85,15 @@ const ContractsTab = ({ projectId, onContractFormOpen }: ContractsTabProps) => {
     useEffect(() => {
         onContractFormOpen?.(!!activeForm);
     }, [activeForm, onContractFormOpen]);
+
+    // Auto-open a specific contract type if requested (e.g. from Contratos page)
+    const [hasAutoOpened, setHasAutoOpened] = useState(false);
+    useEffect(() => {
+        if (initialContractType && !hasAutoOpened && !isLoading && projectId) {
+            setHasAutoOpened(true);
+            openForm(initialContractType);
+        }
+    }, [initialContractType, hasAutoOpened, isLoading, projectId]);
 
     // Find an existing contract for the given type
     const findContract = (type: string) => {

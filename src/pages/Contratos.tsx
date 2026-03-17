@@ -29,6 +29,8 @@ import {
 import { Checkbox } from "../components/ui/checkbox";
 import { Label } from "../components/ui/label";
 import { useAllContracts } from '../hooks/useAllContracts';
+import { useClients } from '../hooks/useClients';
+import LeadDetailModal from '../components/crm/LeadDetailModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -46,6 +48,55 @@ const Contratos = () => {
     const pageSize = 20;
 
     const { data: rawContracts, isLoading } = useAllContracts();
+    const { data: clientsData } = useClients();
+
+    // Modal state for opening client detail from contract click
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [selectedLead, setSelectedLead] = useState<any>(null);
+    const [selectedContractType, setSelectedContractType] = useState<string | undefined>();
+
+    const handleContractClick = (clientId: string, contractType: string) => {
+        if (!clientsData || !clientId) return;
+        const client = clientsData.find((c: any) => c.id === clientId);
+        if (!client) return;
+
+        const budgets = (client as any).budget || [];
+        const contracts = (client as any).contracts || [];
+        const primaryBudget = budgets.find((b: any) => b.is_primary) || budgets[0];
+        const billing = (client as any).billing?.[0];
+
+        const leadObj: any = {
+            id: client.id,
+            client_id: client.id,
+            name: client.name || 'Sin nombre',
+            surname: client.surname || '',
+            company: billing?.name || '',
+            status: client.client_status || 'prospect',
+            email: client.email || '',
+            phone: client.phone || '',
+            dni: client.dni || '',
+            birthDate: client.birthdate || '',
+            address: client.address || '',
+            addressNumber: client.address_number || '',
+            comercial: client.comercial || '',
+            leadType: client.lead_type || '',
+            fair: client.fair || '',
+            country: client.country || '',
+            autonomousCommunity: client.autonomous_community || '',
+            city: client.city || '',
+            isHotLead: (client as any).is_hot_lead || false,
+            vehicleModel: primaryBudget?.model_option?.name || primaryBudget?.model_options?.name || '',
+            motorization: primaryBudget?.engine_option?.name || primaryBudget?.engine_options?.name || '',
+            hasBudgets: budgets.length > 0,
+            hasContracts: contracts.length > 0,
+            billingType: billing?.type || 'personal',
+            _raw: client,
+        };
+
+        setSelectedLead(leadObj);
+        setSelectedContractType(contractType);
+        setIsDetailModalOpen(true);
+    };
 
     const mapContractType = (type: string) => {
         switch (type) {
@@ -404,7 +455,7 @@ const Contratos = () => {
                     <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
                         <div className="divide-y divide-border/50">
                             {paginatedContracts.length > 0 ? paginatedContracts.map((c) => (
-                                <div key={c.realId} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-colors group">
+                                <div key={c.realId} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-colors group cursor-pointer" onClick={() => handleContractClick(c.projectId, c.contractType)}>
                                     <div className="flex items-center space-x-5">
                                         <div className={`p-3 rounded-xl ${getTypeColors(c.type)}`}>
                                             {getTypeIcon(c.type)}
@@ -507,6 +558,15 @@ const Contratos = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Client Detail Modal - opens on Contratos tab */}
+            <LeadDetailModal
+                open={isDetailModalOpen}
+                onOpenChange={setIsDetailModalOpen}
+                lead={selectedLead}
+                initialTab="contratos"
+                initialContractType={selectedContractType}
+            />
         </Layout>
     );
 };

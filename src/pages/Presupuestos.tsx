@@ -402,7 +402,7 @@ const Presupuestos = () => {
                                         <div className="space-y-1">
                                             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Total Presupuesto</p>
                                             <p className="text-2xl font-black text-primary">
-                                                {budget.total?.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                                                {((budget as any).total_with_iedmt || budget.total)?.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
                                             </p>
                                         </div>
                                         <div className="flex gap-2">

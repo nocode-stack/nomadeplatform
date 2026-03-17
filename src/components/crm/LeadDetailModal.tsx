@@ -108,11 +108,13 @@ interface LeadDetailModalProps {
     onOpenChange: (open: boolean) => void;
     lead: any;
     onLeadUpdated?: (leadData: any) => void;
+    initialTab?: string;
+    initialContractType?: string;
 }
 
-const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetailModalProps) => {
+const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated, initialTab, initialContractType }: LeadDetailModalProps) => {
     const [isLoading, setIsLoading] = React.useState(false);
-    const [activeTab, setActiveTab] = React.useState('cliente');
+    const [activeTab, setActiveTab] = React.useState(initialTab || 'cliente');
     const [clientSubTab, setClientSubTab] = React.useState<'contacto' | 'facturacion'>('contacto');
     const [currentProjectId, setCurrentProjectId] = React.useState(lead?.id);
     const [isHotLead, setIsHotLead] = React.useState(lead?.isHotLead || false);
@@ -122,7 +124,10 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
     useEffect(() => {
         setCurrentProjectId(lead?.id);
         setIsHotLead(lead?.isHotLead || false);
-    }, [lead?.id, lead?.isHotLead]);
+        if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [lead?.id, lead?.isHotLead, initialTab]);
     const { toast } = useToast();
 
     const form = useForm<LeadDetailFormData>({
@@ -922,11 +927,12 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                 </TabsContent>
 
                                 <TabsContent value="contratos" className="mt-0 animate-fade-in-up">
-                                    <ContractsTab projectId={currentProjectId} leadStatus={lead?.status} onContractFormOpen={setIsContractFormOpen} />
+                                    <ContractsTab projectId={currentProjectId} leadStatus={lead?.status} onContractFormOpen={setIsContractFormOpen} initialContractType={initialContractType} />
                                 </TabsContent>
                             </div>
                         </Tabs>
 
+                        {!(activeTab === 'contratos' && isContractFormOpen) && (
                         <div className="flex justify-end space-x-3 p-6 bg-muted/20 border-t border-border rounded-b-2xl shrink-0">
                             <Button
                                 type="button"
@@ -953,6 +959,7 @@ const LeadDetailModal = ({ open, onOpenChange, lead, onLeadUpdated }: LeadDetail
                                 )}
                             </Button>
                         </div>
+                        )}
                     </div>
                 </Form>
             </DialogContent>

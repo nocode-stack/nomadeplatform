@@ -1322,9 +1322,9 @@ const ContractForm: React.FC<ContractFormProps> = ({
                 type="number"
                 step="0.01"
                 value={formatInputValue(formData.total_price)}
-                onChange={(e) => handleNumericInputChange('total_price', e.target.value)}
-                readOnly={isFieldReadOnly('total_price')}
-                className={`pr-8 ${isFieldReadOnly('total_price') ? "bg-muted" : ""}`}
+                readOnly
+                tabIndex={-1}
+                className="pr-8 bg-muted [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">€</span>
             </div>

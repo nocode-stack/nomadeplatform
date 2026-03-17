@@ -297,7 +297,7 @@ const BudgetListTab = ({ projectId, clientName }: BudgetListTabProps) => {
                 const modelName = (budget as any).model_option?.name || 'Sin modelo';
                 const engineName = (budget as any).engine_option?.name || '';
                 const budgetLabel = (budget as any).budget_code || `Presupuesto #${budgets.length - index}`;
-                const total = budget.total || 0;
+                const total = (budget as any).total_with_iedmt || budget.total || 0;
                 const createdAt = budget.created_at
                     ? new Date(budget.created_at).toLocaleDateString('es-ES', {
                         day: '2-digit',
